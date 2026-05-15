@@ -26,8 +26,8 @@ const C = {
   sidebarActive: "#1A8F68",
 };
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_CHILDREN = [
+// ─── Initial Mock Data ────────────────────────────────────────────────────────
+const INIT_CHILDREN = [
   {
     id: 1,
     child_code: "CHD-0001",
@@ -133,8 +133,7 @@ const MOCK_CHILDREN = [
     status: "Overweight",
   },
 ];
-
-const MOCK_MEASUREMENTS = [
+const INIT_MEASUREMENTS = [
   {
     id: 1,
     child_id: 1,
@@ -220,8 +219,7 @@ const MOCK_MEASUREMENTS = [
     whz: 2.5,
   },
 ];
-
-const MOCK_PARENTS = [
+const INIT_PARENTS = [
   {
     id: 1,
     name: "Ana Santos",
@@ -263,7 +261,6 @@ const MOCK_PARENTS = [
     status: "Inactive",
   },
 ];
-
 const TREND_DATA = [
   {
     month: "Dec",
@@ -321,17 +318,14 @@ const TREND_DATA = [
   },
 ];
 
-// ─── WHO Z-Score computation (simplified LMS approximation) ──────────────────
-function computeWHO({ weight_kg, height_cm, age_months, }) {
-  // Simplified reference medians (not real WHO tables, for demo)
+// ─── WHO Z-Score computation ──────────────────────────────────────────────────
+function computeWHO({ weight_kg, height_cm, age_months }) {
   const wazRef = { median: 9.5 + age_months * 0.15, sd: 1.2 };
   const hazRef = { median: 65 + age_months * 0.9, sd: 3.2 };
   const whzRef = { median: 10.5 + (height_cm - 65) * 0.09, sd: 1.1 };
-
   const waz = ((weight_kg - wazRef.median) / wazRef.sd).toFixed(2);
   const haz = ((height_cm - hazRef.median) / hazRef.sd).toFixed(2);
   const whz = ((weight_kg - whzRef.median) / whzRef.sd).toFixed(2);
-
   let status = "Normal";
   if (parseFloat(waz) < -3 || parseFloat(whz) < -3)
     status = "Severely Underweight";
@@ -339,7 +333,6 @@ function computeWHO({ weight_kg, height_cm, age_months, }) {
   else if (parseFloat(haz) < -2) status = "Stunted";
   else if (parseFloat(whz) < -2) status = "Wasted";
   else if (parseFloat(whz) > 2) status = "Overweight";
-
   return {
     waz: parseFloat(waz),
     haz: parseFloat(haz),
@@ -348,7 +341,140 @@ function computeWHO({ weight_kg, height_cm, age_months, }) {
   };
 }
 
-// ─── SVG Icon Components ──────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function Toast({ msg, type, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 2800);
+    return () => clearTimeout(t);
+  }, );
+  const bg =
+    type === "success" ? C.primaryMid : type === "danger" ? C.danger : C.warn;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 28,
+        right: 28,
+        zIndex: 9999,
+        background: bg,
+        color: "#fff",
+        padding: "12px 20px",
+        borderRadius: 12,
+        fontSize: 13,
+        fontWeight: 600,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        minWidth: 240,
+      }}
+    >
+      <Icon
+        name={type === "success" ? "checkCircle" : "alertTriangle"}
+        size={16}
+        color="#fff"
+      />
+      {msg}
+    </div>
+  );
+}
+
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+function ConfirmDialog({ msg, onConfirm, onCancel }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(10,30,20,0.5)",
+        zIndex: 5000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          background: C.card,
+          borderRadius: 16,
+          padding: 28,
+          width: 340,
+          boxShadow: "0 24px 60px rgba(0,0,0,0.2)",
+          border: `1px solid ${C.border}`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: C.dangerLight,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="alertTriangle" size={18} color={C.danger} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+            Confirm Delete
+          </div>
+        </div>
+        <p
+          style={{
+            fontSize: 13,
+            color: C.textMuted,
+            marginBottom: 20,
+            lineHeight: 1.5,
+          }}
+        >
+          {msg}
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: "8px 18px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              color: C.textMuted,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              padding: "8px 18px",
+              borderRadius: 8,
+              border: "none",
+              background: C.danger,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
 const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
   const icons = {
     dashboard: (
@@ -659,22 +785,6 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
         <polyline points="12 5 19 12 12 19" />
       </svg>
     ),
-    arrowLeft: (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={style}
-      >
-        <line x1="19" y1="12" x2="5" y2="12" />
-        <polyline points="12 19 5 12 12 5" />
-      </svg>
-    ),
     mail: (
       <svg
         width={size}
@@ -819,8 +929,6 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
         <circle cx="12" cy="8" r="4" />
         <path d="M12 12v8" />
         <path d="M9 18h6" />
-        <path d="M8 14c-.5.5-1 1-1 2" />
-        <path d="M16 14c.5.5 1 1 1 2" />
       </svg>
     ),
     childMale: (
@@ -903,6 +1011,41 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
       >
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+    edit: (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={style}
+      >
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+    ),
+    trash: (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={style}
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
       </svg>
     ),
     x: (
@@ -1006,7 +1149,6 @@ const statusColor = (s) =>
     Wasted: C.info,
     Overweight: C.accent,
   })[s] || C.textMuted;
-
 const statusBg = (s) =>
   ({
     Normal: C.primaryLight,
@@ -1016,7 +1158,6 @@ const statusBg = (s) =>
     Wasted: C.infoLight,
     Overweight: C.accentLight,
   })[s] || "#f5f5f5";
-
 const StatusBadge = ({ status }) => (
   <span
     style={{
@@ -1034,12 +1175,603 @@ const StatusBadge = ({ status }) => (
     {status}
   </span>
 );
-
 const sourceIconName = (s) =>
   ({ kiosk: "scan", mobile: "phone", manual: "activity" })[s] || "activity";
 const SourceIcon = ({ type, size = 12 }) => (
   <Icon name={sourceIconName(type)} size={size} color="currentColor" />
 );
+
+// ─── Modal Shell ──────────────────────────────────────────────────────────────
+function Modal({ title, onClose, children, width = 540 }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(10,30,20,0.55)",
+        backdropFilter: "blur(4px)",
+        zIndex: 2000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.card,
+          borderRadius: 20,
+          border: `1px solid ${C.border}`,
+          width: "100%",
+          maxWidth: width,
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "18px 24px",
+            borderBottom: `1px solid ${C.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: C.bg,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>
+            {title}
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: C.border,
+              border: "none",
+              borderRadius: 8,
+              width: 30,
+              height: 30,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <Icon name="x" size={15} color={C.textMuted} />
+          </button>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Form Field ───────────────────────────────────────────────────────────────
+function Field({ label, children, required }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: 11,
+          fontWeight: 600,
+          color: C.textMuted,
+          marginBottom: 5,
+          letterSpacing: 0.4,
+        }}
+      >
+        {label}
+        {required && <span style={{ color: C.danger, marginLeft: 2 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+const inputStyle = {
+  width: "100%",
+  padding: "9px 12px",
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  fontSize: 13,
+  color: C.text,
+  outline: "none",
+  background: "#fff",
+  boxSizing: "border-box",
+};
+const selectStyle = { ...inputStyle, cursor: "pointer" };
+
+// ─── Add/Edit Child Modal ─────────────────────────────────────────────────────
+function ChildModal({ child, parents, onSave, onClose }) {
+  const isEdit = !!child;
+  const [form, setForm] = useState(
+    child || {
+      first_name: "",
+      last_name: "",
+      birthdate: "",
+      sex: "Male",
+      barangay: "",
+      address: "",
+      parent: "",
+      age_months: "",
+    },
+  );
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    if (
+      !form.first_name ||
+      !form.last_name ||
+      !form.birthdate ||
+      !form.parent
+    ) {
+      setErr("Please fill all required fields.");
+      return;
+    }
+    onSave(form);
+  };
+
+  return (
+    <Modal
+      title={isEdit ? "Edit Child Profile" : "Add New Child"}
+      onClose={onClose}
+    >
+      <div style={{ padding: 24 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+        >
+          <Field label="First Name" required>
+            <input
+              style={inputStyle}
+              value={form.first_name}
+              onChange={(e) => set("first_name", e.target.value)}
+              placeholder="e.g. Maria"
+            />
+          </Field>
+          <Field label="Last Name" required>
+            <input
+              style={inputStyle}
+              value={form.last_name}
+              onChange={(e) => set("last_name", e.target.value)}
+              placeholder="e.g. Santos"
+            />
+          </Field>
+          <Field label="Birthdate" required>
+            <input
+              type="date"
+              style={inputStyle}
+              value={form.birthdate}
+              onChange={(e) => set("birthdate", e.target.value)}
+            />
+          </Field>
+          <Field label="Age (months)">
+            <input
+              type="number"
+              style={inputStyle}
+              value={form.age_months}
+              onChange={(e) => set("age_months", e.target.value)}
+              placeholder="e.g. 24"
+            />
+          </Field>
+          <Field label="Sex">
+            <select
+              style={selectStyle}
+              value={form.sex}
+              onChange={(e) => set("sex", e.target.value)}
+            >
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+          </Field>
+          <Field label="Barangay">
+            <input
+              style={inputStyle}
+              value={form.barangay}
+              onChange={(e) => set("barangay", e.target.value)}
+              placeholder="e.g. Poblacion"
+            />
+          </Field>
+          <Field label="Parent/Guardian" required>
+            <select
+              style={selectStyle}
+              value={form.parent}
+              onChange={(e) => set("parent", e.target.value)}
+            >
+              <option value="">-- Select Parent --</option>
+              {parents.map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Initial Status">
+            <select
+              style={selectStyle}
+              value={form.status || "Normal"}
+              onChange={(e) => set("status", e.target.value)}
+            >
+              {[
+                "Normal",
+                "Underweight",
+                "Severely Underweight",
+                "Stunted",
+                "Wasted",
+                "Overweight",
+              ].map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field label="Address">
+          <input
+            style={inputStyle}
+            value={form.address}
+            onChange={(e) => set("address", e.target.value)}
+            placeholder="e.g. 123 Rizal St."
+          />
+        </Field>
+        {err && (
+          <div
+            style={{
+              color: C.danger,
+              fontSize: 12,
+              marginBottom: 10,
+              background: C.dangerLight,
+              padding: "8px 12px",
+              borderRadius: 8,
+            }}
+          >
+            {err}
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginTop: 6,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              color: C.textMuted,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: C.primary,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {isEdit ? "Save Changes" : "Add Child"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Add/Edit Parent Modal ────────────────────────────────────────────────────
+function ParentModal({ parent, onSave, onClose }) {
+  const isEdit = !!parent;
+  const [form, setForm] = useState(
+    parent || { name: "", email: "", phone: "", status: "Active" },
+  );
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    if (!form.name || !form.email || !form.phone) {
+      setErr("Please fill all required fields.");
+      return;
+    }
+    onSave(form);
+  };
+
+  return (
+    <Modal
+      title={isEdit ? "Edit Parent" : "Add New Parent"}
+      onClose={onClose}
+      width={480}
+    >
+      <div style={{ padding: 24 }}>
+        <Field label="Full Name" required>
+          <input
+            style={inputStyle}
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="e.g. Ana Santos"
+          />
+        </Field>
+        <Field label="Email Address" required>
+          <input
+            type="email"
+            style={inputStyle}
+            value={form.email}
+            onChange={(e) => set("email", e.target.value)}
+            placeholder="e.g. ana@email.com"
+          />
+        </Field>
+        <Field label="Phone Number" required>
+          <input
+            style={inputStyle}
+            value={form.phone}
+            onChange={(e) => set("phone", e.target.value)}
+            placeholder="e.g. 09171234567"
+          />
+        </Field>
+        <Field label="Status">
+          <select
+            style={selectStyle}
+            value={form.status}
+            onChange={(e) => set("status", e.target.value)}
+          >
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </Field>
+        {err && (
+          <div
+            style={{
+              color: C.danger,
+              fontSize: 12,
+              marginBottom: 10,
+              background: C.dangerLight,
+              padding: "8px 12px",
+              borderRadius: 8,
+            }}
+          >
+            {err}
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginTop: 6,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              color: C.textMuted,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: C.primary,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {isEdit ? "Save Changes" : "Add Parent"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Add Measurement Modal ────────────────────────────────────────────────────
+function MeasurementModal({ children, onSave, onClose }) {
+  const [form, setForm] = useState({
+    child_id: "",
+    height_cm: "",
+    weight_kg: "",
+    measurement_date: new Date().toISOString().split("T")[0],
+    source_type: "manual",
+  });
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    if (!form.child_id || !form.height_cm || !form.weight_kg) {
+      setErr("Please fill all required fields.");
+      return;
+    }
+    const child = children.find((c) => c.id === parseInt(form.child_id));
+    const computed = computeWHO({
+      weight_kg: parseFloat(form.weight_kg),
+      height_cm: parseFloat(form.height_cm),
+      age_months: child.age_months,
+    });
+    onSave({
+      ...form,
+      child: `${child.first_name} ${child.last_name}`,
+      age_months: child.age_months,
+      ...computed,
+      nutritional_status: computed.status,
+    });
+  };
+
+  return (
+    <Modal title="Add Measurement Record" onClose={onClose} width={520}>
+      <div style={{ padding: 24 }}>
+        <Field label="Child" required>
+          <select
+            style={selectStyle}
+            value={form.child_id}
+            onChange={(e) => set("child_id", e.target.value)}
+          >
+            <option value="">-- Select Child --</option>
+            {children.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.first_name} {c.last_name} ({c.age_months} mo)
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+        >
+          <Field label="Height (cm)" required>
+            <input
+              type="number"
+              step="0.1"
+              style={inputStyle}
+              value={form.height_cm}
+              onChange={(e) => set("height_cm", e.target.value)}
+              placeholder="e.g. 82.5"
+            />
+          </Field>
+          <Field label="Weight (kg)" required>
+            <input
+              type="number"
+              step="0.1"
+              style={inputStyle}
+              value={form.weight_kg}
+              onChange={(e) => set("weight_kg", e.target.value)}
+              placeholder="e.g. 10.8"
+            />
+          </Field>
+          <Field label="Measurement Date">
+            <input
+              type="date"
+              style={inputStyle}
+              value={form.measurement_date}
+              onChange={(e) => set("measurement_date", e.target.value)}
+            />
+          </Field>
+          <Field label="Source">
+            <select
+              style={selectStyle}
+              value={form.source_type}
+              onChange={(e) => set("source_type", e.target.value)}
+            >
+              <option value="kiosk">Kiosk</option>
+              <option value="mobile">Mobile</option>
+              <option value="manual">Manual</option>
+            </select>
+          </Field>
+        </div>
+        {form.child_id &&
+          form.height_cm &&
+          form.weight_kg &&
+          (() => {
+            const child = children.find(
+              (c) => c.id === parseInt(form.child_id),
+            );
+            if (!child) return null;
+            const r = computeWHO({
+              weight_kg: parseFloat(form.weight_kg),
+              height_cm: parseFloat(form.height_cm),
+              age_months: child.age_months,
+            });
+            return (
+              <div
+                style={{
+                  background: statusBg(r.status),
+                  border: `1px solid ${statusColor(r.status)}30`,
+                  borderRadius: 10,
+                  padding: "10px 14px",
+                  marginTop: 4,
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "center",
+                }}
+              >
+                <StatusBadge status={r.status} />
+                <span style={{ fontSize: 12, color: C.textMuted }}>
+                  WAZ: {r.waz > 0 ? "+" : ""}
+                  {r.waz} · HAZ: {r.haz > 0 ? "+" : ""}
+                  {r.haz} · WHZ: {r.whz > 0 ? "+" : ""}
+                  {r.whz}
+                </span>
+              </div>
+            );
+          })()}
+        {err && (
+          <div
+            style={{
+              color: C.danger,
+              fontSize: 12,
+              marginTop: 10,
+              background: C.dangerLight,
+              padding: "8px 12px",
+              borderRadius: 8,
+            }}
+          >
+            {err}
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginTop: 14,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              color: C.textMuted,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: C.primary,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Add Record
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 // ─── Mini bar chart ───────────────────────────────────────────────────────────
 function MiniBarChart({ data }) {
@@ -1059,7 +1791,6 @@ function MiniBarChart({ data }) {
   const barGroups = data.length;
   const groupW = keys.length * (bw + gap) - gap + 12;
   const totalW = barGroups * (groupW + 12) + 40;
-
   return (
     <div style={{ overflowX: "auto" }}>
       <svg width={totalW} height={h + 40} style={{ display: "block" }}>
@@ -1126,7 +1857,7 @@ function MiniBarChart({ data }) {
   );
 }
 
-// ─── Gauge / Z-Score visual ───────────────────────────────────────────────────
+// ─── Z-Score Gauge ────────────────────────────────────────────────────────────
 function ZScoreGauge({ label, value, color }) {
   const pct = Math.min(Math.max((value + 4) / 8, 0), 1);
   const angle = pct * 180 - 90;
@@ -1136,7 +1867,6 @@ function ZScoreGauge({ label, value, color }) {
   const rad = (a) => (a * Math.PI) / 180;
   const nx = cx + r * Math.cos(rad(angle - 90));
   const ny = cy + r * Math.sin(rad(angle - 90));
-
   return (
     <div style={{ textAlign: "center", flex: 1 }}>
       <svg width={100} height={60} viewBox="0 0 100 60">
@@ -1173,16 +1903,15 @@ function ZScoreGauge({ label, value, color }) {
   );
 }
 
-// ─── Kiosk interface ──────────────────────────────────────────────────────────
-function KioskView({ onBack }) {
-  const [step, setStep] = useState(0); // 0=select child, 1=measure, 2=processing, 3=result
+// ─── Kiosk View ───────────────────────────────────────────────────────────────
+function KioskView({ children, onBack, onSaveMeasurement }) {
+  const [step, setStep] = useState(0);
   const [selectedChild, setSelectedChild] = useState(null);
   const [form, setForm] = useState({ height_cm: "", weight_kg: "" });
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState(0);
   const [sensorStage, setSensorStage] = useState(0);
   const timerRef = useRef();
-
   const sensorStages = [
     { label: "Initializing sensors...", iconName: "scan" },
     { label: "Connecting to TF-Luna LiDAR...", iconName: "wifi" },
@@ -1193,7 +1922,6 @@ function KioskView({ onBack }) {
     { label: "Saving to database...", iconName: "save" },
     { label: "Complete!", iconName: "checkCircle" },
   ];
-
   const startMeasurement = () => {
     if (!form.height_cm || !form.weight_kg) return;
     setStep(2);
@@ -1212,14 +1940,12 @@ function KioskView({ onBack }) {
           weight_kg: parseFloat(form.weight_kg),
           height_cm: parseFloat(form.height_cm),
           age_months: selectedChild.age_months,
-          sex: selectedChild.sex,
         });
         setResult(r);
         setTimeout(() => setStep(3), 400);
       }
     }, 100);
   };
-
   useEffect(() => () => clearInterval(timerRef.current), []);
 
   return (
@@ -1233,7 +1959,6 @@ function KioskView({ onBack }) {
         fontFamily: "'Segoe UI',sans-serif",
       }}
     >
-      {/* Kiosk Header */}
       <div
         style={{
           display: "flex",
@@ -1253,20 +1978,12 @@ function KioskView({ onBack }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 18,
             }}
           >
             <Icon name="heart" size={18} color="#fff" />
           </div>
           <div>
-            <div
-              style={{
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 15,
-                letterSpacing: 0.5,
-              }}
-            >
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
               SukatKalusugan
             </div>
             <div
@@ -1326,8 +2043,6 @@ function KioskView({ onBack }) {
           </button>
         </div>
       </div>
-
-      {/* Steps indicator */}
       <div
         style={{
           display: "flex",
@@ -1396,8 +2111,6 @@ function KioskView({ onBack }) {
           </div>
         ))}
       </div>
-
-      {/* Main Content */}
       <div
         style={{
           flex: 1,
@@ -1407,7 +2120,6 @@ function KioskView({ onBack }) {
           padding: 24,
         }}
       >
-        {/* Step 0: Select Child */}
         {step === 0 && (
           <div style={{ width: "100%", maxWidth: 700 }}>
             <h2
@@ -1428,7 +2140,7 @@ function KioskView({ onBack }) {
                 marginBottom: 24,
               }}
             >
-              Scan child QR code or select from list
+              Select from registered children
             </p>
             <div
               style={{
@@ -1437,7 +2149,7 @@ function KioskView({ onBack }) {
                 gap: 12,
               }}
             >
-              {MOCK_CHILDREN.slice(0, 6).map((c) => (
+              {children.slice(0, 6).map((c) => (
                 <div
                   key={c.id}
                   onClick={() => {
@@ -1446,11 +2158,10 @@ function KioskView({ onBack }) {
                   }}
                   style={{
                     background: "rgba(255,255,255,0.05)",
-                    border: `1px solid ${selectedChild?.id === c.id ? C.primaryMid : "rgba(255,255,255,0.1)"}`,
+                    border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: 12,
                     padding: 16,
                     cursor: "pointer",
-                    transition: "all 0.15s",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background = "rgba(26,143,104,0.12)")
@@ -1472,23 +2183,14 @@ function KioskView({ onBack }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 18,
                       marginBottom: 8,
                     }}
                   >
-                    {c.sex === "Female" ? (
-                      <Icon
-                        name="childFemale"
-                        size={20}
-                        color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
-                      />
-                    ) : (
-                      <Icon
-                        name="childMale"
-                        size={20}
-                        color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
-                      />
-                    )}
+                    <Icon
+                      name={c.sex === "Female" ? "childFemale" : "childMale"}
+                      size={20}
+                      color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
+                    />
                   </div>
                   <div style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>
                     {c.first_name} {c.last_name}
@@ -1516,8 +2218,6 @@ function KioskView({ onBack }) {
             </div>
           </div>
         )}
-
-        {/* Step 1: Enter Data */}
         {step === 1 && selectedChild && (
           <div
             style={{
@@ -1546,14 +2246,15 @@ function KioskView({ onBack }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 22,
                 }}
               >
-                {selectedChild.sex === "Female" ? (
-                  <Icon name="childFemale" size={22} color="#F06292" />
-                ) : (
-                  <Icon name="childMale" size={22} color="#42A5F5" />
-                )}
+                <Icon
+                  name={
+                    selectedChild.sex === "Female" ? "childFemale" : "childMale"
+                  }
+                  size={22}
+                  color={selectedChild.sex === "Female" ? "#F06292" : "#42A5F5"}
+                />
               </div>
               <div>
                 <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>
@@ -1561,11 +2262,9 @@ function KioskView({ onBack }) {
                 </div>
                 <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
                   {selectedChild.child_code} · {selectedChild.age_months} months
-                  · {selectedChild.sex}
                 </div>
               </div>
             </div>
-
             <div
               style={{
                 display: "grid",
@@ -1579,13 +2278,11 @@ function KioskView({ onBack }) {
                   label: "Height (cm)",
                   key: "height_cm",
                   placeholder: "e.g. 82.5",
-                  iconName: "ruler",
                 },
                 {
                   label: "Weight (kg)",
                   key: "weight_kg",
                   placeholder: "e.g. 10.8",
-                  iconName: "scale",
                 },
               ].map((f) => (
                 <div key={f.key}>
@@ -1598,20 +2295,7 @@ function KioskView({ onBack }) {
                       letterSpacing: 0.5,
                     }}
                   >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                      }}
-                    >
-                      <Icon
-                        name={f.iconName}
-                        size={12}
-                        color="rgba(255,255,255,0.6)"
-                      />{" "}
-                      {f.label}
-                    </span>
+                    {f.label}
                   </label>
                   <input
                     type="number"
@@ -1637,27 +2321,6 @@ function KioskView({ onBack }) {
                 </div>
               ))}
             </div>
-
-            <div
-              style={{
-                background: "rgba(26,143,104,0.08)",
-                border: "1px solid rgba(26,143,104,0.2)",
-                borderRadius: 10,
-                padding: 12,
-                marginBottom: 20,
-                fontSize: 11,
-                color: "rgba(255,255,255,0.5)",
-              }}
-            >
-              <span
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <Icon name="info" size={12} color="rgba(255,255,255,0.5)" />{" "}
-                Sensor data will be populated via ESP32 +
-                TF-Luna LiDAR + Load Cell
-              </span>
-            </div>
-
             <button
               onClick={startMeasurement}
               disabled={!form.height_cm || !form.weight_kg}
@@ -1691,8 +2354,6 @@ function KioskView({ onBack }) {
             </button>
           </div>
         )}
-
-        {/* Step 2: Processing */}
         {step === 2 && (
           <div style={{ textAlign: "center", width: "100%", maxWidth: 420 }}>
             <div
@@ -1740,20 +2401,11 @@ function KioskView({ onBack }) {
                   justifyContent: "center",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Icon
-                    name={sensorStages[sensorStage]?.iconName || "activity"}
-                    size={28}
-                    color={C.primaryMid}
-                  />
-                </div>
+                <Icon
+                  name={sensorStages[sensorStage]?.iconName || "activity"}
+                  size={28}
+                  color={C.primaryMid}
+                />
                 <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>
                   {Math.round(progress)}%
                 </div>
@@ -1768,9 +2420,6 @@ function KioskView({ onBack }) {
               }}
             >
               {sensorStages[sensorStage]?.label}
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>
-              Please wait while we process the measurement data
             </div>
             <div
               style={{
@@ -1794,16 +2443,7 @@ function KioskView({ onBack }) {
                         : "rgba(255,255,255,0.2)",
                   }}
                 >
-                  <span
-                    style={{
-                      color:
-                        i < sensorStage
-                          ? C.primaryMid
-                          : i === sensorStage
-                            ? C.accent
-                            : "transparent",
-                    }}
-                  >
+                  <span>
                     {i < sensorStage ? (
                       <Icon name="check" size={12} color={C.primaryMid} />
                     ) : i === sensorStage ? (
@@ -1815,7 +2455,7 @@ function KioskView({ onBack }) {
                           width: 12,
                           height: 12,
                           borderRadius: "50%",
-                          border: `1px solid rgba(255,255,255,0.2)`,
+                          border: "1px solid rgba(255,255,255,0.2)",
                         }}
                       />
                     )}
@@ -1826,16 +2466,12 @@ function KioskView({ onBack }) {
             </div>
           </div>
         )}
-
-        {/* Step 3: Result */}
         {step === 3 && result && selectedChild && (
           <div style={{ width: "100%", maxWidth: 560 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>
                 {result.status === "Normal" ? (
                   <Icon name="checkCircle" size={48} color={C.primary} />
-                ) : result.status === "Overweight" ? (
-                  <Icon name="alertTriangle" size={48} color={C.warn} />
                 ) : (
                   <Icon name="alertCircle" size={48} color={C.danger} />
                 )}
@@ -1848,7 +2484,6 @@ function KioskView({ onBack }) {
                 {selectedChild.age_months} months
               </p>
             </div>
-
             <div
               style={{
                 display: "grid",
@@ -1857,52 +2492,35 @@ function KioskView({ onBack }) {
                 marginBottom: 16,
               }}
             >
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  borderRadius: 12,
-                  padding: 16,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
+              {[
+                ["HEIGHT", form.height_cm, "cm"],
+                ["WEIGHT", form.weight_kg, "kg"],
+              ].map(([l, v, u]) => (
                 <div
+                  key={l}
                   style={{
-                    color: "rgba(255,255,255,0.4)",
-                    fontSize: 10,
-                    letterSpacing: 1,
+                    background: "rgba(255,255,255,0.04)",
+                    borderRadius: 12,
+                    padding: 16,
+                    border: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
-                  HEIGHT
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.4)",
+                      fontSize: 10,
+                      letterSpacing: 1,
+                    }}
+                  >
+                    {l}
+                  </div>
+                  <div style={{ color: "#fff", fontSize: 28, fontWeight: 700 }}>
+                    {v}
+                    <span style={{ fontSize: 14, marginLeft: 2 }}>{u}</span>
+                  </div>
                 </div>
-                <div style={{ color: "#fff", fontSize: 28, fontWeight: 700 }}>
-                  {form.height_cm}
-                  <span style={{ fontSize: 14, marginLeft: 2 }}>cm</span>
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  borderRadius: 12,
-                  padding: 16,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.4)",
-                    fontSize: 10,
-                    letterSpacing: 1,
-                  }}
-                >
-                  WEIGHT
-                </div>
-                <div style={{ color: "#fff", fontSize: 28, fontWeight: 700 }}>
-                  {form.weight_kg}
-                  <span style={{ fontSize: 14, marginLeft: 2 }}>kg</span>
-                </div>
-              </div>
+              ))}
             </div>
-
             <div
               style={{
                 background: "rgba(255,255,255,0.04)",
@@ -1964,19 +2582,26 @@ function KioskView({ onBack }) {
                     >
                       {z.label}
                     </div>
-                    <div
-                      style={{ color: "rgba(255,255,255,0.35)", fontSize: 9 }}
-                    >
-                      Z-score
-                    </div>
                   </div>
                 ))}
               </div>
             </div>
-
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => {
+                  onSaveMeasurement({
+                    child_id: selectedChild.id,
+                    child: `${selectedChild.first_name} ${selectedChild.last_name}`,
+                    height_cm: parseFloat(form.height_cm),
+                    weight_kg: parseFloat(form.weight_kg),
+                    age_months: selectedChild.age_months,
+                    measurement_date: new Date().toISOString().split("T")[0],
+                    source_type: "kiosk",
+                    nutritional_status: result.status,
+                    waz: result.waz,
+                    haz: result.haz,
+                    whz: result.whz,
+                  });
                   setStep(0);
                   setSelectedChild(null);
                   setForm({ height_cm: "", weight_kg: "" });
@@ -1984,9 +2609,9 @@ function KioskView({ onBack }) {
                 }}
                 style={{
                   flex: 1,
-                  background: "rgba(255,255,255,0.06)",
+                  background: C.primaryMid,
                   color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  border: "none",
                   borderRadius: 10,
                   padding: "12px 0",
                   fontSize: 14,
@@ -1994,15 +2619,15 @@ function KioskView({ onBack }) {
                   fontWeight: 600,
                 }}
               >
-                New Measurement
+                Save & New Measurement
               </button>
               <button
                 onClick={onBack}
                 style={{
                   flex: 1,
-                  background: C.primaryMid,
+                  background: "rgba(255,255,255,0.06)",
                   color: "#fff",
-                  border: "none",
+                  border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: 10,
                   padding: "12px 0",
                   fontSize: 14,
@@ -2021,11 +2646,15 @@ function KioskView({ onBack }) {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard() {
+function Dashboard({ children, measurements }) {
+  const statusCounts = children.reduce((acc, c) => {
+    acc[c.status] = (acc[c.status] || 0) + 1;
+    return acc;
+  }, {});
   const stats = [
     {
       label: "Total Children",
-      value: 75,
+      value: children.length,
       iconName: "children",
       color: C.primary,
       bg: C.primaryLight,
@@ -2033,7 +2662,7 @@ function Dashboard() {
     },
     {
       label: "Normal",
-      value: 55,
+      value: statusCounts["Normal"] || 0,
       iconName: "checkCircle",
       color: C.primary,
       bg: C.primaryLight,
@@ -2041,7 +2670,7 @@ function Dashboard() {
     },
     {
       label: "Underweight",
-      value: 7,
+      value: statusCounts["Underweight"] || 0,
       iconName: "alertTriangle",
       color: C.warn,
       bg: C.warnLight,
@@ -2049,7 +2678,7 @@ function Dashboard() {
     },
     {
       label: "Severely Underweight",
-      value: 2,
+      value: statusCounts["Severely Underweight"] || 0,
       iconName: "alertCircle",
       color: C.danger,
       bg: C.dangerLight,
@@ -2057,7 +2686,7 @@ function Dashboard() {
     },
     {
       label: "Stunted",
-      value: 5,
+      value: statusCounts["Stunted"] || 0,
       iconName: "trendingDown",
       color: C.purple,
       bg: C.purpleLight,
@@ -2065,7 +2694,7 @@ function Dashboard() {
     },
     {
       label: "Wasted",
-      value: 3,
+      value: statusCounts["Wasted"] || 0,
       iconName: "zap",
       color: C.info,
       bg: C.infoLight,
@@ -2073,29 +2702,28 @@ function Dashboard() {
     },
     {
       label: "Overweight",
-      value: 3,
+      value: statusCounts["Overweight"] || 0,
       iconName: "trendingUp",
       color: C.accent,
       bg: C.accentLight,
       delta: "-1",
     },
   ];
-
-  const recentMeasurements = MOCK_MEASUREMENTS.slice(0, 4);
-
+  const recent = measurements.slice(-4).reverse();
   return (
     <div>
-      {/* Welcome */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>
           Good morning, Admin!
         </h1>
         <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-          Here's a summary of child health monitoring — May 2024
+          Here's a summary of child health monitoring —{" "}
+          {new Date().toLocaleDateString("en-PH", {
+            month: "long",
+            year: "numeric",
+          })}
         </p>
       </div>
-
-      {/* Stat Cards */}
       <div
         style={{
           display: "grid",
@@ -2151,14 +2779,11 @@ function Dashboard() {
                 marginTop: 2,
               }}
             >
-              {s.delta !== "0" ? s.delta : "—"}{" "}
-              {s.delta !== "0" ? "this month" : "no change"}
+              {s.delta !== "0" ? s.delta + " this month" : "— no change"}
             </div>
           </div>
         ))}
       </div>
-
-      {/* Charts + Table Row */}
       <div
         style={{
           display: "grid",
@@ -2167,7 +2792,6 @@ function Dashboard() {
           marginBottom: 16,
         }}
       >
-        {/* Bar Chart */}
         <div
           style={{
             background: C.card,
@@ -2191,8 +2815,6 @@ function Dashboard() {
           </div>
           <MiniBarChart data={TREND_DATA} />
         </div>
-
-        {/* Donut-style summary */}
         <div
           style={{
             background: C.card,
@@ -2212,19 +2834,43 @@ function Dashboard() {
             Status Breakdown
           </div>
           <div style={{ color: C.textMuted, fontSize: 11, marginBottom: 14 }}>
-            Current month distribution
+            Current distribution
           </div>
           <svg width="100%" height={160} viewBox="0 0 300 160">
             {(() => {
               const items = [
-                { label: "Normal", val: 55, color: C.primary },
-                { label: "Underweight", val: 7, color: C.warn },
-                { label: "Stunted", val: 5, color: C.purple },
-                { label: "Wasted", val: 3, color: C.info },
-                { label: "Sev. Underweight", val: 2, color: C.danger },
-                { label: "Overweight", val: 3, color: C.accent },
+                {
+                  label: "Normal",
+                  val: statusCounts["Normal"] || 0,
+                  color: C.primary,
+                },
+                {
+                  label: "Underweight",
+                  val: statusCounts["Underweight"] || 0,
+                  color: C.warn,
+                },
+                {
+                  label: "Stunted",
+                  val: statusCounts["Stunted"] || 0,
+                  color: C.purple,
+                },
+                {
+                  label: "Wasted",
+                  val: statusCounts["Wasted"] || 0,
+                  color: C.info,
+                },
+                {
+                  label: "Sev. Underweight",
+                  val: statusCounts["Severely Underweight"] || 0,
+                  color: C.danger,
+                },
+                {
+                  label: "Overweight",
+                  val: statusCounts["Overweight"] || 0,
+                  color: C.accent,
+                },
               ];
-              const total = items.reduce((a, b) => a + b.val, 0);
+              const total = items.reduce((a, b) => a + b.val, 0) || 1;
               let startAngle = -90;
               const cx = 85,
                 cy = 80,
@@ -2234,8 +2880,8 @@ function Dashboard() {
                 <>
                   {items.map((item, i) => {
                     const angle = (item.val / total) * 360;
-                    const start = (startAngle * Math.PI) / 180;
-                    const end = ((startAngle + angle) * Math.PI) / 180;
+                    const start = (startAngle * Math.PI) / 180,
+                      end = ((startAngle + angle) * Math.PI) / 180;
                     const x1 = cx + r * Math.cos(start),
                       y1 = cy + r * Math.sin(start);
                     const x2 = cx + r * Math.cos(end),
@@ -2301,8 +2947,6 @@ function Dashboard() {
           </svg>
         </div>
       </div>
-
-      {/* Recent Measurements */}
       <div
         style={{
           background: C.card,
@@ -2327,137 +2971,128 @@ function Dashboard() {
               Latest anthropometric records
             </div>
           </div>
-          <span
-            style={{
-              fontSize: 11,
-              color: C.primary,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            View All →
-          </span>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                {[
-                  "Child",
-                  "Height",
-                  "Weight",
-                  "Age",
-                  "Date",
-                  "Source",
-                  "Status",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      textAlign: "left",
-                      padding: "8px 12px",
-                      fontSize: 11,
-                      color: C.textMuted,
-                      fontWeight: 600,
-                      borderBottom: `1px solid ${C.border}`,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {recentMeasurements.map((m) => (
-                <tr
-                  key={m.id}
-                  style={{ borderBottom: `1px solid ${C.border}` }}
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              {[
+                "Child",
+                "Height",
+                "Weight",
+                "Age",
+                "Date",
+                "Source",
+                "Status",
+              ].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "8px 12px",
+                    fontSize: 11,
+                    color: C.textMuted,
+                    fontWeight: 600,
+                    borderBottom: `1px solid ${C.border}`,
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  <td
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {recent.map((m) => (
+              <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: C.text,
+                  }}
+                >
+                  {m.child}
+                </td>
+                <td
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    color: C.textMuted,
+                  }}
+                >
+                  {m.height_cm} cm
+                </td>
+                <td
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    color: C.textMuted,
+                  }}
+                >
+                  {m.weight_kg} kg
+                </td>
+                <td
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    color: C.textMuted,
+                  }}
+                >
+                  {m.age_months} mo
+                </td>
+                <td
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    color: C.textMuted,
+                  }}
+                >
+                  {m.measurement_date}
+                </td>
+                <td style={{ padding: "10px 12px" }}>
+                  <span
                     style={{
-                      padding: "10px 12px",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: C.text,
-                    }}
-                  >
-                    {m.child}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      fontSize: 13,
+                      background: C.bg,
+                      padding: "2px 8px",
+                      borderRadius: 6,
                       color: C.textMuted,
+                      fontSize: 11,
                     }}
                   >
-                    {m.height_cm} cm
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      fontSize: 13,
-                      color: C.textMuted,
-                    }}
-                  >
-                    {m.weight_kg} kg
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      fontSize: 13,
-                      color: C.textMuted,
-                    }}
-                  >
-                    {m.age_months} mo
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      fontSize: 13,
-                      color: C.textMuted,
-                    }}
-                  >
-                    {m.measurement_date}
-                  </td>
-                  <td style={{ padding: "10px 12px", fontSize: 12 }}>
                     <span
                       style={{
-                        background: C.bg,
-                        padding: "2px 8px",
-                        borderRadius: 6,
-                        color: C.textMuted,
-                        fontSize: 11,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        verticalAlign: "middle",
                       }}
                     >
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          verticalAlign: "middle",
-                        }}
-                      >
-                        <SourceIcon type={m.source_type} size={11} />{" "}
-                        {m.source_type}
-                      </span>
+                      <SourceIcon type={m.source_type} size={11} />{" "}
+                      {m.source_type}
                     </span>
-                  </td>
-                  <td style={{ padding: "10px 12px" }}>
-                    <StatusBadge status={m.nutritional_status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </td>
+                <td style={{ padding: "10px 12px" }}>
+                  <StatusBadge status={m.nutritional_status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
 // ─── Children List ────────────────────────────────────────────────────────────
-function ChildrenList({ onViewChild }) {
+function ChildrenList({
+  children,
+  onViewChild,
+  onAdd,
+  onEdit,
+  onDelete,
+}) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const statuses = [
@@ -2469,14 +3104,13 @@ function ChildrenList({ onViewChild }) {
     "Wasted",
     "Overweight",
   ];
-  const filtered = MOCK_CHILDREN.filter(
+  const filtered = children.filter(
     (c) =>
       (filter === "All" || c.status === filter) &&
       `${c.first_name} ${c.last_name} ${c.child_code}`
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-
   return (
     <div>
       <div
@@ -2494,10 +3128,11 @@ function ChildrenList({ onViewChild }) {
             Child Profiles
           </h1>
           <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {MOCK_CHILDREN.length} registered children
+            {children.length} registered children
           </p>
         </div>
         <button
+          onClick={onAdd}
           style={{
             background: C.primary,
             color: "#fff",
@@ -2507,12 +3142,14 @@ function ChildrenList({ onViewChild }) {
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          + Add Child
+          <Icon name="plus" size={14} color="#fff" /> Add Child
         </button>
       </div>
-
       <div
         style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}
       >
@@ -2552,7 +3189,6 @@ function ChildrenList({ onViewChild }) {
           ))}
         </div>
       </div>
-
       <div
         style={{
           background: C.card,
@@ -2622,22 +3258,13 @@ function ChildrenList({ onViewChild }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 14,
                       }}
                     >
-                      {c.sex === "Female" ? (
-                        <Icon
-                          name="childFemale"
-                          size={20}
-                          color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
-                        />
-                      ) : (
-                        <Icon
-                          name="childMale"
-                          size={20}
-                          color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
-                        />
-                      )}
+                      <Icon
+                        name={c.sex === "Female" ? "childFemale" : "childMale"}
+                        size={20}
+                        color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
+                      />
                     </div>
                     <div>
                       <div
@@ -2691,24 +3318,69 @@ function ChildrenList({ onViewChild }) {
                   <StatusBadge status={c.status} />
                 </td>
                 <td style={{ padding: "12px 14px" }}>
-                  <button
-                    onClick={() => onViewChild(c)}
-                    style={{
-                      background: C.primaryLight,
-                      color: C.primary,
-                      border: "none",
-                      borderRadius: 8,
-                      padding: "6px 12px",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    View
-                  </button>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => onViewChild(c)}
+                      style={{
+                        background: C.primaryLight,
+                        color: C.primary,
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "5px 10px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => onEdit(c)}
+                      style={{
+                        background: C.infoLight,
+                        color: C.info,
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "5px 8px",
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Icon name="edit" size={12} color={C.info} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(c)}
+                      style={{
+                        background: C.dangerLight,
+                        color: C.danger,
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "5px 8px",
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Icon name="trash" size={12} color={C.danger} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  style={{
+                    padding: 32,
+                    textAlign: "center",
+                    color: C.textMuted,
+                    fontSize: 13,
+                  }}
+                >
+                  No children found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -2717,10 +3389,9 @@ function ChildrenList({ onViewChild }) {
 }
 
 // ─── Child Detail ─────────────────────────────────────────────────────────────
-function ChildDetail({ child, onBack }) {
-  const measurements = MOCK_MEASUREMENTS.filter((m) => m.child_id === child.id);
-  const latest = measurements[0];
-
+function ChildDetail({ child, measurements, onBack }) {
+  const childMeasurements = measurements.filter((m) => m.child_id === child.id);
+  const latest = childMeasurements[0];
   return (
     <div>
       <button
@@ -2738,11 +3409,9 @@ function ChildDetail({ child, onBack }) {
       >
         ← Back to Children
       </button>
-
       <div
         style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}
       >
-        {/* Profile Card */}
         <div
           style={{
             background: C.card,
@@ -2761,15 +3430,14 @@ function ChildDetail({ child, onBack }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 36,
                 margin: "0 auto 12px",
               }}
             >
-              {child.sex === "Female" ? (
-                <Icon name="childFemale" size={36} color="#F06292" />
-              ) : (
-                <Icon name="childMale" size={36} color="#42A5F5" />
-              )}
+              <Icon
+                name={child.sex === "Female" ? "childFemale" : "childMale"}
+                size={36}
+                color={child.sex === "Female" ? "#F06292" : "#42A5F5"}
+              />
             </div>
             <h2
               style={{
@@ -2822,10 +3490,7 @@ function ChildDetail({ child, onBack }) {
             ))}
           </div>
         </div>
-
-        {/* Right side */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Latest Z-scores */}
           {latest && (
             <div
               style={{
@@ -2894,8 +3559,6 @@ function ChildDetail({ child, onBack }) {
               </div>
             </div>
           )}
-
-          {/* Measurement history */}
           <div
             style={{
               background: C.card,
@@ -2915,7 +3578,7 @@ function ChildDetail({ child, onBack }) {
             >
               Measurement History
             </div>
-            {measurements.length === 0 ? (
+            {childMeasurements.length === 0 ? (
               <div
                 style={{
                   textAlign: "center",
@@ -2956,18 +3619,12 @@ function ChildDetail({ child, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {measurements.map((m) => (
+                  {childMeasurements.map((m) => (
                     <tr
                       key={m.id}
                       style={{ borderBottom: `1px solid ${C.border}` }}
                     >
-                      <td
-                        style={{
-                          padding: "8px 10px",
-                          fontSize: 12,
-                          color: C.text,
-                        }}
-                      >
+                      <td style={{ padding: "8px 10px", fontSize: 12 }}>
                         {m.measurement_date}
                       </td>
                       <td
@@ -3043,7 +3700,7 @@ function ChildDetail({ child, onBack }) {
 }
 
 // ─── Measurements Page ────────────────────────────────────────────────────────
-function MeasurementsPage() {
+function MeasurementsPage({ measurements, onAdd, onDelete }) {
   return (
     <div>
       <div
@@ -3061,10 +3718,11 @@ function MeasurementsPage() {
             Anthropometric Records
           </h1>
           <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {MOCK_MEASUREMENTS.length} measurements recorded
+            {measurements.length} measurements recorded
           </p>
         </div>
         <button
+          onClick={onAdd}
           style={{
             background: C.primary,
             color: "#fff",
@@ -3074,12 +3732,14 @@ function MeasurementsPage() {
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          + Add Record
+          <Icon name="plus" size={14} color="#fff" /> Add Record
         </button>
       </div>
-
       <div
         style={{
           background: C.card,
@@ -3103,6 +3763,7 @@ function MeasurementsPage() {
                 "Date",
                 "Source",
                 "Status",
+                "",
               ].map((h) => (
                 <th
                   key={h}
@@ -3122,7 +3783,7 @@ function MeasurementsPage() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_MEASUREMENTS.map((m,) => (
+            {measurements.map((m) => (
               <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}` }}>
                 <td
                   style={{
@@ -3241,6 +3902,21 @@ function MeasurementsPage() {
                 <td style={{ padding: "12px 14px" }}>
                   <StatusBadge status={m.nutritional_status} />
                 </td>
+                <td style={{ padding: "12px 14px" }}>
+                  <button
+                    onClick={() => onDelete(m)}
+                    style={{
+                      background: C.dangerLight,
+                      color: C.danger,
+                      border: "none",
+                      borderRadius: 7,
+                      padding: "5px 8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Icon name="trash" size={12} color={C.danger} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -3251,15 +3927,20 @@ function MeasurementsPage() {
 }
 
 // ─── Parents Page ─────────────────────────────────────────────────────────────
-function ParentsPage() {
+function ParentsPage({
+  parents,
+  children,
+  measurements,
+  onAdd,
+  onEdit,
+  onDelete,
+}) {
   const [selectedParent, setSelectedParent] = useState(null);
-
-  const childrenByParent = MOCK_CHILDREN.reduce((acc, c) => {
+  const childrenByParent = children.reduce((acc, c) => {
     if (!acc[c.parent]) acc[c.parent] = [];
     acc[c.parent].push(c);
     return acc;
   }, {});
-
   return (
     <div>
       {selectedParent && (
@@ -3350,9 +4031,79 @@ function ParentsPage() {
                 <Icon name="x" size={16} color={C.textMuted} />
               </button>
             </div>
-
             <div style={{ overflowY: "auto", padding: 24 }}>
-              {(childrenByParent[selectedParent.name] || []).length === 0 ? (
+              {(childrenByParent[selectedParent.name] || []).map((child) => {
+                const latest = measurements.find(
+                  (m) => m.child_id === child.id,
+                );
+                return (
+                  <div
+                    key={child.id}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "auto 1fr auto",
+                      alignItems: "center",
+                      gap: 16,
+                      background: C.bg,
+                      borderRadius: 12,
+                      padding: "14px 16px",
+                      border: `1px solid ${C.border}`,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: "50%",
+                        background:
+                          child.sex === "Female" ? "#FCE4EC" : "#E3F2FD",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Icon
+                        name={
+                          child.sex === "Female" ? "childFemale" : "childMale"
+                        }
+                        size={22}
+                        color={child.sex === "Female" ? "#F06292" : "#42A5F5"}
+                      />
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 13,
+                          color: C.text,
+                          marginBottom: 2,
+                        }}
+                      >
+                        {child.first_name} {child.last_name}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.textMuted }}>
+                        {child.child_code} · {child.age_months} months ·{" "}
+                        {child.barangay}
+                      </div>
+                      {latest && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: C.textMuted,
+                            marginTop: 2,
+                          }}
+                        >
+                          Last measured: {latest.measurement_date} —{" "}
+                          {latest.height_cm}cm / {latest.weight_kg}kg
+                        </div>
+                      )}
+                    </div>
+                    <StatusBadge status={child.status} />
+                  </div>
+                );
+              })}
+              {(childrenByParent[selectedParent.name] || []).length === 0 && (
                 <div
                   style={{
                     textAlign: "center",
@@ -3361,119 +4112,10 @@ function ParentsPage() {
                     padding: "32px 0",
                   }}
                 >
-                  No children registered under this parent.
-                </div>
-              ) : (
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
-                >
-                  {(childrenByParent[selectedParent.name] || []).map(
-                    (child) => {
-                      const latest = MOCK_MEASUREMENTS.find(
-                        (m) => m.child_id === child.id,
-                      );
-                      return (
-                        <div
-                          key={child.id}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "auto 1fr auto",
-                            alignItems: "center",
-                            gap: 16,
-                            background: C.bg,
-                            borderRadius: 12,
-                            padding: "14px 16px",
-                            border: `1px solid ${C.border}`,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: "50%",
-                              background:
-                                child.sex === "Female" ? "#FCE4EC" : "#E3F2FD",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Icon
-                              name={
-                                child.sex === "Female"
-                                  ? "childFemale"
-                                  : "childMale"
-                              }
-                              size={22}
-                              color={
-                                child.sex === "Female" ? "#F06292" : "#42A5F5"
-                              }
-                            />
-                          </div>
-                          <div>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                fontSize: 13,
-                                color: C.text,
-                                marginBottom: 2,
-                              }}
-                            >
-                              {child.first_name} {child.last_name}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: C.textMuted,
-                                display: "flex",
-                                gap: 8,
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <span>{child.child_code}</span>
-                              <span>·</span>
-                              <span>{child.age_months} months</span>
-                              <span>·</span>
-                              <span>{child.sex}</span>
-                              <span>·</span>
-                              <span>{child.barangay}</span>
-                            </div>
-                            {latest && (
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: C.textMuted,
-                                  marginTop: 3,
-                                }}
-                              >
-                                Last measured: {latest.measurement_date} —{" "}
-                                {latest.height_cm}cm / {latest.weight_kg}kg
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <StatusBadge status={child.status} />
-                            {latest && (
-                              <div
-                                style={{
-                                  fontSize: 10,
-                                  color: C.textMuted,
-                                  marginTop: 4,
-                                }}
-                              >
-                                WAZ: {latest.waz > 0 ? "+" : ""}
-                                {latest.waz}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    },
-                  )}
+                  No children registered.
                 </div>
               )}
             </div>
-
             <div
               style={{
                 padding: "14px 24px",
@@ -3501,7 +4143,6 @@ function ParentsPage() {
           </div>
         </div>
       )}
-
       <div
         style={{
           display: "flex",
@@ -3517,10 +4158,11 @@ function ParentsPage() {
             Parent Accounts
           </h1>
           <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {MOCK_PARENTS.length} registered parents
+            {parents.length} registered parents
           </p>
         </div>
         <button
+          onClick={onAdd}
           style={{
             background: C.primary,
             color: "#fff",
@@ -3538,7 +4180,6 @@ function ParentsPage() {
           <Icon name="plus" size={14} color="#fff" /> Add Parent
         </button>
       </div>
-
       <div
         style={{
           display: "grid",
@@ -3546,7 +4187,7 @@ function ParentsPage() {
           gap: 14,
         }}
       >
-        {MOCK_PARENTS.map((p) => {
+        {parents.map((p) => {
           const pChildren = childrenByParent[p.name] || [];
           return (
             <div
@@ -3617,8 +4258,8 @@ function ParentsPage() {
                 {[
                   ["mail", p.email],
                   ["phone", p.phone],
-                  ["baby", `${p.children} child(ren)`],
-                ].map(([iconName, val]) => (
+                  ["baby", `${pChildren.length} child(ren)`],
+                ].map(([icon, val]) => (
                   <div
                     key={val}
                     style={{
@@ -3629,33 +4270,65 @@ function ParentsPage() {
                       alignItems: "center",
                     }}
                   >
-                    <Icon name={iconName} size={13} color={C.textMuted} />
+                    <Icon name={icon} size={13} color={C.textMuted} />
                     <span>{val}</span>
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => setSelectedParent(p)}
-                style={{
-                  marginTop: 14,
-                  width: "100%",
-                  background: C.primaryLight,
-                  color: C.primary,
-                  border: `1px solid ${C.primary}22`,
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                <Icon name="eye" size={13} color={C.primary} />
-                View Children ({pChildren.length})
-              </button>
+              <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+                <button
+                  onClick={() => setSelectedParent(p)}
+                  style={{
+                    flex: 1,
+                    background: C.primaryLight,
+                    color: C.primary,
+                    border: `1px solid ${C.primary}22`,
+                    borderRadius: 8,
+                    padding: "8px 0",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon name="eye" size={13} color={C.primary} /> Children (
+                    {pChildren.length})
+                  </span>
+                </button>
+                <button
+                  onClick={() => onEdit(p)}
+                  style={{
+                    background: C.infoLight,
+                    color: C.info,
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Icon name="edit" size={13} color={C.info} />
+                </button>
+                <button
+                  onClick={() => onDelete(p)}
+                  style={{
+                    background: C.dangerLight,
+                    color: C.danger,
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Icon name="trash" size={13} color={C.danger} />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -3681,7 +4354,6 @@ function ReportsPage() {
       <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 20px" }}>
         Generate and export health monitoring reports
       </p>
-
       <div
         style={{
           display: "grid",
@@ -3693,7 +4365,7 @@ function ReportsPage() {
         {[
           {
             title: "Monthly Summary Report",
-            desc: "Nutritional status overview for May 2024",
+            desc: "Nutritional status overview for this month",
             iconName: "barChart",
             color: C.primary,
           },
@@ -3790,71 +4462,13 @@ function ReportsPage() {
           </div>
         ))}
       </div>
-
-      {/* Summary stats for report */}
-      <div
-        style={{
-          background: C.card,
-          borderRadius: 14,
-          border: `1px solid ${C.border}`,
-          padding: 20,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: 14,
-            color: C.text,
-            marginBottom: 14,
-          }}
-        >
-          May 2024 — Quick Summary
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-            gap: 14,
-          }}
-        >
-          {[
-            { label: "Total Measurements", val: 58, note: "+12 vs last month" },
-            { label: "Kiosk Sessions", val: 34, note: "58.6% of total" },
-            { label: "Mobile Records", val: 18, note: "31% of total" },
-            { label: "At-Risk Children", val: 12, note: "16% of population" },
-            { label: "Barangays Covered", val: 4, note: "100% coverage" },
-            { label: "eOPT+ Synced", val: 52, note: "89.6% sync rate" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              style={{
-                background: C.bg,
-                borderRadius: 10,
-                padding: "14px 16px",
-              }}
-            >
-              <div
-                style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}
-              >
-                {s.label}
-              </div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: C.text }}>
-                {s.val}
-              </div>
-              <div style={{ fontSize: 11, color: C.primary, marginTop: 2 }}>
-                {s.note}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
 
 // ─── Settings Page ────────────────────────────────────────────────────────────
 function SettingsPage() {
-  const settings = [
+  const [settings, setSettings] = useState([
     {
       key: "who_reference_year",
       value: "2006",
@@ -3885,8 +4499,8 @@ function SettingsPage() {
       value: "true",
       desc: "Automatically notify parents on new results",
     },
-  ];
-
+  ]);
+  const [saved, setSaved] = useState(null);
   return (
     <div>
       <h1
@@ -3937,20 +4551,20 @@ function SettingsPage() {
               <div style={{ fontSize: 11, color: C.textMuted }}>{s.desc}</div>
             </div>
             <input
-              defaultValue={s.value}
-              style={{
-                padding: "8px 12px",
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                fontSize: 13,
-                color: C.text,
-                outline: "none",
-                background: C.bg,
-              }}
+              value={s.value}
+              onChange={(e) =>
+                setSettings((prev) =>
+                  prev.map((p, pi) =>
+                    pi === i ? { ...p, value: e.target.value } : p,
+                  ),
+                )
+              }
+              style={{ ...inputStyle }}
             />
             <button
+              onClick={() => setSaved(s.key)}
               style={{
-                background: C.primaryLight,
+                background: saved === s.key ? C.primaryLight : C.primaryLight,
                 color: C.primary,
                 border: "none",
                 borderRadius: 8,
@@ -3958,9 +4572,19 @@ function SettingsPage() {
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                justifyContent: "center",
               }}
             >
-              Update
+              {saved === s.key ? (
+                <>
+                  <Icon name="check" size={12} color={C.primary} /> Saved!
+                </>
+              ) : (
+                "Update"
+              )}
             </button>
           </div>
         ))}
@@ -3977,25 +4601,23 @@ function LoginPage({ onLogin }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handleLogin = () => {
     setLoading(true);
     setError("");
     setTimeout(() => {
-      if (form.email && form.password) {
+      if (form.email && form.password)
         onLogin({ name: "Admin User", role: "admin", email: form.email });
-      } else {
+      else {
         setError("Please enter your credentials.");
         setLoading(false);
       }
     }, 1200);
   };
-
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, #0D2B20 0%, #0B4A34 100%)`,
+        background: "linear-gradient(135deg, #0D2B20 0%, #0B4A34 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -4013,7 +4635,6 @@ function LoginPage({ onLogin }) {
           boxShadow: "0 40px 80px rgba(0,0,0,0.4)",
         }}
       >
-        {/* Left panel */}
         <div
           style={{
             flex: 1,
@@ -4111,8 +4732,6 @@ function LoginPage({ onLogin }) {
             )}
           </div>
         </div>
-
-        {/* Right: Login form */}
         <div
           style={{
             width: 380,
@@ -4136,7 +4755,6 @@ function LoginPage({ onLogin }) {
           <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 32px" }}>
             Sign in to your account to continue
           </p>
-
           <div style={{ marginBottom: 16 }}>
             <label
               style={{
@@ -4155,15 +4773,7 @@ function LoginPage({ onLogin }) {
               onChange={(e) =>
                 setForm((p) => ({ ...p, email: e.target.value }))
               }
-              style={{
-                width: "100%",
-                padding: "11px 14px",
-                border: `1px solid ${C.border}`,
-                borderRadius: 10,
-                fontSize: 14,
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={{ ...inputStyle }}
             />
           </div>
           <div style={{ marginBottom: 20 }}>
@@ -4185,18 +4795,9 @@ function LoginPage({ onLogin }) {
                 setForm((p) => ({ ...p, password: e.target.value }))
               }
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              style={{
-                width: "100%",
-                padding: "11px 14px",
-                border: `1px solid ${C.border}`,
-                borderRadius: 10,
-                fontSize: 14,
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={{ ...inputStyle }}
             />
           </div>
-
           {error && (
             <div
               style={{
@@ -4211,7 +4812,6 @@ function LoginPage({ onLogin }) {
               {error}
             </div>
           )}
-
           <button
             onClick={handleLogin}
             style={{
@@ -4224,12 +4824,10 @@ function LoginPage({ onLogin }) {
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
-              transition: "all 0.2s",
             }}
           >
             {loading ? "Signing in..." : "Sign In →"}
           </button>
-
           <div
             style={{
               marginTop: 24,
@@ -4268,8 +4866,113 @@ export default function App() {
   const [kioskMode, setKioskMode] = useState(false);
   const [notifications] = useState(3);
 
+  // ─── Data state ──────────────────────────────────────────────────────────
+  const [childrenData, setChildrenData] = useState(INIT_CHILDREN);
+  const [measurementsData, setMeasurementsData] = useState(INIT_MEASUREMENTS);
+  const [parentsData, setParentsData] = useState(INIT_PARENTS);
+
+  // ─── Modal state ─────────────────────────────────────────────────────────
+  const [childModal, setChildModal] = useState(null); // null | "add" | child obj
+  const [parentModal, setParentModal] = useState(null);
+  const [measureModal, setMeasureModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { type, item }
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = "success") => setToast({ msg, type });
+
+  // ─── CRUD handlers ────────────────────────────────────────────────────────
+  const handleAddChild = (form) => {
+    const newId = Math.max(...childrenData.map((c) => c.id), 0) + 1;
+    const newCode = `CHD-${String(newId).padStart(4, "0")}`;
+    setChildrenData((prev) => [
+      ...prev,
+      {
+        ...form,
+        id: newId,
+        child_code: newCode,
+        status: form.status || "Normal",
+      },
+    ]);
+    setChildModal(null);
+    showToast(`${form.first_name} ${form.last_name} added successfully`);
+  };
+  const handleEditChild = (form) => {
+    setChildrenData((prev) =>
+      prev.map((c) => (c.id === form.id ? { ...c, ...form } : c)),
+    );
+    setChildModal(null);
+    showToast("Child profile updated");
+  };
+  const handleDeleteChild = () => {
+    const c = confirmDelete.item;
+    setChildrenData((prev) => prev.filter((x) => x.id !== c.id));
+    setMeasurementsData((prev) => prev.filter((m) => m.child_id !== c.id));
+    setConfirmDelete(null);
+    showToast(`${c.first_name} ${c.last_name} deleted`, "danger");
+  };
+
+  const handleAddParent = (form) => {
+    const newId = Math.max(...parentsData.map((p) => p.id), 0) + 1;
+    setParentsData((prev) => [...prev, { ...form, id: newId, children: 0 }]);
+    setParentModal(null);
+    showToast(`${form.name} added as parent`);
+  };
+  const handleEditParent = (form) => {
+    setParentsData((prev) =>
+      prev.map((p) => (p.id === form.id ? { ...p, ...form } : p)),
+    );
+    setParentModal(null);
+    showToast("Parent account updated");
+  };
+  const handleDeleteParent = () => {
+    const p = confirmDelete.item;
+    setParentsData((prev) => prev.filter((x) => x.id !== p.id));
+    setConfirmDelete(null);
+    showToast(`${p.name} removed`, "danger");
+  };
+
+  const handleAddMeasurement = (form) => {
+    const newId = Math.max(...measurementsData.map((m) => m.id), 0) + 1;
+    setMeasurementsData((prev) => [...prev, { ...form, id: newId }]);
+    // Update child status
+    const child = childrenData.find((c) => c.id === parseInt(form.child_id));
+    if (child)
+      setChildrenData((prev) =>
+        prev.map((c) =>
+          c.id === child.id ? { ...c, status: form.nutritional_status } : c,
+        ),
+      );
+    setMeasureModal(false);
+    showToast(`Measurement added for ${form.child}`);
+  };
+  const handleDeleteMeasurement = () => {
+    const m = confirmDelete.item;
+    setMeasurementsData((prev) => prev.filter((x) => x.id !== m.id));
+    setConfirmDelete(null);
+    showToast("Measurement record deleted", "danger");
+  };
+
+  const handleKioskSave = (data) => {
+    const newId = Math.max(...measurementsData.map((m) => m.id), 0) + 1;
+    setMeasurementsData((prev) => [...prev, { ...data, id: newId }]);
+    const child = childrenData.find((c) => c.id === data.child_id);
+    if (child)
+      setChildrenData((prev) =>
+        prev.map((c) =>
+          c.id === child.id ? { ...c, status: data.nutritional_status } : c,
+        ),
+      );
+  };
+
   if (!user) return <LoginPage onLogin={setUser} />;
-  if (kioskMode) return <KioskView onBack={() => setKioskMode(false)} />;
+  if (kioskMode)
+    return (
+      <KioskView
+        children={childrenData}
+        onBack={() => setKioskMode(false)}
+        onSaveMeasurement={handleKioskSave}
+      />
+    );
 
   const handleNav = (id) => {
     if (id === "kiosk") {
@@ -4285,30 +4988,54 @@ export default function App() {
       return (
         <ChildDetail
           child={selectedChild}
+          measurements={measurementsData}
           onBack={() => setSelectedChild(null)}
         />
       );
     switch (page) {
       case "dashboard":
-        return <Dashboard />;
+        return (
+          <Dashboard children={childrenData} measurements={measurementsData} />
+        );
       case "children":
         return (
           <ChildrenList
-            onViewChild={(c) => {
-              setSelectedChild(c);
-            }}
+            children={childrenData}
+            parents={parentsData}
+            onViewChild={(c) => setSelectedChild(c)}
+            onAdd={() => setChildModal("add")}
+            onEdit={(c) => setChildModal(c)}
+            onDelete={(c) => setConfirmDelete({ type: "child", item: c })}
           />
         );
       case "measurements":
-        return <MeasurementsPage />;
+        return (
+          <MeasurementsPage
+            measurements={measurementsData}
+            children={childrenData}
+            onAdd={() => setMeasureModal(true)}
+            onDelete={(m) => setConfirmDelete({ type: "measurement", item: m })}
+          />
+        );
       case "parents":
-        return <ParentsPage />;
+        return (
+          <ParentsPage
+            parents={parentsData}
+            children={childrenData}
+            measurements={measurementsData}
+            onAdd={() => setParentModal("add")}
+            onEdit={(p) => setParentModal(p)}
+            onDelete={(p) => setConfirmDelete({ type: "parent", item: p })}
+          />
+        );
       case "reports":
         return <ReportsPage />;
       case "settings":
         return <SettingsPage />;
       default:
-        return <Dashboard />;
+        return (
+          <Dashboard children={childrenData} measurements={measurementsData} />
+        );
     }
   };
 
@@ -4321,6 +5048,50 @@ export default function App() {
         background: C.bg,
       }}
     >
+      {/* Modals */}
+      {childModal && (
+        <ChildModal
+          child={childModal === "add" ? null : childModal}
+          parents={parentsData}
+          onSave={childModal === "add" ? handleAddChild : handleEditChild}
+          onClose={() => setChildModal(null)}
+        />
+      )}
+      {parentModal && (
+        <ParentModal
+          parent={parentModal === "add" ? null : parentModal}
+          onSave={parentModal === "add" ? handleAddParent : handleEditParent}
+          onClose={() => setParentModal(null)}
+        />
+      )}
+      {measureModal && (
+        <MeasurementModal
+          children={childrenData}
+          onSave={handleAddMeasurement}
+          onClose={() => setMeasureModal(false)}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          msg={`Are you sure you want to delete ${confirmDelete.type === "child" ? `${confirmDelete.item.first_name} ${confirmDelete.item.last_name}` : confirmDelete.type === "parent" ? confirmDelete.item.name : `this measurement record`}? This action cannot be undone.`}
+          onConfirm={
+            confirmDelete.type === "child"
+              ? handleDeleteChild
+              : confirmDelete.type === "parent"
+                ? handleDeleteParent
+                : handleDeleteMeasurement
+          }
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+      {toast && (
+        <Toast
+          msg={toast.msg}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         style={{
@@ -4334,7 +5105,6 @@ export default function App() {
           height: "100vh",
         }}
       >
-        {/* Logo */}
         <div
           style={{
             padding: "20px 18px 16px",
@@ -4351,7 +5121,6 @@ export default function App() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 18,
               }}
             >
               <Icon name="heart" size={18} color="#fff" />
@@ -4367,19 +5136,12 @@ export default function App() {
               >
                 SukatKalusugan
               </div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.35)",
-                  fontSize: 9,
-                }}
-              >
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9 }}>
                 eOPT+ Admin Panel
               </div>
             </div>
           </div>
         </div>
-
-        {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
           <div
             style={{
@@ -4453,8 +5215,6 @@ export default function App() {
             </button>
           ))}
         </nav>
-
-        {/* User card */}
         <div
           style={{
             padding: "12px 14px",
@@ -4512,7 +5272,6 @@ export default function App() {
                 border: "none",
                 color: "rgba(255,255,255,0.3)",
                 cursor: "pointer",
-                fontSize: 13,
                 padding: 4,
               }}
               title="Sign out"
@@ -4532,7 +5291,6 @@ export default function App() {
           minWidth: 0,
         }}
       >
-        {/* Top bar */}
         <div
           style={{
             background: C.card,
@@ -4608,8 +5366,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        {/* Page content */}
         <div style={{ flex: 1, padding: 24, overflowY: "auto" }}>
           {renderPage()}
         </div>
