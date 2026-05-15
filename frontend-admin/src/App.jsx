@@ -1653,7 +1653,7 @@ function KioskView({ onBack }) {
                 style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
               >
                 <Icon name="info" size={12} color="rgba(255,255,255,0.5)" />{" "}
-                Sensor data will be auto-populated in production via ESP32 +
+                Sensor data will be populated via ESP32 +
                 TF-Luna LiDAR + Load Cell
               </span>
             </div>
@@ -4371,10 +4371,9 @@ export default function App() {
                 style={{
                   color: "rgba(255,255,255,0.35)",
                   fontSize: 9,
-                  letterSpacing: 1,
                 }}
               >
-                HEALTH MONITORING
+                eOPT+ Admin Panel
               </div>
             </div>
           </div>
