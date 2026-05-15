@@ -346,7 +346,7 @@ function Toast({ msg, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 2800);
     return () => clearTimeout(t);
-  }, );
+  });
   const bg =
     type === "success" ? C.primaryMid : type === "danger" ? C.danger : C.warn;
   return (
@@ -1903,6 +1903,240 @@ function ZScoreGauge({ label, value, color }) {
   );
 }
 
+// ─── AI Chatbot Demo ──────────────────────────────────────────────────────────
+function AIChatbot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: "assistant",
+      text: "Hello! I'm your SukatKalusugan AI Assistant. I can help you with child health insights, growth tracking, and nutrition recommendations. How can I assist you today?",
+    },
+  ]);
+  const [input, setInput] = useState("");
+
+  const sampleResponses = {
+    growth:
+      "Based on the data, children with normal nutritional status are growing at expected rates. Those marked as underweight should focus on calorie-dense meals and frequent check-ins.",
+    nutrition:
+      "Nutritional recommendations include: ensure 3 meals and 2-3 snacks daily, include protein sources, iron-rich foods, and calcium for bone development. Consult the guidelines for age-specific portions.",
+    measurements:
+      "Recent measurements show 6 children tracked. The dashboard displays trends over the past 5 months with improvements in normal-status children.",
+    default:
+      "Thank you for your question. This is a demo chatbot. For detailed assistance, please consult the admin or health worker on duty.",
+  };
+
+  const handleSendMessage = () => {
+    if (!input.trim()) return;
+
+    const userMsg = {
+      id: messages.length + 1,
+      role: "user",
+      text: input,
+    };
+
+    let botResponse = sampleResponses.default;
+    const inputLower = input.toLowerCase();
+    if (inputLower.includes("growth")) botResponse = sampleResponses.growth;
+    else if (
+      inputLower.includes("nutrition") ||
+      inputLower.includes("diet") ||
+      inputLower.includes("meal")
+    )
+      botResponse = sampleResponses.nutrition;
+    else if (inputLower.includes("measurement"))
+      botResponse = sampleResponses.measurements;
+
+    setMessages((prev) => [
+      ...prev,
+      userMsg,
+      {
+        id: messages.length + 2,
+        role: "assistant",
+        text: botResponse,
+      },
+    ]);
+    setInput("");
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 24,
+        right: 24,
+        zIndex: 9999,
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+      }}
+    >
+      {isOpen && (
+        <div
+          style={{
+            width: 380,
+            height: 520,
+            background: "#fff",
+            borderRadius: 16,
+            border: `1px solid ${C.border}`,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow:
+              "0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+            marginBottom: 12,
+            overflow: "hidden",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
+              color: "#fff",
+              padding: "16px 18px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>
+                Health Assistant
+              </div>
+              <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>
+                Powered by AI
+              </div>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{
+                background: "rgba(255,255,255,0.2)",
+                border: "none",
+                borderRadius: 6,
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#fff",
+              }}
+            >
+              <Icon name="x" size={14} color="#fff" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              background: "#fafafa",
+            }}
+          >
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    msg.role === "user" ? "flex-end" : "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: "75%",
+                    padding: "10px 14px",
+                    borderRadius:
+                      msg.role === "user"
+                        ? "16px 4px 16px 16px"
+                        : "4px 16px 16px 16px",
+                    background:
+                      msg.role === "user" ? C.primary : C.primaryLight,
+                    color: msg.role === "user" ? "#fff" : C.text,
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div
+            style={{
+              padding: "12px 14px",
+              borderTop: `1px solid ${C.border}`,
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder="Ask about growth, nutrition..."
+              style={{
+                flex: 1,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 12,
+                outline: "none",
+                background: "#fff",
+              }}
+            />
+            <button
+              onClick={handleSendMessage}
+              style={{
+                background: C.primary,
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <Icon name="arrowRight" size={14} color="#fff" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
+          border: "none",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(11,110,79,0.3)",
+          transition: "transform 0.2s",
+        }}
+        onMouseEnter={(e) => (e.target.style.transform = "scale(1.1)")}
+        onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+      >
+        <Icon name="zap" size={24} color="#fff" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Kiosk View ───────────────────────────────────────────────────────────────
 function KioskView({ children, onBack, onSaveMeasurement }) {
   const [step, setStep] = useState(0);
@@ -3086,13 +3320,7 @@ function Dashboard({ children, measurements }) {
 }
 
 // ─── Children List ────────────────────────────────────────────────────────────
-function ChildrenList({
-  children,
-  onViewChild,
-  onAdd,
-  onEdit,
-  onDelete,
-}) {
+function ChildrenList({ children, onViewChild, onAdd, onEdit, onDelete }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const statuses = [
@@ -5370,6 +5598,9 @@ export default function App() {
           {renderPage()}
         </div>
       </div>
+
+      {/* AI Chatbot */}
+      <AIChatbot />
     </div>
   );
 }
