@@ -53,6 +53,338 @@ const DARK_THEME = {
 
 const C = { ...LIGHT_THEME };
 
+const PAGE_HEADER_STYLE = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 16,
+  marginBottom: 16,
+  flexWrap: "wrap",
+};
+
+const PAGE_TITLE_STYLE = {
+  fontSize: 22,
+  fontWeight: 800,
+  color: C.text,
+  margin: 0,
+};
+
+const PAGE_SUBTITLE_STYLE = {
+  color: C.textMuted,
+  fontSize: 13,
+  margin: "6px 0 0",
+  lineHeight: 1.6,
+};
+
+const PAGE_SURFACE_STYLE = {
+  background: C.card,
+  borderRadius: 18,
+  border: `1px solid ${C.border}`,
+  boxShadow: "0 12px 30px rgba(0,0,0,0.04)",
+};
+
+const PAGE_PRIMARY_BUTTON_STYLE = {
+  background: C.primary,
+  color: "#fff",
+  border: "none",
+  borderRadius: 10,
+  padding: "10px 20px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+};
+
+function PageHeader({ title, subtitle, action, secondaryAction }) {
+  return (
+    <div style={PAGE_HEADER_STYLE}>
+      <div style={{ minWidth: 0 }}>
+        <h1 style={PAGE_TITLE_STYLE}>{title}</h1>
+        {subtitle ? <p style={PAGE_SUBTITLE_STYLE}>{subtitle}</p> : null}
+      </div>
+      {(action || secondaryAction) && (
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          {secondaryAction}
+          {action}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Login Page ───────────────────────────────────────────────────────────────
+function LoginPage({ onLogin }) {
+  const [form, setForm] = useState({
+    email: "admin@sukat.ph",
+    password: "admin123",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = () => {
+    setLoading(true);
+    setError("");
+    setTimeout(() => {
+      if (form.email && form.password)
+        onLogin({ name: "Admin User", role: "admin", email: form.email });
+      else {
+        setError("Please enter your credentials.");
+        setLoading(false);
+      }
+    }, 1200);
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg,#0D2B20 0%,#0B4A34 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Segoe UI',sans-serif",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          maxWidth: 900,
+          minHeight: 520,
+          borderRadius: 24,
+          overflow: "hidden",
+          boxShadow: "0 40px 80px rgba(0,0,0,0.4)",
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            background: "linear-gradient(160deg,#0B6E4F 0%,#0D4A32 100%)",
+            padding: 48,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 48,
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 22,
+                }}
+              >
+                ⚕
+              </div>
+              <div>
+                <div
+                  style={{
+                    color: "#fff",
+                    fontWeight: 800,
+                    fontSize: 18,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  SukatKalusugan
+                </div>
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: 10,
+                    letterSpacing: 2,
+                  }}
+                >
+                  HEALTH MONITORING SYSTEM
+                </div>
+              </div>
+            </div>
+            <h2
+              style={{
+                color: "#fff",
+                fontSize: 26,
+                fontWeight: 800,
+                lineHeight: 1.3,
+                margin: "0 0 12px",
+              }}
+            >
+              Monitoring Child Growth with WHO Standards
+            </h2>
+            <p
+              style={{
+                color: "rgba(255,255,255,0.6)",
+                fontSize: 13,
+                lineHeight: 1.7,
+              }}
+            >
+              A kiosk-based anthropometric system for children aged 0–59 months,
+              using eOPT+ framework and WHO growth standards.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {["WHO Standards", "eOPT+ Ready", "IoT Kiosk", "Mobile App"].map(
+              (tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: 11,
+                    padding: "5px 12px",
+                    borderRadius: 20,
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  {tag}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+
+        <div
+          style={{
+            width: 380,
+            background: "#fff",
+            padding: 48,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              color: C.text,
+              margin: "0 0 4px",
+            }}
+          >
+            Welcome back
+          </h2>
+          <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 32px" }}>
+            Sign in to your account to continue
+          </p>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                fontWeight: 600,
+                color: C.textMuted,
+                marginBottom: 6,
+              }}
+            >
+              EMAIL ADDRESS
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm((previous) => ({
+                  ...previous,
+                  email: event.target.value,
+                }))
+              }
+              style={{ ...inputStyle }}
+            />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                fontWeight: 600,
+                color: C.textMuted,
+                marginBottom: 6,
+              }}
+            >
+              PASSWORD
+            </label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) =>
+                setForm((previous) => ({
+                  ...previous,
+                  password: event.target.value,
+                }))
+              }
+              onKeyDown={(event) => event.key === "Enter" && handleLogin()}
+              style={{ ...inputStyle }}
+            />
+          </div>
+          {error && (
+            <div
+              style={{
+                background: C.dangerLight,
+                color: C.danger,
+                fontSize: 12,
+                padding: "8px 12px",
+                borderRadius: 8,
+                marginBottom: 16,
+              }}
+            >
+              {error}
+            </div>
+          )}
+          <button
+            onClick={handleLogin}
+            style={{
+              width: "100%",
+              background: loading ? C.primaryLight : C.primary,
+              color: loading ? C.primary : "#fff",
+              border: "none",
+              borderRadius: 10,
+              padding: "13px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {loading ? "Signing in..." : "Sign In →"}
+          </button>
+          <div
+            style={{
+              marginTop: 24,
+              padding: 14,
+              background: C.bg,
+              borderRadius: 10,
+              fontSize: 11,
+              color: C.textMuted,
+            }}
+          >
+            <strong>Demo credentials</strong>
+            <br />
+            Email: admin@sukat.ph | Password: admin123
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Initial Mock Data ────────────────────────────────────────────────────────
 const INIT_CHILDREN = [
   {
@@ -4139,43 +4471,15 @@ function ChildrenList({ children, onViewChild, onAdd, onEdit, onDelete }) {
   );
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <h1
-            style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}
-          >
-            Child Profiles
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {children.length} registered children
-          </p>
-        </div>
-        <button
-          onClick={onAdd}
-          style={{
-            background: C.primary,
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="plus" size={14} color="#fff" /> Add Child
-        </button>
-      </div>
+      <PageHeader
+        title="Child Profiles"
+        subtitle={`${children.length} registered children`}
+        action={
+          <button onClick={onAdd} style={PAGE_PRIMARY_BUTTON_STYLE}>
+            <Icon name="plus" size={14} color="#fff" /> Add Child
+          </button>
+        }
+      />
       <div
         style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}
       >
@@ -4420,28 +4724,34 @@ function ChildDetail({ child, measurements, onBack }) {
   const latest = childMeasurements[0];
   return (
     <div>
-      <button
-        onClick={onBack}
-        style={{
-          background: "none",
-          border: "none",
-          color: C.primary,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: "pointer",
-          marginBottom: 20,
-          padding: 0,
-        }}
-      >
-        ← Back to Children
-      </button>
+      <PageHeader
+        title={`${child.first_name} ${child.last_name}`}
+        subtitle={`${child.child_code} • ${child.barangay} • ${child.age_months} months`}
+        action={
+          <button
+            onClick={onBack}
+            style={{
+              background: C.bg,
+              color: C.text,
+              border: `1px solid ${C.border}`,
+              borderRadius: 10,
+              padding: "10px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Back to Children
+          </button>
+        }
+      />
       <div
         style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}
       >
         <div
           style={{
             background: C.card,
-            borderRadius: 16,
+            borderRadius: 18,
             border: `1px solid ${C.border}`,
             padding: 24,
           }}
@@ -4729,48 +5039,18 @@ function ChildDetail({ child, measurements, onBack }) {
 function MeasurementsPage({ measurements, onAdd, onDelete }) {
   return (
     <div>
+      <PageHeader
+        title="Anthropometric Records"
+        subtitle={`${measurements.length} measurements recorded`}
+        action={
+          <button onClick={onAdd} style={PAGE_PRIMARY_BUTTON_STYLE}>
+            <Icon name="plus" size={14} color="#fff" /> Add Record
+          </button>
+        }
+      />
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <h1
-            style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}
-          >
-            Anthropometric Records
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {measurements.length} measurements recorded
-          </p>
-        </div>
-        <button
-          onClick={onAdd}
-          style={{
-            background: C.primary,
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="plus" size={14} color="#fff" /> Add Record
-        </button>
-      </div>
-      <div
-        style={{
-          background: C.card,
-          borderRadius: 14,
-          border: `1px solid ${C.border}`,
+          ...PAGE_SURFACE_STYLE,
           overflow: "hidden",
         }}
       >
@@ -4969,6 +5249,15 @@ function ParentsPage({
   }, {});
   return (
     <div>
+      <PageHeader
+        title="Parent Accounts"
+        subtitle={`${parents.length} registered parents`}
+        action={
+          <button onClick={onAdd} style={PAGE_PRIMARY_BUTTON_STYLE}>
+            <Icon name="plus" size={14} color="#fff" /> Add Parent
+          </button>
+        }
+      />
       {selectedParent && (
         <div
           style={{
@@ -5171,43 +5460,6 @@ function ParentsPage({
       )}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <h1
-            style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}
-          >
-            Parent Accounts
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {parents.length} registered parents
-          </p>
-        </div>
-        <button
-          onClick={onAdd}
-          style={{
-            background: C.primary,
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="plus" size={14} color="#fff" /> Add Parent
-        </button>
-      </div>
-      <div
-        style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
           gap: 14,
@@ -5367,43 +5619,15 @@ function ParentsPage({
 function NutritionistsPage({ nutritionists, onAdd, onEdit, onDelete }) {
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <h1
-            style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}
-          >
-            Nutritionists & Health Workers
-          </h1>
-          <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
-            {nutritionists.length} registered professionals
-          </p>
-        </div>
-        <button
-          onClick={onAdd}
-          style={{
-            background: C.primary,
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="plus" size={14} color="#fff" /> Add Nutritionist
-        </button>
-      </div>
+      <PageHeader
+        title="Nutritionists & Health Workers"
+        subtitle={`${nutritionists.length} registered professionals`}
+        action={
+          <button onClick={onAdd} style={PAGE_PRIMARY_BUTTON_STYLE}>
+            <Icon name="plus" size={14} color="#fff" /> Add Nutritionist
+          </button>
+        }
+      />
       <div
         style={{
           display: "grid",
@@ -5573,129 +5797,1039 @@ function NutritionistsPage({ nutritionists, onAdd, onEdit, onDelete }) {
 }
 
 // ─── Reports Page ─────────────────────────────────────────────────────────────
-function ReportsPage() {
+const REPORT_RANGE_OPTIONS = [
+  { id: "12m", label: "12 Months", months: 12 },
+  { id: "6m", label: "6 Months", months: 6 },
+  { id: "30d", label: "30 Days", months: 2 },
+  { id: "7d", label: "7 Days", months: 1 },
+];
+
+const REPORT_STATUS_META = {
+  Normal: { label: "Normal", color: C.primary, tint: C.primaryLight },
+  Underweight: { label: "Underweight", color: C.warn, tint: C.warnLight },
+  Stunted: { label: "Stunted", color: C.info, tint: C.infoLight },
+  Wasted: { label: "Wasted", color: C.danger, tint: C.dangerLight },
+  "Severely Underweight": {
+    label: "Severely Underweight",
+    color: C.danger,
+    tint: C.dangerLight,
+  },
+  Overweight: { label: "Overweight", color: C.purple, tint: C.purpleLight },
+};
+
+const REPORT_SEVERITY_ORDER = {
+  "Severely Underweight": 4,
+  Wasted: 3,
+  Stunted: 2,
+  Underweight: 1,
+  Overweight: 1,
+  Normal: 0,
+};
+
+const REPORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function parseReportDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatReportMonth(date) {
+  return `${REPORT_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function formatReportMonthShort(date) {
+  return REPORT_MONTHS[date.getMonth()];
+}
+
+function getReportRangeAnchor(measurements) {
+  const dates = measurements
+    .map((measurement) => parseReportDate(measurement.measurement_date))
+    .filter(Boolean)
+    .map((date) => date.getTime());
+  return dates.length ? new Date(Math.max(...dates)) : new Date();
+}
+
+function buildReportBuckets(measurements, monthsToShow) {
+  const anchor = getReportRangeAnchor(measurements);
+  const firstMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const buckets = [];
+
+  for (let offset = monthsToShow - 1; offset >= 0; offset -= 1) {
+    const bucketDate = new Date(
+      firstMonth.getFullYear(),
+      firstMonth.getMonth() - offset,
+      1,
+    );
+    buckets.push({
+      key: `${bucketDate.getFullYear()}-${String(bucketDate.getMonth() + 1).padStart(2, "0")}`,
+      label: formatReportMonthShort(bucketDate),
+      fullLabel: formatReportMonth(bucketDate),
+      total: 0,
+      normal: 0,
+      risk: 0,
+      severe: 0,
+    });
+  }
+
+  const bucketMap = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+  measurements.forEach((measurement) => {
+    const date = parseReportDate(measurement.measurement_date);
+    if (!date) return;
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const bucket = bucketMap.get(key);
+    if (!bucket) return;
+
+    const status = measurement.nutritional_status || "Normal";
+    bucket.total += 1;
+    if (status === "Normal") {
+      bucket.normal += 1;
+    } else {
+      bucket.risk += 1;
+      if (status === "Severely Underweight" || status === "Wasted") {
+        bucket.severe += 1;
+      }
+    }
+  });
+
+  return buckets;
+}
+
+function buildSmoothPath(points) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const controlX = (previous.x + current.x) / 2;
+    path += ` Q ${controlX} ${previous.y} ${current.x} ${current.y}`;
+  }
+  return path;
+}
+
+function ChartPanel({ data, accent = C.primary, riskAccent = C.danger }) {
+  const width = 760;
+  const height = 320;
+  const padding = { top: 34, right: 22, bottom: 42, left: 28 };
+  const innerWidth = width - padding.left - padding.right;
+  const innerHeight = height - padding.top - padding.bottom;
+  const values = data.map((item) => item.value);
+  const maxValue = Math.max(1, ...values);
+  const minValue = 0;
+  const step = data.length > 1 ? innerWidth / (data.length - 1) : innerWidth;
+  const points = data.map((item, index) => ({
+    x: padding.left + index * step,
+    y:
+      padding.top +
+      innerHeight -
+      ((item.value - minValue) / (maxValue - minValue)) * innerHeight,
+  }));
+  const linePath = buildSmoothPath(points);
+  const fillPath = `${linePath} L ${padding.left + innerWidth} ${padding.top + innerHeight} L ${padding.left} ${padding.top + innerHeight} Z`;
+
   return (
-    <div>
-      <h1
-        style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: C.text,
-          margin: "0 0 6px",
-        }}
-      >
-        Reports & Analytics
-      </h1>
-      <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 20px" }}>
-        Generate and export health monitoring reports
-      </p>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      height="100%"
+      preserveAspectRatio="none"
+      role="img"
+      aria-label="Monthly malnutrition trend chart"
+      style={{ display: "block" }}
+    >
+      <defs>
+        <linearGradient id="report-grid-fade" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={C.border} stopOpacity="0.6" />
+          <stop offset="100%" stopColor={C.border} stopOpacity="0.05" />
+        </linearGradient>
+        <linearGradient id="report-accent-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.32" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0.03" />
+        </linearGradient>
+      </defs>
+
+      {[0, 1, 2, 3].map((tick) => {
+        const y = padding.top + (innerHeight / 3) * tick;
+        return (
+          <line
+            key={tick}
+            x1={padding.left}
+            x2={padding.left + innerWidth}
+            y1={y}
+            y2={y}
+            stroke="url(#report-grid-fade)"
+            strokeWidth="1"
+          />
+        );
+      })}
+
+      <path d={fillPath} fill="url(#report-accent-fill)" />
+      <path
+        d={linePath}
+        fill="none"
+        stroke={accent}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d={buildSmoothPath(
+          data.map((item, index) => ({
+            ...points[index],
+            y:
+              padding.top +
+              innerHeight -
+              ((item.secondaryValue - minValue) / (maxValue - minValue)) *
+                innerHeight,
+          })),
+        )}
+        fill="none"
+        stroke={riskAccent}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.95"
+      />
+
+      {points.map((point, index) => {
+        const item = data[index];
+        return (
+          <g key={item.label}>
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="6.5"
+              fill={accent}
+              stroke={C.card}
+              strokeWidth="3"
+            />
+            <circle cx={point.x} cy={point.y} r="2" fill="#fff" />
+            {item.secondaryValue > 0 && (
+              <circle
+                cx={point.x}
+                cy={
+                  padding.top +
+                  innerHeight -
+                  ((item.secondaryValue - minValue) / (maxValue - minValue)) *
+                    innerHeight
+                }
+                r="5.5"
+                fill={riskAccent}
+                stroke={C.card}
+                strokeWidth="2.5"
+              />
+            )}
+          </g>
+        );
+      })}
+
+      {data.map((item, index) => (
+        <text
+          key={`${item.label}-x`}
+          x={points[index].x}
+          y={height - 18}
+          textAnchor="middle"
+          fontSize="11"
+          fill={C.textMuted}
+        >
+          {item.label}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+function escapeCsvValue(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function ReportsPage({ children, measurements, parents, nutritionists }) {
+  const [rangeId, setRangeId] = useState("12m");
+  const selectedRange =
+    REPORT_RANGE_OPTIONS.find((option) => option.id === rangeId) ||
+    REPORT_RANGE_OPTIONS[0];
+  const monthBuckets = buildReportBuckets(measurements, selectedRange.months);
+  const totalMeasurements = monthBuckets.reduce(
+    (sum, bucket) => sum + bucket.total,
+    0,
+  );
+  const totalNormal = monthBuckets.reduce(
+    (sum, bucket) => sum + bucket.normal,
+    0,
+  );
+  const totalRisk = monthBuckets.reduce((sum, bucket) => sum + bucket.risk, 0);
+  const totalSevere = monthBuckets.reduce(
+    (sum, bucket) => sum + bucket.severe,
+    0,
+  );
+  const chartData = monthBuckets.map((bucket) => ({
+    label: bucket.label,
+    value: bucket.risk,
+    secondaryValue: bucket.normal,
+    fullLabel: bucket.fullLabel,
+    total: bucket.total,
+  }));
+
+  const statusCounts = children.reduce((accumulator, child) => {
+    accumulator[child.status] = (accumulator[child.status] || 0) + 1;
+    return accumulator;
+  }, {});
+
+  const atRiskStatuses = [
+    "Underweight",
+    "Severely Underweight",
+    "Stunted",
+    "Wasted",
+  ];
+  const atRiskChildren = children.filter((child) =>
+    atRiskStatuses.includes(child.status),
+  );
+  const normalChildren = children.filter((child) => child.status === "Normal");
+  const latestMeasurementByChild = measurements.reduce(
+    (accumulator, measurement) => {
+      const current = accumulator[measurement.child_id];
+      if (!current)
+        return { ...accumulator, [measurement.child_id]: measurement };
+      const currentDate = parseReportDate(current.measurement_date);
+      const nextDate = parseReportDate(measurement.measurement_date);
+      if (!currentDate || !nextDate || nextDate >= currentDate) {
+        return { ...accumulator, [measurement.child_id]: measurement };
+      }
+      return accumulator;
+    },
+    {},
+  );
+
+  const reportCards = [
+    {
+      label: "Children monitored",
+      value: children.length,
+      delta: `${normalChildren.length} normal`,
+      icon: "children",
+      color: C.primary,
+      bg: C.primaryLight,
+      note: `${atRiskChildren.length} need follow-up`,
+    },
+    {
+      label: "At-risk cases",
+      value: totalRisk,
+      delta: totalRisk > totalNormal ? "Priority review" : "Stable trend",
+      icon: "alertTriangle",
+      color: C.danger,
+      bg: C.dangerLight,
+      note: `${totalSevere} severe cases in range`,
+    },
+    {
+      label: "Measurements",
+      value: totalMeasurements,
+      delta: `${selectedRange.label} window`,
+      icon: "measurements",
+      color: C.info,
+      bg: C.infoLight,
+      note: `${nutritionists.length} nutritionists active`,
+    },
+    {
+      label: "Recovery rate",
+      value: `${Math.round((totalNormal / Math.max(1, totalMeasurements)) * 100)}%`,
+      delta: "Normal growth share",
+      icon: "checkCircle",
+      color: C.primaryMid,
+      bg: C.primaryLight,
+      note: `${parents.length} guardians connected`,
+    },
+  ];
+
+  const trendChange =
+    monthBuckets.length > 1
+      ? monthBuckets[monthBuckets.length - 1].risk - monthBuckets[0].risk
+      : monthBuckets[0]?.risk || 0;
+  const trendDirection = trendChange >= 0 ? "up" : "down";
+  const trendLabel =
+    trendChange === 0
+      ? "flat"
+      : `${trendChange > 0 ? "+" : ""}${trendChange} from start of period`;
+
+  const topPriorityChildren = atRiskChildren
+    .map((child) => ({
+      ...child,
+      latestMeasurement: latestMeasurementByChild[child.id],
+    }))
+    .sort((left, right) => {
+      const leftSeverity = REPORT_SEVERITY_ORDER[left.status] || 0;
+      const rightSeverity = REPORT_SEVERITY_ORDER[right.status] || 0;
+      if (rightSeverity !== leftSeverity) return rightSeverity - leftSeverity;
+
+      const leftDate = parseReportDate(
+        left.latestMeasurement?.measurement_date,
+      );
+      const rightDate = parseReportDate(
+        right.latestMeasurement?.measurement_date,
+      );
+      return (rightDate?.getTime() || 0) - (leftDate?.getTime() || 0);
+    })
+    .slice(0, 4);
+
+  const highestMonth = monthBuckets.reduce(
+    (best, bucket) => (bucket.risk > (best?.risk || -1) ? bucket : best),
+    monthBuckets[0],
+  );
+
+  const exportCsv = () => {
+    const rows = [
+      ["Month", "Total Measurements", "Normal", "At Risk", "Severe Cases"],
+      ...monthBuckets.map((bucket) => [
+        bucket.fullLabel,
+        bucket.total,
+        bucket.normal,
+        bucket.risk,
+        bucket.severe,
+      ]),
+      [],
+      ["Summary", "Value"],
+      ["Children Monitored", children.length],
+      ["At-Risk Children", atRiskChildren.length],
+      ["Total Measurements", totalMeasurements],
+      ["Normal Measurements", totalNormal],
+      ["At-Risk Measurements", totalRisk],
+      ["Severe Cases", totalSevere],
+    ];
+
+    const csvContent = rows
+      .map((row) => row.map((cell) => escapeCsvValue(cell)).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `malnutrition-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(downloadUrl);
+  };
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+        color: C.text,
+      }}
+    >
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 14,
-          marginBottom: 20,
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 24,
+          padding: "20px 22px",
+          boxShadow: "0 12px 30px rgba(0,0,0,0.04)",
         }}
       >
-        {[
-          {
-            title: "Monthly Summary Report",
-            desc: "Nutritional status overview for this month",
-            iconName: "barChart",
-            color: C.primary,
-          },
-          {
-            title: "Growth Trend Analysis",
-            desc: "6-month trend comparison per barangay",
-            iconName: "lineChart",
-            color: C.info,
-          },
-          {
-            title: "At-Risk Children Report",
-            desc: "Children with critical nutritional status",
-            iconName: "alertTriangle",
-            color: C.danger,
-          },
-          {
-            title: "eOPT+ Sync Report",
-            desc: "Integration status with national database",
-            iconName: "refreshCw",
-            color: C.accent,
-          },
-        ].map((r) => (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: C.primaryLight,
+                color: C.primaryMid,
+                fontSize: 12,
+                fontWeight: 700,
+                marginBottom: 10,
+              }}
+            >
+              <Icon name="lineChart" size={14} color={C.primaryMid} />
+              Monthly malnutrition trend
+            </div>
+            <h1
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                margin: 0,
+                color: C.text,
+              }}
+            >
+              Reports & Analytics
+            </h1>
+            <p
+              style={{
+                color: C.textMuted,
+                fontSize: 13,
+                margin: "6px 0 0",
+                maxWidth: 720,
+                lineHeight: 1.6,
+              }}
+            >
+              Monitor monthly malnutrition trends, review at-risk cases, and
+              export a clean report for staff and partners.
+            </p>
+          </div>
+
           <div
-            key={r.title}
             style={{
-              background: C.card,
-              borderRadius: 14,
-              border: `1px solid ${C.border}`,
-              padding: 20,
               display: "flex",
-              gap: 14,
-              alignItems: "flex-start",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                width: 44,
-                height: 44,
-                background: `${r.color}18`,
-                borderRadius: 10,
+                gap: 8,
+                padding: "10px 12px",
+                borderRadius: 14,
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                minHeight: 42,
               }}
             >
-              <Icon name={r.iconName} size={22} color={r.color} />
+              <div style={{ fontSize: 12, color: C.textMuted }}>
+                Latest month in view
+                <div style={{ color: C.text, fontWeight: 700 }}>
+                  {highestMonth?.fullLabel || "No data"}
+                </div>
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
+
+            <button
+              type="button"
+              style={{
+                background: C.card,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                borderRadius: 14,
+                padding: "11px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Export CSV
+            </button>
+            <button
+              type="button"
+              style={{
+                background: C.primaryMid,
+                color: "#fff",
+                border: "none",
+                borderRadius: 14,
+                padding: "11px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Generate report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 14,
+        }}
+      >
+        {reportCards.map((card) => (
+          <div
+            key={card.label}
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 20,
+              padding: 18,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.03)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
               <div
                 style={{
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: C.text,
-                  marginBottom: 4,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: `${card.bg}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {r.title}
+                <Icon name={card.icon} size={18} color={card.color} />
               </div>
-              <div
-                style={{ fontSize: 12, color: C.textMuted, marginBottom: 12 }}
+              <span
+                style={{ fontSize: 11, color: C.textLight, fontWeight: 700 }}
               >
-                {r.desc}
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
+                {card.delta}
+              </span>
+            </div>
+            <div style={{ marginTop: 12, fontSize: 12, color: C.textMuted }}>
+              {card.label}
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 28,
+                fontWeight: 800,
+                color: C.text,
+              }}
+            >
+              {card.value}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: C.textMuted }}>
+              {card.note}
+            </div>
+            <div
+              style={{
+                marginTop: 14,
+                height: 42,
+                borderRadius: 14,
+                background: `linear-gradient(135deg, ${card.bg} 0%, transparent 100%)`,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: 0.7,
+                }}
+              >
+                <div
                   style={{
-                    background: r.color,
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "7px 14px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
+                    width: "78%",
+                    height: 16,
+                    borderRadius: 999,
+                    background: `linear-gradient(90deg, transparent 0%, ${card.color}55 45%, ${card.color} 100%)`,
+                    clipPath:
+                      card.label === "At-risk cases"
+                        ? "polygon(0% 70%, 14% 42%, 26% 54%, 40% 18%, 54% 30%, 70% 6%, 86% 18%, 100% 0%, 100% 100%, 0% 100%)"
+                        : "polygon(0% 60%, 15% 55%, 30% 62%, 44% 40%, 58% 48%, 74% 20%, 88% 35%, 100% 22%, 100% 100%, 0% 100%)",
                   }}
-                >
-                  Generate
-                </button>
-                <button
-                  style={{
-                    background: C.bg,
-                    color: C.textMuted,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 8,
-                    padding: "7px 14px",
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
-                  Export PDF
-                </button>
+                />
               </div>
             </div>
           </div>
         ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.4fr) minmax(320px, 1fr)",
+          gap: 16,
+          alignItems: "start",
+        }}
+      >
+        <div
+          style={{
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 24,
+            padding: 20,
+            boxShadow: "0 12px 30px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+              flexWrap: "wrap",
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
+                Malnutrition trend per month
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 12,
+                  color: C.textMuted,
+                  lineHeight: 1.6,
+                }}
+              >
+                Compare at-risk cases and normal growth across the selected
+                period.
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                justifyContent: "flex-end",
+              }}
+            >
+              {REPORT_RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setRangeId(option.id)}
+                  style={{
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "8px 14px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: rangeId === option.id ? C.infoLight : C.bg,
+                    color: rangeId === option.id ? C.info : C.textMuted,
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={exportCsv}
+                style={{
+                  borderRadius: 999,
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  background: C.primaryLight,
+                  color: C.primary,
+                  border: `1px solid ${C.primaryLight}`,
+                }}
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: "relative",
+              height: 360,
+              borderRadius: 22,
+              background: `linear-gradient(180deg, ${C.bg} 0%, ${C.card} 100%)`,
+              border: `1px solid ${C.border}`,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 18,
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                zIndex: 2,
+              }}
+            >
+              <div
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.72)",
+                  backdropFilter: "blur(14px)",
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <div style={{ fontSize: 11, color: C.textMuted }}>
+                  Total measurements
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
+                  {totalMeasurements}
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.72)",
+                  backdropFilter: "blur(14px)",
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <div style={{ fontSize: 11, color: C.textMuted }}>
+                  Children at risk
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: C.danger }}>
+                  {totalRisk}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ position: "absolute", inset: 0, paddingTop: 18 }}>
+              <ChartPanel
+                data={chartData}
+                accent={C.primaryMid}
+                riskAccent={C.purple}
+              />
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 12,
+            }}
+          >
+            {[
+              {
+                label: "Trend delta",
+                value: trendLabel,
+                icon: trendDirection === "up" ? "trendingUp" : "trendingDown",
+                color: trendDirection === "up" ? C.danger : C.primary,
+              },
+              {
+                label: "Normal share",
+                value: `${Math.round((totalNormal / Math.max(1, totalMeasurements)) * 100)}%`,
+                icon: "checkCircle",
+                color: C.primaryMid,
+              },
+              {
+                label: "Severe cases",
+                value: totalSevere,
+                icon: "alertTriangle",
+                color: C.danger,
+              },
+            ].map((summary) => (
+              <div
+                key={summary.label}
+                style={{
+                  padding: 14,
+                  borderRadius: 18,
+                  border: `1px solid ${C.border}`,
+                  background: C.bg,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: `${summary.color}16`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon name={summary.icon} size={18} color={summary.color} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.textMuted }}>
+                    {summary.label}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>
+                    {summary.value}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 16 }}>
+          <div
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 24,
+              padding: 20,
+              boxShadow: "0 14px 38px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 17,
+                fontWeight: 800,
+                color: C.text,
+                marginBottom: 14,
+              }}
+            >
+              Status breakdown
+            </div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {Object.entries(REPORT_STATUS_META).map(([status, meta]) => {
+                const count = statusCounts[status] || 0;
+                const share = children.length
+                  ? Math.round((count / children.length) * 100)
+                  : 0;
+                return (
+                  <div key={status} style={{ display: "grid", gap: 6 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        fontSize: 12,
+                      }}
+                    >
+                      <span style={{ color: C.text }}>{meta.label}</span>
+                      <span style={{ color: C.textMuted }}>
+                        {count} children
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 10,
+                        borderRadius: 999,
+                        background: C.bg,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.max(6, share)}%`,
+                          height: "100%",
+                          borderRadius: 999,
+                          background: `linear-gradient(90deg, ${meta.color} 0%, ${meta.tint} 100%)`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 24,
+              padding: 20,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 17,
+                fontWeight: 800,
+                color: C.text,
+                marginBottom: 14,
+              }}
+            >
+              Priority follow-up
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              {topPriorityChildren.length ? (
+                topPriorityChildren.map((child) => {
+                  const meta =
+                    REPORT_STATUS_META[child.status] ||
+                    REPORT_STATUS_META.Underweight;
+                  return (
+                    <div
+                      key={child.id}
+                      style={{
+                        padding: 14,
+                        borderRadius: 18,
+                        background: C.bg,
+                        border: `1px solid ${C.border}`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            color: C.text,
+                          }}
+                        >
+                          {child.first_name} {child.last_name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: C.textMuted,
+                            marginTop: 3,
+                          }}
+                        >
+                          {child.barangay} • Parent: {child.parent}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: C.textLight,
+                            marginTop: 4,
+                          }}
+                        >
+                          {child.latestMeasurement?.measurement_date ||
+                            "not available"}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          padding: "7px 10px",
+                          borderRadius: 999,
+                          background: `${meta.tint}`,
+                          color: meta.color,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {child.status}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ fontSize: 12, color: C.textMuted }}>
+                  No priority cases in the selected period.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -5707,7 +6841,7 @@ function SettingsPage() {
     {
       key: "who_reference_year",
       value: "2006",
-      desc: "WHO Child Growth Standards Reference Year",
+      desc: "WHO Child Growth Standards reference year",
     },
     {
       key: "kiosk_timeout_seconds",
@@ -5736,32 +6870,17 @@ function SettingsPage() {
     },
   ]);
   const [saved, setSaved] = useState(null);
+
   return (
     <div>
-      <h1
-        style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: C.text,
-          margin: "0 0 6px",
-        }}
-      >
-        System Settings
-      </h1>
-      <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 20px" }}>
-        Configure system parameters and integrations
-      </p>
-      <div
-        style={{
-          background: C.card,
-          borderRadius: 14,
-          border: `1px solid ${C.border}`,
-          overflow: "hidden",
-        }}
-      >
-        {settings.map((s, i) => (
+      <PageHeader
+        title="System Settings"
+        subtitle="Configure system parameters and integrations"
+      />
+      <div style={{ ...PAGE_SURFACE_STYLE, overflow: "hidden" }}>
+        {settings.map((setting, index) => (
           <div
-            key={s.key}
+            key={setting.key}
             style={{
               display: "grid",
               gridTemplateColumns: "220px 1fr 160px",
@@ -5769,7 +6888,7 @@ function SettingsPage() {
               alignItems: "center",
               padding: "16px 20px",
               borderBottom:
-                i < settings.length - 1 ? `1px solid ${C.border}` : "none",
+                index < settings.length - 1 ? `1px solid ${C.border}` : "none",
             }}
           >
             <div>
@@ -5781,23 +6900,27 @@ function SettingsPage() {
                   marginBottom: 2,
                 }}
               >
-                {s.key}
+                {setting.key}
               </div>
-              <div style={{ fontSize: 11, color: C.textMuted }}>{s.desc}</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>
+                {setting.desc}
+              </div>
             </div>
             <input
-              value={s.value}
-              onChange={(e) =>
-                setSettings((prev) =>
-                  prev.map((p, pi) =>
-                    pi === i ? { ...p, value: e.target.value } : p,
+              value={setting.value}
+              onChange={(event) =>
+                setSettings((previous) =>
+                  previous.map((item, itemIndex) =>
+                    itemIndex === index
+                      ? { ...item, value: event.target.value }
+                      : item,
                   ),
                 )
               }
               style={{ ...inputStyle }}
             />
             <button
-              onClick={() => setSaved(s.key)}
+              onClick={() => setSaved(setting.key)}
               style={{
                 background: C.primaryLight,
                 color: C.primary,
@@ -5813,7 +6936,7 @@ function SettingsPage() {
                 justifyContent: "center",
               }}
             >
-              {saved === s.key ? (
+              {saved === setting.key ? (
                 <>
                   <Icon name="check" size={12} color={C.primary} /> Saved!
                 </>
@@ -5823,261 +6946,6 @@ function SettingsPage() {
             </button>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Login Page ───────────────────────────────────────────────────────────────
-function LoginPage({ onLogin }) {
-  const [form, setForm] = useState({
-    email: "admin@sukat.ph",
-    password: "admin123",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const handleLogin = () => {
-    setLoading(true);
-    setError("");
-    setTimeout(() => {
-      if (form.email && form.password)
-        onLogin({ name: "Admin User", role: "admin", email: form.email });
-      else {
-        setError("Please enter your credentials.");
-        setLoading(false);
-      }
-    }, 1200);
-  };
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg,#0D2B20 0%,#0B4A34 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Segoe UI',sans-serif",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          maxWidth: 900,
-          minHeight: 520,
-          borderRadius: 24,
-          overflow: "hidden",
-          boxShadow: "0 40px 80px rgba(0,0,0,0.4)",
-        }}
-      >
-        <div
-          style={{
-            flex: 1,
-            background: "linear-gradient(160deg,#0B6E4F 0%,#0D4A32 100%)",
-            padding: 48,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 48,
-              }}
-            >
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 10,
-                  background: "rgba(255,255,255,0.15)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 22,
-                }}
-              >
-                ⚕
-              </div>
-              <div>
-                <div
-                  style={{
-                    color: "#fff",
-                    fontWeight: 800,
-                    fontSize: 18,
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  SukatKalusugan
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 10,
-                    letterSpacing: 2,
-                  }}
-                >
-                  HEALTH MONITORING SYSTEM
-                </div>
-              </div>
-            </div>
-            <h2
-              style={{
-                color: "#fff",
-                fontSize: 26,
-                fontWeight: 800,
-                lineHeight: 1.3,
-                margin: "0 0 12px",
-              }}
-            >
-              Monitoring Child Growth with WHO Standards
-            </h2>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.6)",
-                fontSize: 13,
-                lineHeight: 1.7,
-              }}
-            >
-              A kiosk-based anthropometric system for children aged 0–59 months,
-              using eOPT+ framework and WHO growth standards.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {["WHO Standards", "eOPT+ Ready", "IoT Kiosk", "Mobile App"].map(
-              (t) => (
-                <span
-                  key={t}
-                  style={{
-                    background: "rgba(255,255,255,0.1)",
-                    color: "rgba(255,255,255,0.7)",
-                    fontSize: 11,
-                    padding: "5px 12px",
-                    borderRadius: 20,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                  }}
-                >
-                  {t}
-                </span>
-              ),
-            )}
-          </div>
-        </div>
-        <div
-          style={{
-            width: 380,
-            background: "#fff",
-            padding: 48,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: C.text,
-              margin: "0 0 4px",
-            }}
-          >
-            Welcome back
-          </h2>
-          <p style={{ color: C.textMuted, fontSize: 13, margin: "0 0 32px" }}>
-            Sign in to your account to continue
-          </p>
-          <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 600,
-                color: C.textMuted,
-                marginBottom: 6,
-              }}
-            >
-              EMAIL ADDRESS
-            </label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, email: e.target.value }))
-              }
-              style={{ ...inputStyle }}
-            />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 600,
-                color: C.textMuted,
-                marginBottom: 6,
-              }}
-            >
-              PASSWORD
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, password: e.target.value }))
-              }
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              style={{ ...inputStyle }}
-            />
-          </div>
-          {error && (
-            <div
-              style={{
-                background: C.dangerLight,
-                color: C.danger,
-                fontSize: 12,
-                padding: "8px 12px",
-                borderRadius: 8,
-                marginBottom: 16,
-              }}
-            >
-              {error}
-            </div>
-          )}
-          <button
-            onClick={handleLogin}
-            style={{
-              width: "100%",
-              background: loading ? C.primaryLight : C.primary,
-              color: loading ? C.primary : "#fff",
-              border: "none",
-              borderRadius: 10,
-              padding: "13px 0",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            {loading ? "Signing in..." : "Sign In →"}
-          </button>
-          <div
-            style={{
-              marginTop: 24,
-              padding: 14,
-              background: C.bg,
-              borderRadius: 10,
-              fontSize: 11,
-              color: C.textMuted,
-            }}
-          >
-            <strong>Demo credentials</strong>
-            <br />
-            Email: admin@sukat.ph | Password: admin123
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -6324,7 +7192,14 @@ export default function App() {
           />
         );
       case "reports":
-        return <ReportsPage />;
+        return (
+          <ReportsPage
+            children={childrenData}
+            measurements={measurementsData}
+            parents={parentsData}
+            nutritionists={nutritionistsData}
+          />
+        );
       case "settings":
         return <SettingsPage />;
       default:
