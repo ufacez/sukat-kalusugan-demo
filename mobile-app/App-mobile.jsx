@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-// ─── Design Tokens (mirrors frontend-admin App.jsx) ─────────────────────────
+// ─── Design Tokens (matches frontend-admin App.jsx) ──────────────────────────
 const C = {
   primary: "#0B6E4F",
   primaryLight: "#E6F4EF",
@@ -35,9 +35,10 @@ const C = {
   textMuted: "#6B8C7D",
   textLight: "#9BB5AC",
   sidebar: "#0D2B20",
+  sidebarActive: "#1A8F68",
 };
 
-// ─── Status helpers (mirrors frontend-admin) ─────────────────────────────────
+// ─── Status helpers (matches frontend-admin) ──────────────────────────────────
 function statusColor(s) {
   return (
     {
@@ -47,6 +48,8 @@ function statusColor(s) {
       Stunted: C.purple,
       Wasted: C.info,
       Overweight: C.accent,
+      Active: C.primary,
+      Inactive: C.textMuted,
     }[s] || C.textMuted
   );
 }
@@ -59,11 +62,13 @@ function statusBg(s) {
       Stunted: C.purpleLight,
       Wasted: C.infoLight,
       Overweight: C.accentLight,
+      Active: C.primaryLight,
+      Inactive: "#f5f5f5",
     }[s] || "#f5f5f5"
   );
 }
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Mock Data ─────────────────────────────────────────────────────────────────
 const INITIAL_PARENTS = [
   {
     id: 1,
@@ -246,23 +251,9 @@ const INITIAL_MEASUREMENTS = [
   },
   {
     id: 4,
-    childId: 4,
-    childName: "Miguel Torres",
-    measurementDate: "2024-05-07",
-    sourceType: "Kiosk",
-    heightCm: 71.5,
-    weightKg: 8.6,
-    ageMonths: 11,
-    waz: -0.7,
-    haz: 0.1,
-    whz: -0.3,
-    status: "Normal",
-  },
-  {
-    id: 5,
     childId: 5,
     childName: "Sofia Garcia",
-    measurementDate: "2024-05-06",
+    measurementDate: "2024-05-07",
     sourceType: "Manual",
     heightCm: 80.0,
     weightKg: 7.9,
@@ -273,10 +264,10 @@ const INITIAL_MEASUREMENTS = [
     status: "Severely Underweight",
   },
   {
-    id: 6,
+    id: 5,
     childId: 6,
     childName: "Carlos Lim",
-    measurementDate: "2024-05-05",
+    measurementDate: "2024-05-06",
     sourceType: "Kiosk",
     heightCm: 72.5,
     weightKg: 7.1,
@@ -326,9 +317,10 @@ const NUTRITION_TIPS = [
   "Track height and weight every month so trends are easy to spot.",
   "Encourage water intake before snacks to reduce empty calories.",
   "Bring the child to the next weigh-in even when they feel healthy.",
+  "Include vitamin A-rich foods like camote and malunggay in daily meals.",
 ];
 
-// ─── WHO Z-Score helper ───────────────────────────────────────────────────────
+// ─── WHO Z-Score helper ────────────────────────────────────────────────────────
 function computeWHO({ weightKg, heightCm, ageMonths }) {
   const wazMedian = 9.5 + ageMonths * 0.15;
   const hazMedian = 65 + ageMonths * 0.9;
@@ -368,47 +360,17 @@ function initials(name) {
     .toUpperCase();
 }
 
-// ─── Minimal SVG-free icon text symbols ──────────────────────────────────────
-// Using Unicode symbols to keep icon weight minimal
-const ICONS = {
-  home: "⊞",
-  children: "⊹",
-  measure: "≡",
-  parents: "⊕",
-  staff: "⊛",
-  reports: "⊟",
-  tips: "⊙",
-  settings: "⊡",
-  logout: "⤷",
-  plus: "+",
-  edit: "✎",
-  trash: "⌫",
-  check: "✓",
-  alert: "!",
-  info: "i",
-  search: "⌕",
-  male: "♂",
-  female: "♀",
-  heart: "♥",
-};
-
+// ─── Navigation tabs ───────────────────────────────────────────────────────────
 const NUTRITIONIST_TABS = [
-  { id: "dashboard", label: "Home", icon: ICONS.home },
-  { id: "children", label: "Children", icon: ICONS.children },
-  { id: "measurements", label: "Records", icon: ICONS.measure },
-  { id: "staff", label: "Staff", icon: ICONS.staff },
-  { id: "reports", label: "Reports", icon: ICONS.reports },
+  { id: "dashboard", label: "Dashboard" },
+  { id: "children", label: "Children" },
+  { id: "measurements", label: "Records" },
+  { id: "staff", label: "Staff" },
+  { id: "reports", label: "Reports" },
 ];
 
-const PARENT_TABS = [
-  { id: "dashboard", label: "Home", icon: ICONS.home },
-  { id: "child", label: "My Child", icon: ICONS.children },
-  { id: "growth", label: "Growth", icon: ICONS.reports },
-  { id: "tips", label: "Tips", icon: ICONS.tips },
-  { id: "settings", label: "Settings", icon: ICONS.settings },
-];
+// ─── Shared UI Components (mirroring frontend-admin design language) ───────────
 
-// ─── Shared UI Components ─────────────────────────────────────────────────────
 function StatusBadge({ status }) {
   return (
     <View style={[ss.badge, { backgroundColor: statusBg(status) }]}>
@@ -426,23 +388,33 @@ function Card({ children, style }) {
 
 function SectionTitle({ title, subtitle }) {
   return (
-    <View style={{ marginBottom: 12 }}>
+    <View style={{ marginBottom: 14 }}>
       <Text style={ss.sectionTitle}>{title}</Text>
       {subtitle ? <Text style={ss.sectionSubtitle}>{subtitle}</Text> : null}
     </View>
   );
 }
 
-function StatCard({ label, value, hint, color }) {
-  const bg = color ? `${color}15` : C.primaryLight;
-  const fg = color || C.primary;
+function StatCard({ label, value, hint, color, highlighted }) {
+  const bg = highlighted ? C.primaryMid : color ? `${color}18` : C.primaryLight;
+  const fg = highlighted ? "#fff" : color || C.primary;
+  const labelColor = highlighted ? "rgba(255,255,255,0.8)" : C.textMuted;
+  const hintColor = highlighted ? "rgba(255,255,255,0.6)" : C.textMuted;
   return (
     <View
-      style={[ss.statCard, { backgroundColor: bg, borderColor: `${fg}20` }]}
+      style={[
+        ss.statCard,
+        {
+          backgroundColor: bg,
+          borderColor: highlighted ? C.primaryMid : `${color || C.primary}20`,
+        },
+      ]}
     >
       <Text style={[ss.statValue, { color: fg }]}>{value}</Text>
-      <Text style={ss.statLabel}>{label}</Text>
-      {hint ? <Text style={ss.statHint}>{hint}</Text> : null}
+      <Text style={[ss.statLabel, { color: labelColor }]}>{label}</Text>
+      {hint ? (
+        <Text style={[ss.statHint, { color: hintColor }]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
@@ -560,6 +532,7 @@ function ListRow({ title, meta, right, onPress, style }) {
   );
 }
 
+// ─── Bottom Tab Bar (mirrors sidebar nav of admin) ─────────────────────────────
 function TabBar({ tabs, active, onChange }) {
   return (
     <View style={ss.tabBar}>
@@ -571,9 +544,7 @@ function TabBar({ tabs, active, onChange }) {
             onPress={() => onChange(t.id)}
             style={ss.tabItem}
           >
-            <Text style={[ss.tabIcon, sel && { color: C.primaryMid }]}>
-              {t.icon}
-            </Text>
+            {sel && <View style={ss.tabIndicator} />}
             <Text
               style={[
                 ss.tabLabel,
@@ -582,7 +553,6 @@ function TabBar({ tabs, active, onChange }) {
             >
               {t.label}
             </Text>
-            {sel && <View style={ss.tabIndicator} />}
           </Pressable>
         );
       })}
@@ -590,34 +560,35 @@ function TabBar({ tabs, active, onChange }) {
   );
 }
 
-function AppHeader({ title, subtitle }) {
+// ─── App Header (mirrors admin topbar) ────────────────────────────────────────
+function AppHeader({ title, subtitle, user, onLogout }) {
   return (
     <View style={ss.appHeader}>
-      <View style={ss.appHeaderBrand}>
-        <Text style={ss.appHeaderIcon}>{ICONS.heart}</Text>
+      <View style={ss.appHeaderLeft}>
+        <View style={ss.appHeaderBrand}>
+          <Text style={{ fontSize: 16, color: C.primaryMid }}>♥</Text>
+        </View>
+        <View>
+          <Text style={ss.appHeaderTitle}>{title}</Text>
+          {subtitle ? <Text style={ss.appHeaderSub}>{subtitle}</Text> : null}
+        </View>
       </View>
-      <View>
-        <Text style={ss.appHeaderTitle}>{title}</Text>
-        {subtitle ? <Text style={ss.appHeaderSub}>{subtitle}</Text> : null}
-      </View>
+      {user && (
+        <Pressable onPress={onLogout} style={ss.headerAvatarBtn}>
+          <View style={ss.headerAvatar}>
+            <Text style={ss.headerAvatarText}>{initials(user.name)}</Text>
+          </View>
+        </Pressable>
+      )}
     </View>
   );
 }
 
-// ─── Login Screen ─────────────────────────────────────────────────────────────
+// ─── Login Screen (single form, no role toggle) ───────────────────────────────
 function LoginScreen({ onLogin }) {
-  const [role, setRole] = useState("nutritionist");
   const [email, setEmail] = useState("maria.santos@health.gov");
   const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setEmail(
-      role === "nutritionist"
-        ? "maria.santos@health.gov"
-        : "ana.santos@email.com",
-    );
-  }, [role]);
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -626,10 +597,9 @@ function LoginScreen({ onLogin }) {
     }
     setLoading(true);
     setTimeout(() => {
-      const name = role === "nutritionist" ? "Dr. Maria Santos" : "Ana Santos";
-      onLogin({ role, name, email, parentId: role === "parent" ? 1 : null });
+      onLogin({ name: "Dr. Maria Santos", email });
       setLoading(false);
-    }, 800);
+    }, 900);
   };
 
   return (
@@ -646,44 +616,20 @@ function LoginScreen({ onLogin }) {
           {/* Brand */}
           <View style={ss.loginBrand}>
             <View style={ss.loginBrandMark}>
-              <Text style={{ fontSize: 28, color: C.primaryMid }}>
-                {ICONS.heart}
-              </Text>
+              <Text style={{ fontSize: 28, color: C.primaryMid }}>♥</Text>
             </View>
             <View>
               <Text style={ss.loginBrandTitle}>SukatKalusugan</Text>
-              <Text style={ss.loginBrandSub}>Child Health Monitoring</Text>
+              <Text style={ss.loginBrandSub}>HEALTH MONITORING SYSTEM</Text>
             </View>
           </View>
 
-          {/* Card */}
+          {/* White card */}
           <View style={ss.loginCard}>
             <Text style={ss.loginHeading}>Welcome back</Text>
-            <Text style={ss.loginCaption}>Sign in to continue</Text>
-
-            {/* Role toggle */}
-            <View style={ss.roleRow}>
-              {["nutritionist", "parent"].map((r) => {
-                const sel = role === r;
-                return (
-                  <Pressable
-                    key={r}
-                    onPress={() => setRole(r)}
-                    style={[
-                      ss.roleBtn,
-                      sel && {
-                        backgroundColor: C.primary,
-                        borderColor: C.primary,
-                      },
-                    ]}
-                  >
-                    <Text style={[ss.roleBtnText, sel && { color: "#fff" }]}>
-                      {r === "nutritionist" ? "Nutritionist" : "Parent"}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <Text style={ss.loginCaption}>
+              Sign in to your account to continue
+            </Text>
 
             <Field label="EMAIL ADDRESS">
               <Input
@@ -703,7 +649,7 @@ function LoginScreen({ onLogin }) {
             </Field>
 
             <PrimaryButton
-              label="Sign In"
+              label="Sign In →"
               onPress={handleLogin}
               loading={loading}
               style={{ marginTop: 4 }}
@@ -718,13 +664,12 @@ function LoginScreen({ onLogin }) {
                   marginBottom: 3,
                 }}
               >
-                Demo Access
+                Demo Credentials
               </Text>
               <Text
                 style={{ fontSize: 11, color: C.textLight, lineHeight: 17 }}
               >
-                Nutritionist: maria.santos@health.gov{"\n"}Parent:
-                ana.santos@email.com{"\n"}Password: admin123
+                Email: maria.santos@health.gov{"\n"}Password: admin123
               </Text>
             </View>
           </View>
@@ -753,21 +698,22 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// ─── Nutritionist: Dashboard ──────────────────────────────────────────────────
-function NutritionistDashboard({
-  children,
-  measurements,
-  parents,
-  nutritionists,
-}) {
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+function DashboardScreen({ children, measurements, parents, nutritionists }) {
   const normalCount = children.filter((c) => c.status === "Normal").length;
   const atRisk = children.filter((c) => c.status !== "Normal").length;
 
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="Good morning!" subtitle="Nutritionist Dashboard" />
+      {/* Greeting */}
+      <View style={{ marginBottom: 16 }}>
+        <Text style={ss.greeting}>Good morning, Admin!</Text>
+        <Text style={ss.greetingSub}>
+          Here's a summary of child health monitoring
+        </Text>
+      </View>
 
-      {/* Hero stats row */}
+      {/* Stat cards row — matches admin dashboard cards */}
       <View style={ss.statsRow}>
         <StatCard label="Children" value={children.length} hint="registered" />
         <StatCard
@@ -775,17 +721,41 @@ function NutritionistDashboard({
           value={atRisk}
           hint="need attention"
           color={C.danger}
+          highlighted={false}
+        />
+        <StatCard
+          label="Healthy"
+          value={normalCount}
+          hint="normal"
+          color={C.primary}
+          highlighted={true}
+        />
+      </View>
+
+      {/* Second row */}
+      <View style={[ss.statsRow, { marginTop: 10 }]}>
+        <StatCard
+          label="Measurements"
+          value={measurements.length}
+          hint="records"
+          color={C.warn}
+        />
+        <StatCard
+          label="Parents"
+          value={parents.length}
+          hint="registered"
+          color={C.info}
         />
         <StatCard
           label="Staff"
           value={nutritionists.length}
           hint="active"
-          color={C.info}
+          color={C.purple}
         />
       </View>
 
       {/* Attention queue */}
-      <Card>
+      <Card style={{ marginTop: 4 }}>
         <SectionTitle
           title="Attention Queue"
           subtitle="Children needing follow-up"
@@ -793,14 +763,31 @@ function NutritionistDashboard({
         {children
           .filter((c) => c.status !== "Normal")
           .slice(0, 5)
-          .map((c) => (
-            <ListRow
+          .map((c, i, arr) => (
+            <View
               key={c.id}
-              title={getChildName(c)}
-              meta={`${c.barangay} · ${c.ageMonths} months`}
-              right={<StatusBadge status={c.status} />}
-              style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
-            />
+              style={[
+                ss.listRow,
+                i < arr.length - 1 && {
+                  borderBottomWidth: 1,
+                  borderBottomColor: C.border,
+                },
+              ]}
+            >
+              <AvatarCircle
+                name={getChildName(c)}
+                size={34}
+                color={c.sex === "Female" ? "#E91E8C" : C.info}
+                bg={c.sex === "Female" ? "#FCE4EC" : C.infoLight}
+              />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={ss.listRowTitle}>{getChildName(c)}</Text>
+                <Text style={ss.listRowMeta}>
+                  {c.barangay} · {c.ageMonths} months
+                </Text>
+              </View>
+              <StatusBadge status={c.status} />
+            </View>
           ))}
         {atRisk === 0 && (
           <Text style={ss.emptyText}>No children need immediate attention</Text>
@@ -813,24 +800,36 @@ function NutritionistDashboard({
           title="Recent Measurements"
           subtitle="Latest saved entries"
         />
-        {measurements.slice(0, 4).map((m) => (
-          <ListRow
+        {measurements.slice(0, 4).map((m, i, arr) => (
+          <View
             key={m.id}
-            title={m.childName}
-            meta={`${formatDate(m.measurementDate)} · ${m.sourceType}`}
-            right={<StatusBadge status={m.status} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
-          />
+            style={[
+              ss.listRow,
+              i < arr.length - 1 && {
+                borderBottomWidth: 1,
+                borderBottomColor: C.border,
+              },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={ss.listRowTitle}>{m.childName}</Text>
+              <Text style={ss.listRowMeta}>
+                {formatDate(m.measurementDate)} · {m.sourceType}
+              </Text>
+            </View>
+            <StatusBadge status={m.status} />
+          </View>
         ))}
       </Card>
     </ScrollView>
   );
 }
 
-// ─── Nutritionist: Children ───────────────────────────────────────────────────
+// ─── Children Screen ──────────────────────────────────────────────────────────
 function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -841,9 +840,17 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
     address: "",
     parentId: parents[0]?.id ?? null,
   });
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const filtered = children.filter((c) =>
+    `${c.firstName} ${c.lastName} ${c.barangay}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
+  );
 
   const resetForm = () => {
     setEditingId(null);
+    setShowForm(false);
     setForm({
       firstName: "",
       lastName: "",
@@ -855,13 +862,6 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
       parentId: parents[0]?.id ?? null,
     });
   };
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
-  const filtered = children.filter((c) =>
-    `${c.firstName} ${c.lastName} ${c.barangay}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
 
   const handleSubmit = () => {
     if (
@@ -893,134 +893,164 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
       address: c.address,
       parentId: c.parentId,
     });
+    setShowForm(true);
   };
 
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="Children" subtitle="Add, review & update profiles" />
+      <View style={ss.pageHeader}>
+        <View>
+          <Text style={ss.pageTitle}>Child Profiles</Text>
+          <Text style={ss.pageSubtitle}>
+            {children.length} registered children
+          </Text>
+        </View>
+        <Pressable onPress={() => setShowForm(!showForm)} style={ss.addBtn}>
+          <Text style={ss.addBtnText}>+ Add Child</Text>
+        </Pressable>
+      </View>
 
-      <Field label="SEARCH">
-        <Input
+      <View style={ss.searchBar}>
+        <Text style={{ color: C.textMuted, fontSize: 14, marginRight: 8 }}>
+          ⌕
+        </Text>
+        <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search by name or barangay"
+          placeholder="Search by name or barangay..."
+          placeholderTextColor={C.textLight}
+          style={{ flex: 1, fontSize: 13, color: C.text }}
         />
-      </Field>
+      </View>
 
-      {/* Add/Edit form */}
-      <Card>
-        <Text style={ss.cardTitle}>
-          {editingId ? "Edit child profile" : "Add new child"}
-        </Text>
-        <View style={ss.twoCol}>
-          <View style={{ flex: 1 }}>
-            <Field label="FIRST NAME" required>
-              <Input
-                value={form.firstName}
-                onChangeText={(v) => set("firstName", v)}
-                placeholder="Maria"
-              />
-            </Field>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Field label="LAST NAME" required>
-              <Input
-                value={form.lastName}
-                onChangeText={(v) => set("lastName", v)}
-                placeholder="Santos"
-              />
-            </Field>
-          </View>
-        </View>
-        <View style={ss.twoCol}>
-          <View style={{ flex: 1 }}>
-            <Field label="BIRTHDATE" required>
-              <Input
-                value={form.birthdate}
-                onChangeText={(v) => set("birthdate", v)}
-                placeholder="2022-03-15"
-              />
-            </Field>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Field label="AGE (MONTHS)">
-              <Input
-                value={String(form.ageMonths)}
-                onChangeText={(v) => set("ageMonths", v)}
-                placeholder="26"
-                keyboardType="numeric"
-              />
-            </Field>
-          </View>
-        </View>
-        <Field label="SEX">
-          <ChoiceGroup
-            value={form.sex}
-            onChange={(v) => set("sex", v)}
-            options={[
-              { label: "Female", value: "Female" },
-              { label: "Male", value: "Male" },
-            ]}
-          />
-        </Field>
-        <Field label="BARANGAY">
-          <Input
-            value={form.barangay}
-            onChangeText={(v) => set("barangay", v)}
-            placeholder="Bagong Silang"
-          />
-        </Field>
-        <Field label="ADDRESS">
-          <Input
-            value={form.address}
-            onChangeText={(v) => set("address", v)}
-            placeholder="House no. and street"
-          />
-        </Field>
-        <Field label="PARENT">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {parents.map((p) => {
-                const sel = p.id === form.parentId;
-                return (
-                  <Pressable
-                    key={p.id}
-                    onPress={() => set("parentId", p.id)}
-                    style={[
-                      ss.choiceBtn,
-                      sel && {
-                        backgroundColor: C.primary,
-                        borderColor: C.primary,
-                      },
-                    ]}
-                  >
-                    <Text style={[ss.choiceBtnText, sel && { color: "#fff" }]}>
-                      {p.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+      {showForm && (
+        <Card>
+          <Text style={ss.cardTitle}>
+            {editingId ? "Edit Child Profile" : "Add New Child"}
+          </Text>
+          <View style={ss.twoCol}>
+            <View style={{ flex: 1 }}>
+              <Field label="FIRST NAME" required>
+                <Input
+                  value={form.firstName}
+                  onChangeText={(v) => set("firstName", v)}
+                  placeholder="Maria"
+                />
+              </Field>
             </View>
-          </ScrollView>
-        </Field>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
-          <PrimaryButton
-            label={editingId ? "Update" : "Save Child"}
-            onPress={handleSubmit}
-            style={{ flex: 1 }}
-          />
-          <SecondaryButton label="Clear" onPress={resetForm} />
-        </View>
-      </Card>
+            <View style={{ width: 10 }} />
+            <View style={{ flex: 1 }}>
+              <Field label="LAST NAME" required>
+                <Input
+                  value={form.lastName}
+                  onChangeText={(v) => set("lastName", v)}
+                  placeholder="Santos"
+                />
+              </Field>
+            </View>
+          </View>
+          <View style={ss.twoCol}>
+            <View style={{ flex: 1 }}>
+              <Field label="BIRTHDATE" required>
+                <Input
+                  value={form.birthdate}
+                  onChangeText={(v) => set("birthdate", v)}
+                  placeholder="2022-03-15"
+                />
+              </Field>
+            </View>
+            <View style={{ width: 10 }} />
+            <View style={{ flex: 1 }}>
+              <Field label="AGE (MONTHS)">
+                <Input
+                  value={String(form.ageMonths)}
+                  onChangeText={(v) => set("ageMonths", v)}
+                  placeholder="26"
+                  keyboardType="numeric"
+                />
+              </Field>
+            </View>
+          </View>
+          <Field label="SEX">
+            <ChoiceGroup
+              value={form.sex}
+              onChange={(v) => set("sex", v)}
+              options={[
+                { label: "Female", value: "Female" },
+                { label: "Male", value: "Male" },
+              ]}
+            />
+          </Field>
+          <Field label="BARANGAY">
+            <Input
+              value={form.barangay}
+              onChangeText={(v) => set("barangay", v)}
+              placeholder="Bagong Silang"
+            />
+          </Field>
+          <Field label="ADDRESS">
+            <Input
+              value={form.address}
+              onChangeText={(v) => set("address", v)}
+              placeholder="House no. and street"
+            />
+          </Field>
+          <Field label="PARENT/GUARDIAN" required>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {parents.map((p) => {
+                  const sel = p.id === form.parentId;
+                  return (
+                    <Pressable
+                      key={p.id}
+                      onPress={() => set("parentId", p.id)}
+                      style={[
+                        ss.choiceBtn,
+                        sel && {
+                          backgroundColor: C.primary,
+                          borderColor: C.primary,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[ss.choiceBtnText, sel && { color: "#fff" }]}
+                      >
+                        {p.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </Field>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+            <PrimaryButton
+              label={editingId ? "Update" : "Save Child"}
+              onPress={handleSubmit}
+              style={{ flex: 1 }}
+            />
+            <SecondaryButton label="Cancel" onPress={resetForm} />
+          </View>
+        </Card>
+      )}
 
-      {/* List */}
+      {/* Child list — matches admin Children table style */}
       <Card>
         <SectionTitle
           title="Child Records"
           subtitle={`${filtered.length} children`}
         />
-        {filtered.map((c) => (
-          <View key={c.id} style={ss.childRow}>
+        {filtered.map((c, i) => (
+          <View
+            key={c.id}
+            style={[
+              ss.childRow,
+              i < filtered.length - 1 && {
+                borderBottomWidth: 1,
+                borderBottomColor: C.border,
+              },
+            ]}
+          >
             <View
               style={{
                 flexDirection: "row",
@@ -1043,20 +1073,20 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
               </View>
               <StatusBadge status={c.status} />
             </View>
-            <View style={{ flexDirection: "row", gap: 6 }}>
+            <View style={{ flexDirection: "row", gap: 6, marginBottom: 8 }}>
               <Text style={ss.metaChip}>{c.sex}</Text>
               <Text style={ss.metaChip}>{c.ageMonths} mo</Text>
               <Text style={ss.metaChip}>{formatDate(c.birthdate)}</Text>
             </View>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+            <View style={{ flexDirection: "row", gap: 8 }}>
               <Pressable
                 onPress={() => editChild(c)}
                 style={[ss.iconBtn, { backgroundColor: C.infoLight }]}
               >
                 <Text
-                  style={{ color: C.info, fontSize: 13, fontWeight: "700" }}
+                  style={{ color: C.info, fontSize: 12, fontWeight: "700" }}
                 >
-                  {ICONS.edit} Edit
+                  ✎ Edit
                 </Text>
               </Pressable>
               <Pressable
@@ -1064,20 +1094,23 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
                 style={[ss.iconBtn, { backgroundColor: C.dangerLight }]}
               >
                 <Text
-                  style={{ color: C.danger, fontSize: 13, fontWeight: "700" }}
+                  style={{ color: C.danger, fontSize: 12, fontWeight: "700" }}
                 >
-                  {ICONS.trash} Delete
+                  ⌫ Delete
                 </Text>
               </Pressable>
             </View>
           </View>
         ))}
+        {filtered.length === 0 && (
+          <Text style={ss.emptyText}>No children found</Text>
+        )}
       </Card>
     </ScrollView>
   );
 }
 
-// ─── Nutritionist: Measurements ───────────────────────────────────────────────
+// ─── Measurements Screen ──────────────────────────────────────────────────────
 function MeasurementsScreen({
   children,
   measurements,
@@ -1133,13 +1166,15 @@ function MeasurementsScreen({
 
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle
-        title="Measurements"
-        subtitle="Record anthropometric entries"
-      />
+      <View style={ss.pageHeader}>
+        <View>
+          <Text style={ss.pageTitle}>Measurements</Text>
+          <Text style={ss.pageSubtitle}>Record anthropometric entries</Text>
+        </View>
+      </View>
 
       <Card>
-        <Text style={ss.cardTitle}>Add measurement</Text>
+        <Text style={ss.cardTitle}>Add Measurement Record</Text>
         <Field label="CHILD" required>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: "row", gap: 8 }}>
@@ -1187,6 +1222,7 @@ function MeasurementsScreen({
               />
             </Field>
           </View>
+          <View style={{ width: 10 }} />
           <View style={{ flex: 1 }}>
             <Field label="WEIGHT (KG)" required>
               <Input
@@ -1206,7 +1242,7 @@ function MeasurementsScreen({
           />
         </Field>
 
-        {/* Live preview */}
+        {/* Live Z-score preview — mirrors admin measurement modal preview */}
         {preview && (
           <View
             style={[
@@ -1226,7 +1262,6 @@ function MeasurementsScreen({
             </Text>
           </View>
         )}
-
         <PrimaryButton
           label="Save Measurement"
           onPress={submit}
@@ -1234,17 +1269,23 @@ function MeasurementsScreen({
         />
       </Card>
 
-      {/* Records list */}
       <Card>
         <SectionTitle
           title="Recent Entries"
           subtitle={`${measurements.length} records`}
         />
-        {measurements.map((m) => (
-          <View key={m.id} style={ss.childRow}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
+        {measurements.map((m, i) => (
+          <View
+            key={m.id}
+            style={[
+              ss.childRow,
+              i < measurements.length - 1 && {
+                borderBottomWidth: 1,
+                borderBottomColor: C.border,
+              },
+            ]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View style={{ flex: 1 }}>
                 <Text style={ss.listRowTitle}>{m.childName}</Text>
                 <Text style={ss.listRowMeta}>
@@ -1256,7 +1297,15 @@ function MeasurementsScreen({
             <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
               <Text style={ss.metaChip}>{m.heightCm} cm</Text>
               <Text style={ss.metaChip}>{m.weightKg} kg</Text>
-              <Text style={ss.metaChip}>WAZ {m.waz}</Text>
+              <Text
+                style={[
+                  ss.metaChip,
+                  { color: m.waz < -2 ? C.danger : C.primary },
+                ]}
+              >
+                WAZ {m.waz > 0 ? "+" : ""}
+                {m.waz}
+              </Text>
             </View>
             <Pressable
               onPress={() => onDeleteMeasurement(m)}
@@ -1272,7 +1321,7 @@ function MeasurementsScreen({
               <Text
                 style={{ color: C.danger, fontSize: 12, fontWeight: "700" }}
               >
-                {ICONS.trash} Delete
+                ⌫ Delete
               </Text>
             </Pressable>
           </View>
@@ -1282,19 +1331,30 @@ function MeasurementsScreen({
   );
 }
 
-// ─── Nutritionist: Staff ──────────────────────────────────────────────────────
+// ─── Staff Screen (mirrors admin Parents + Nutritionists pages) ───────────────
 function StaffScreen({ parents, children, nutritionists }) {
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle
-        title="Staff Directory"
-        subtitle="Health workers & parents"
-      />
+      <View style={ss.pageHeader}>
+        <View>
+          <Text style={ss.pageTitle}>Staff Directory</Text>
+          <Text style={ss.pageSubtitle}>Health workers & parents</Text>
+        </View>
+      </View>
 
       <Card>
         <Text style={ss.cardTitle}>Nutritionists & Medical Staff</Text>
-        {nutritionists.map((n) => (
-          <View key={n.id} style={ss.childRow}>
+        {nutritionists.map((n, i) => (
+          <View
+            key={n.id}
+            style={[
+              ss.childRow,
+              i < nutritionists.length - 1 && {
+                borderBottomWidth: 1,
+                borderBottomColor: C.border,
+              },
+            ]}
+          >
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
@@ -1304,7 +1364,14 @@ function StaffScreen({ parents, children, nutritionists }) {
                 <Text style={ss.listRowMeta}>
                   {n.role} · {n.barangay}
                 </Text>
-                <Text style={ss.listRowMeta}>{n.license}</Text>
+                <Text
+                  style={[
+                    ss.listRowMeta,
+                    { fontFamily: "monospace", fontSize: 10 },
+                  ]}
+                >
+                  {n.license}
+                </Text>
               </View>
               <StatusBadge status={n.status} />
             </View>
@@ -1314,10 +1381,19 @@ function StaffScreen({ parents, children, nutritionists }) {
 
       <Card>
         <Text style={ss.cardTitle}>Parents / Guardians</Text>
-        {parents.map((p) => {
+        {parents.map((p, i) => {
           const linked = children.filter((c) => c.parentId === p.id);
           return (
-            <View key={p.id} style={ss.childRow}>
+            <View
+              key={p.id}
+              style={[
+                ss.childRow,
+                i < parents.length - 1 && {
+                  borderBottomWidth: 1,
+                  borderBottomColor: C.border,
+                },
+              ]}
+            >
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
               >
@@ -1336,7 +1412,7 @@ function StaffScreen({ parents, children, nutritionists }) {
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 6,
-                    marginTop: 4,
+                    marginTop: 6,
                     paddingLeft: 46,
                   }}
                 >
@@ -1354,7 +1430,7 @@ function StaffScreen({ parents, children, nutritionists }) {
   );
 }
 
-// ─── Nutritionist: Reports ────────────────────────────────────────────────────
+// ─── Reports Screen ───────────────────────────────────────────────────────────
 function ReportsScreen({ children, measurements }) {
   const counts = measurements.reduce((acc, m) => {
     acc[m.status] = (acc[m.status] || 0) + 1;
@@ -1369,10 +1445,17 @@ function ReportsScreen({ children, measurements }) {
     "Severely Underweight",
   ];
   const maxCount = Math.max(...statuses.map((s) => counts[s] || 0), 1);
+  const normalCount = children.filter((c) => c.status === "Normal").length;
+  const atRisk = children.length - normalCount;
 
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="Reports" subtitle="Growth & nutrition status" />
+      <View style={ss.pageHeader}>
+        <View>
+          <Text style={ss.pageTitle}>Reports & Analytics</Text>
+          <Text style={ss.pageSubtitle}>Growth & nutrition status</Text>
+        </View>
+      </View>
 
       <View style={ss.statsRow}>
         <StatCard label="Children" value={children.length} hint="Profiles" />
@@ -1384,14 +1467,39 @@ function ReportsScreen({ children, measurements }) {
         />
         <StatCard
           label="Healthy"
-          value={counts["Normal"] || 0}
+          value={normalCount}
           hint="Normal"
           color={C.primary}
+          highlighted={true}
         />
       </View>
 
+      <Card style={{ marginTop: 4 }}>
+        <SectionTitle
+          title="At-Risk Summary"
+          subtitle="Breakdown by category"
+        />
+        <View style={ss.statsRow}>
+          <StatCard
+            label="At Risk"
+            value={atRisk}
+            hint="children"
+            color={C.danger}
+          />
+          <StatCard
+            label="Normal"
+            value={normalCount}
+            hint="children"
+            color={C.primary}
+          />
+        </View>
+      </Card>
+
       <Card>
-        <SectionTitle title="Status Distribution" subtitle="Relative counts" />
+        <SectionTitle
+          title="Status Distribution"
+          subtitle="Measurement records"
+        />
         {statuses.map((s) => (
           <View
             key={s}
@@ -1404,7 +1512,7 @@ function ReportsScreen({ children, measurements }) {
           >
             <Text
               style={{
-                width: 130,
+                width: 120,
                 fontSize: 11,
                 color: C.text,
                 fontWeight: "600",
@@ -1444,236 +1552,12 @@ function ReportsScreen({ children, measurements }) {
           </View>
         ))}
       </Card>
-    </ScrollView>
-  );
-}
-
-// ─── Parent: Dashboard ────────────────────────────────────────────────────────
-function ParentDashboard({ child, latestMeasurement, history }) {
-  return (
-    <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="My Child's Health" subtitle="Latest overview" />
-
-      {child ? (
-        <Card>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 12,
-            }}
-          >
-            <AvatarCircle
-              name={getChildName(child)}
-              size={48}
-              color={child.sex === "Female" ? "#E91E8C" : C.info}
-              bg={child.sex === "Female" ? "#FCE4EC" : C.infoLight}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={[ss.sectionTitle, { marginBottom: 0 }]}>
-                {getChildName(child)}
-              </Text>
-              <Text style={ss.sectionSubtitle}>
-                {child.sex} · {child.ageMonths} months · {child.barangay}
-              </Text>
-            </View>
-            <StatusBadge status={child.status} />
-          </View>
-          {latestMeasurement && (
-            <View
-              style={[
-                ss.previewBox,
-                {
-                  backgroundColor: statusBg(latestMeasurement.status),
-                  borderColor: `${statusColor(latestMeasurement.status)}30`,
-                },
-              ]}
-            >
-              <Text
-                style={{ fontSize: 12, color: C.textMuted, marginBottom: 4 }}
-              >
-                Latest Measurement ·{" "}
-                {formatDate(latestMeasurement.measurementDate)}
-              </Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <Text style={ss.metaChip}>{latestMeasurement.heightCm} cm</Text>
-                <Text style={ss.metaChip}>{latestMeasurement.weightKg} kg</Text>
-                <Text style={ss.metaChip}>WAZ {latestMeasurement.waz}</Text>
-              </View>
-            </View>
-          )}
-        </Card>
-      ) : (
-        <Card>
-          <Text style={ss.emptyText}>
-            No child profile linked to your account.
-          </Text>
-        </Card>
-      )}
 
       <Card>
-        <SectionTitle title="Recent History" subtitle="Latest records" />
-        {history.slice(0, 4).map((m) => (
-          <ListRow
-            key={m.id}
-            title={formatDate(m.measurementDate)}
-            meta={`${m.heightCm} cm · ${m.weightKg} kg`}
-            right={<StatusBadge status={m.status} />}
-            style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
-          />
-        ))}
-        {history.length === 0 && (
-          <Text style={ss.emptyText}>No measurement history yet.</Text>
-        )}
-      </Card>
-    </ScrollView>
-  );
-}
-
-// ─── Parent: My Child ─────────────────────────────────────────────────────────
-function ParentChildScreen({ child, latestMeasurement }) {
-  return (
-    <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="My Child" subtitle="Profile details" />
-      {child ? (
-        <Card>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 14,
-            }}
-          >
-            <AvatarCircle
-              name={getChildName(child)}
-              size={52}
-              color={child.sex === "Female" ? "#E91E8C" : C.info}
-              bg={child.sex === "Female" ? "#FCE4EC" : C.infoLight}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={ss.sectionTitle}>{getChildName(child)}</Text>
-              <StatusBadge status={child.status} />
-            </View>
-          </View>
-          {[
-            ["Birthdate", child.birthdate],
-            ["Age", `${child.ageMonths} months`],
-            ["Sex", child.sex],
-            ["Barangay", child.barangay],
-            ["Address", child.address],
-            [
-              "Last Status",
-              latestMeasurement ? latestMeasurement.status : "No record",
-            ],
-          ].map(([k, v]) => (
-            <View
-              key={k}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: C.border,
-              }}
-            >
-              <Text style={{ fontSize: 12, color: C.textMuted }}>{k}</Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "600",
-                  color: C.text,
-                  maxWidth: "55%",
-                  textAlign: "right",
-                }}
-              >
-                {v}
-              </Text>
-            </View>
-          ))}
-        </Card>
-      ) : (
-        <Card>
-          <Text style={ss.emptyText}>No child linked.</Text>
-        </Card>
-      )}
-    </ScrollView>
-  );
-}
-
-// ─── Parent: Growth ───────────────────────────────────────────────────────────
-function ParentGrowthScreen({ history }) {
-  const pts = history.slice(0, 6).reverse();
-  const maxW = Math.max(...pts.map((p) => p.weightKg), 1);
-  return (
-    <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="Growth Trend" subtitle="Weight over time" />
-      <Card>
-        {pts.length === 0 && (
-          <Text style={ss.emptyText}>No growth history available yet.</Text>
-        )}
-        {pts.map((p) => (
-          <View
-            key={p.id}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ width: 60, fontSize: 11, color: C.textMuted }}>
-              {new Date(p.measurementDate).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            </Text>
-            <View
-              style={{
-                flex: 1,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: C.border,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  height: "100%",
-                  width: `${(p.weightKg / maxW) * 100}%`,
-                  backgroundColor: statusColor(p.status),
-                  borderRadius: 5,
-                }}
-              />
-            </View>
-            <Text
-              style={{
-                width: 36,
-                textAlign: "right",
-                fontSize: 11,
-                color: C.textMuted,
-                fontWeight: "700",
-              }}
-            >
-              {p.weightKg}
-            </Text>
-          </View>
-        ))}
-      </Card>
-    </ScrollView>
-  );
-}
-
-// ─── Shared: Tips ─────────────────────────────────────────────────────────────
-function TipsScreen() {
-  return (
-    <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle
-        title="Nutrition Tips"
-        subtitle="Health reminders for parents"
-      />
-      <Card>
+        <SectionTitle
+          title="Nutrition Tips"
+          subtitle="Health reminders for parents"
+        />
         {NUTRITION_TIPS.map((tip, i) => (
           <View
             key={i}
@@ -1713,47 +1597,83 @@ function TipsScreen() {
   );
 }
 
-// ─── Settings ─────────────────────────────────────────────────────────────────
-function SettingsScreen({ user, role, onLogout }) {
+// ─── Settings Screen ──────────────────────────────────────────────────────────
+function SettingsScreen({ user, onLogout }) {
   return (
     <ScrollView contentContainerStyle={ss.screen}>
-      <SectionTitle title="Settings" subtitle="Account & preferences" />
+      <View style={ss.pageHeader}>
+        <View>
+          <Text style={ss.pageTitle}>Settings</Text>
+          <Text style={ss.pageSubtitle}>Account & preferences</Text>
+        </View>
+      </View>
+
       <Card>
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 12,
-            marginBottom: 14,
+            marginBottom: 16,
           }}
         >
-          <AvatarCircle name={user.name} size={48} />
+          <AvatarCircle name={user.name} size={52} />
           <View>
             <Text style={ss.sectionTitle}>{user.name}</Text>
             <Text style={ss.sectionSubtitle}>{user.email}</Text>
-            <Text
+            <View
               style={[
-                ss.sectionSubtitle,
-                { color: C.primaryMid, fontWeight: "600" },
+                ss.badge,
+                { backgroundColor: C.primaryLight, marginTop: 4 },
               ]}
             >
-              {role === "nutritionist" ? "Nutritionist" : "Parent"}
-            </Text>
+              <Text
+                style={{ fontSize: 10, color: C.primary, fontWeight: "700" }}
+              >
+                Nutritionist
+              </Text>
+            </View>
           </View>
         </View>
+
+        {[
+          { label: "WHO Reference Year", value: "2006" },
+          { label: "Barangay", value: "Bagong Silang, Caloocan City" },
+          { label: "eOPT+ Sync", value: "Enabled" },
+          { label: "Alert Threshold WAZ", value: "-2.0" },
+        ].map((item, i, arr) => (
+          <View
+            key={item.label}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              paddingVertical: 12,
+              borderTopWidth: i === 0 ? 1 : 0,
+              borderBottomWidth: 1,
+              borderColor: C.border,
+            }}
+          >
+            <Text style={{ fontSize: 13, color: C.textMuted }}>
+              {item.label}
+            </Text>
+            <Text style={{ fontSize: 13, fontWeight: "600", color: C.text }}>
+              {item.value}
+            </Text>
+          </View>
+        ))}
+
         <Pressable
           onPress={onLogout}
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderTopColor: C.border,
+            paddingVertical: 14,
+            marginTop: 4,
           }}
         >
           <Text style={{ color: C.danger, fontSize: 13, fontWeight: "700" }}>
-            {ICONS.logout} Sign Out
+            ⤷ Sign Out
           </Text>
         </Pressable>
       </Card>
@@ -1761,7 +1681,7 @@ function SettingsScreen({ user, role, onLogout }) {
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -1770,30 +1690,7 @@ export default function App() {
   const [measurements, setMeasurements] = useState(INITIAL_MEASUREMENTS);
   const [nutritionists] = useState(INITIAL_NUTRITIONISTS);
 
-  const tabs = user?.role === "nutritionist" ? NUTRITIONIST_TABS : PARENT_TABS;
-
-  // Reset tab when role changes
-  useEffect(() => {
-    if (user && !tabs.some((t) => t.id === activeTab))
-      setActiveTab("dashboard");
-  }, [user]);
-
-  const currentParent = useMemo(() => {
-    if (!user || user.role !== "parent") return null;
-    return parents.find((p) => p.id === user.parentId) ?? parents[0] ?? null;
-  }, [parents, user]);
-
-  const parentChild = useMemo(() => {
-    if (!currentParent) return null;
-    return children.find((c) => c.parentId === currentParent.id) ?? null;
-  }, [children, currentParent]);
-
-  const parentHistory = useMemo(() => {
-    if (!parentChild) return [];
-    return measurements.filter((m) => m.childId === parentChild.id);
-  }, [measurements, parentChild]);
-
-  const latestParentMeasurement = parentHistory[0] ?? null;
+  const tabs = [...NUTRITIONIST_TABS, { id: "settings", label: "Settings" }];
 
   const handleSaveChild = (editingId, payload) => {
     if (editingId) {
@@ -1849,107 +1746,81 @@ export default function App() {
 
   if (!user) return <LoginScreen onLogin={setUser} />;
 
-  const subtitle =
-    user.role === "nutritionist"
-      ? "Nutritionist workspace"
-      : "Parent workspace";
-
   const renderScreen = () => {
-    if (user.role === "nutritionist") {
-      switch (activeTab) {
-        case "dashboard":
-          return (
-            <NutritionistDashboard
-              children={children}
-              measurements={measurements}
-              parents={parents}
-              nutritionists={nutritionists}
-            />
-          );
-        case "children":
-          return (
-            <ChildrenScreen
-              children={children}
-              parents={parents}
-              onSaveChild={handleSaveChild}
-              onDeleteChild={handleDeleteChild}
-            />
-          );
-        case "measurements":
-          return (
-            <MeasurementsScreen
-              children={children}
-              measurements={measurements}
-              onSaveMeasurement={handleSaveMeasurement}
-              onDeleteMeasurement={handleDeleteMeasurement}
-            />
-          );
-        case "staff":
-          return (
-            <StaffScreen
-              parents={parents}
-              children={children}
-              nutritionists={nutritionists}
-            />
-          );
-        case "reports":
-          return (
-            <ReportsScreen children={children} measurements={measurements} />
-          );
-      }
-    }
     switch (activeTab) {
       case "dashboard":
         return (
-          <ParentDashboard
-            child={parentChild}
-            latestMeasurement={latestParentMeasurement}
-            history={parentHistory}
+          <DashboardScreen
+            children={children}
+            measurements={measurements}
+            parents={parents}
+            nutritionists={nutritionists}
           />
         );
-      case "child":
+      case "children":
         return (
-          <ParentChildScreen
-            child={parentChild}
-            latestMeasurement={latestParentMeasurement}
+          <ChildrenScreen
+            children={children}
+            parents={parents}
+            onSaveChild={handleSaveChild}
+            onDeleteChild={handleDeleteChild}
           />
         );
-      case "growth":
-        return <ParentGrowthScreen history={parentHistory} />;
-      case "tips":
-        return <TipsScreen />;
+      case "measurements":
+        return (
+          <MeasurementsScreen
+            children={children}
+            measurements={measurements}
+            onSaveMeasurement={handleSaveMeasurement}
+            onDeleteMeasurement={handleDeleteMeasurement}
+          />
+        );
+      case "staff":
+        return (
+          <StaffScreen
+            parents={parents}
+            children={children}
+            nutritionists={nutritionists}
+          />
+        );
+      case "reports":
+        return (
+          <ReportsScreen children={children} measurements={measurements} />
+        );
       case "settings":
-        return (
-          <SettingsScreen
-            user={user}
-            role={user.role}
-            onLogout={() => setUser(null)}
-          />
-        );
+        return <SettingsScreen user={user} onLogout={() => setUser(null)} />;
+      default:
+        return null;
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar barStyle="light-content" backgroundColor={C.sidebar} />
-      <AppHeader title="SukatKalusugan" subtitle={subtitle} />
+      <AppHeader
+        title="SukatKalusugan"
+        subtitle="Health Monitoring"
+        user={user}
+        onLogout={() => setUser(null)}
+      />
       <View style={{ flex: 1 }}>{renderScreen()}</View>
       <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles (mirrors frontend-admin design system) ────────────────────────────
 const ss = StyleSheet.create({
-  // App shell
+  // App header — mirrors admin top navbar dark green
   appHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "space-between",
     backgroundColor: C.sidebar,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  appHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   appHeaderBrand: {
     width: 32,
     height: 32,
@@ -1958,7 +1829,6 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  appHeaderIcon: { fontSize: 18, color: C.primaryMid },
   appHeaderTitle: {
     fontSize: 15,
     fontWeight: "800",
@@ -1966,9 +1836,53 @@ const ss = StyleSheet.create({
     letterSpacing: 0.2,
   },
   appHeaderSub: { fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 },
+  headerAvatarBtn: { padding: 2 },
+  headerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.primaryMid,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerAvatarText: { fontSize: 12, fontWeight: "700", color: "#fff" },
 
   // Screens
   screen: { padding: 14, paddingBottom: 28, gap: 14 },
+
+  // Page header
+  pageHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  pageTitle: { fontSize: 20, fontWeight: "800", color: C.text },
+  pageSubtitle: { fontSize: 13, color: C.textMuted, marginTop: 3 },
+  addBtn: {
+    backgroundColor: C.primary,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  addBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+
+  // Greeting
+  greeting: { fontSize: 20, fontWeight: "700", color: C.text },
+  greetingSub: { fontSize: 13, color: C.textMuted, marginTop: 3 },
+
+  // Search bar
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 4,
+  },
 
   // Cards
   card: {
@@ -1994,19 +1908,14 @@ const ss = StyleSheet.create({
   },
   sectionSubtitle: { fontSize: 12, color: C.textMuted, lineHeight: 17 },
 
-  // Stat cards
+  // Stat cards — mirrors admin dashboard stat cards
   statsRow: { flexDirection: "row", gap: 10 },
-  statCard: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-  },
+  statCard: { flex: 1, borderRadius: 12, borderWidth: 1, padding: 12 },
   statValue: { fontSize: 22, fontWeight: "800", marginBottom: 2 },
   statLabel: { fontSize: 11, fontWeight: "700", color: C.text },
   statHint: { fontSize: 10, color: C.textMuted, marginTop: 2 },
 
-  // Badges
+  // Badges — mirrors admin StatusBadge
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -2030,11 +1939,7 @@ const ss = StyleSheet.create({
   listRowMeta: { fontSize: 11, color: C.textMuted, marginTop: 2 },
 
   // Child rows
-  childRow: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
+  childRow: { paddingVertical: 12 },
 
   // Meta chips
   metaChip: {
@@ -2064,7 +1969,7 @@ const ss = StyleSheet.create({
     fontSize: 13,
     color: C.text,
   },
-  twoCol: { flexDirection: "row", gap: 10 },
+  twoCol: { flexDirection: "row" },
   choiceBtn: {
     borderWidth: 1,
     borderColor: C.border,
@@ -2102,12 +2007,7 @@ const ss = StyleSheet.create({
   },
 
   // Preview box
-  previewBox: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
-    marginTop: 8,
-  },
+  previewBox: { borderRadius: 10, borderWidth: 1, padding: 12, marginTop: 8 },
 
   // Empty state
   emptyText: {
@@ -2117,41 +2017,40 @@ const ss = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Tab bar
+  // Bottom Tab Bar — mirrors admin sidebar nav items
   tabBar: {
     flexDirection: "row",
-    backgroundColor: C.card,
+    backgroundColor: C.sidebar,
     borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingBottom: Platform.OS === "ios" ? 8 : 0,
+    borderTopColor: "rgba(255,255,255,0.07)",
+    paddingBottom: Platform.OS === "ios" ? 20 : 4,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: 6,
     position: "relative",
   },
-  tabIcon: { fontSize: 16, color: C.textMuted, marginBottom: 2 },
-  tabLabel: { fontSize: 9, color: C.textMuted, fontWeight: "500" },
+  tabLabel: { fontSize: 9, color: "rgba(255,255,255,0.5)", fontWeight: "500" },
   tabIndicator: {
     position: "absolute",
     top: 0,
-    left: "25%",
-    right: "25%",
+    left: "20%",
+    right: "20%",
     height: 2,
     backgroundColor: C.primaryMid,
     borderRadius: 1,
   },
 
-  // Login
-  loginScroll: { flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 32 },
+  // Login screen
+  loginScroll: { flexGrow: 1, padding: 20, paddingTop: 48, paddingBottom: 32 },
   loginBrand: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginBottom: 28,
+    marginBottom: 32,
   },
   loginBrandMark: {
     width: 48,
@@ -2161,35 +2060,21 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  loginBrandTitle: { fontSize: 18, fontWeight: "900", color: "#fff" },
+  loginBrandTitle: { fontSize: 20, fontWeight: "900", color: "#fff" },
   loginBrandSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.55)",
+    fontSize: 9,
+    color: "rgba(255,255,255,0.45)",
     marginTop: 2,
+    letterSpacing: 1.5,
   },
-  loginCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 22,
-  },
+  loginCard: { backgroundColor: "#fff", borderRadius: 20, padding: 24 },
   loginHeading: {
     fontSize: 22,
     fontWeight: "800",
     color: C.text,
     marginBottom: 4,
   },
-  loginCaption: { fontSize: 13, color: C.textMuted, marginBottom: 20 },
-  roleRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
-  roleBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: "center",
-    backgroundColor: C.card,
-  },
-  roleBtnText: { fontSize: 13, fontWeight: "700", color: C.text },
+  loginCaption: { fontSize: 13, color: C.textMuted, marginBottom: 22 },
   loginDemo: {
     marginTop: 16,
     backgroundColor: C.bg,
