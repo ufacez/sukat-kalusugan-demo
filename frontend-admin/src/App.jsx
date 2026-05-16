@@ -313,62 +313,6 @@ const INIT_NUTRITIONISTS = [
     status: "Inactive",
   },
 ];
-const TREND_DATA = [
-  {
-    month: "Dec",
-    normal: 42,
-    underweight: 10,
-    stunted: 7,
-    wasted: 5,
-    severelyUnderweight: 3,
-    overweight: 4,
-  },
-  {
-    month: "Jan",
-    normal: 45,
-    underweight: 9,
-    stunted: 7,
-    wasted: 4,
-    severelyUnderweight: 3,
-    overweight: 4,
-  },
-  {
-    month: "Feb",
-    normal: 47,
-    underweight: 8,
-    stunted: 6,
-    wasted: 4,
-    severelyUnderweight: 2,
-    overweight: 5,
-  },
-  {
-    month: "Mar",
-    normal: 50,
-    underweight: 8,
-    stunted: 6,
-    wasted: 3,
-    severelyUnderweight: 2,
-    overweight: 4,
-  },
-  {
-    month: "Apr",
-    normal: 53,
-    underweight: 7,
-    stunted: 5,
-    wasted: 3,
-    severelyUnderweight: 2,
-    overweight: 3,
-  },
-  {
-    month: "May",
-    normal: 55,
-    underweight: 7,
-    stunted: 5,
-    wasted: 3,
-    severelyUnderweight: 2,
-    overweight: 3,
-  },
-];
 
 // ─── WHO Z-Score computation ──────────────────────────────────────────────────
 function computeWHO({ weight_kg, height_cm, age_months }) {
@@ -1210,6 +1154,7 @@ const statusBg = (s) =>
     Wasted: C.infoLight,
     Overweight: C.accentLight,
   })[s] || "#f5f5f5";
+
 const StatusBadge = ({ status }) => (
   <span
     style={{
@@ -1227,6 +1172,7 @@ const StatusBadge = ({ status }) => (
     {status}
   </span>
 );
+
 const sourceIconName = (s) =>
   ({ kiosk: "scan", mobile: "phone", manual: "activity" })[s] || "activity";
 const SourceIcon = ({ type, size = 12 }) => (
@@ -1352,7 +1298,6 @@ function ChildModal({ child, parents, onSave, onClose }) {
   );
   const [err, setErr] = useState("");
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
   const handleSave = () => {
     if (
       !form.first_name ||
@@ -1365,7 +1310,6 @@ function ChildModal({ child, parents, onSave, onClose }) {
     }
     onSave(form);
   };
-
   return (
     <Modal
       title={isEdit ? "Edit Child Profile" : "Add New Child"}
@@ -1540,7 +1484,6 @@ function NutritionistModal({ nutritionist, onSave, onClose }) {
   );
   const [err, setErr] = useState("");
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
   const handleSave = () => {
     if (
       !form.name ||
@@ -1554,7 +1497,6 @@ function NutritionistModal({ nutritionist, onSave, onClose }) {
     }
     onSave(form);
   };
-
   const roles = [
     "Registered Dietitian Nutritionist (RDN)",
     "Nurse",
@@ -1563,7 +1505,6 @@ function NutritionistModal({ nutritionist, onSave, onClose }) {
     "Health Educator",
     "Midwife",
   ];
-
   return (
     <Modal
       title={isEdit ? "Edit Nutritionist" : "Add New Nutritionist"}
@@ -1700,7 +1641,6 @@ function ParentModal({ parent, onSave, onClose }) {
   );
   const [err, setErr] = useState("");
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
   const handleSave = () => {
     if (!form.name || !form.email || !form.phone) {
       setErr("Please fill all required fields.");
@@ -1708,7 +1648,6 @@ function ParentModal({ parent, onSave, onClose }) {
     }
     onSave(form);
   };
-
   return (
     <Modal
       title={isEdit ? "Edit Parent" : "Add New Parent"}
@@ -1819,7 +1758,6 @@ function MeasurementModal({ children, onSave, onClose }) {
   });
   const [err, setErr] = useState("");
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
   const handleSave = () => {
     if (!form.child_id || !form.height_cm || !form.weight_kg) {
       setErr("Please fill all required fields.");
@@ -1839,7 +1777,6 @@ function MeasurementModal({ children, onSave, onClose }) {
       nutritional_status: computed.status,
     });
   };
-
   return (
     <Modal title="Add Measurement Record" onClose={onClose} width={520}>
       <div style={{ padding: 24 }}>
@@ -1993,90 +1930,6 @@ function MeasurementModal({ children, onSave, onClose }) {
   );
 }
 
-// ─── Mini bar chart ───────────────────────────────────────────────────────────
-function MiniBarChart({ data }) {
-  const keys = [
-    "normal",
-    "underweight",
-    "stunted",
-    "wasted",
-    "severelyUnderweight",
-    "overweight",
-  ];
-  const colors = [C.primary, C.warn, C.purple, C.info, C.danger, C.accent];
-  const maxVal = Math.max(...data.map((d) => d.normal));
-  const h = 120,
-    bw = 8,
-    gap = 4;
-  const barGroups = data.length;
-  const groupW = keys.length * (bw + gap) - gap + 12;
-  const totalW = barGroups * (groupW + 12) + 40;
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <svg width={totalW} height={h + 40} style={{ display: "block" }}>
-        {data.map((d, gi) => {
-          const gx = 20 + gi * (groupW + 12);
-          return (
-            <g key={gi}>
-              {keys.map((k, ki) => {
-                const val = d[k] || 0;
-                const bh = Math.max(2, (val / maxVal) * h);
-                const bx = gx + ki * (bw + gap);
-                const by = h - bh + 10;
-                return (
-                  <rect
-                    key={k}
-                    x={bx}
-                    y={by}
-                    width={bw}
-                    height={bh}
-                    fill={colors[ki]}
-                    rx={2}
-                    opacity={0.85}
-                  />
-                );
-              })}
-              <text
-                x={gx + groupW / 2}
-                y={h + 26}
-                textAnchor="middle"
-                fontSize={10}
-                fill={C.textMuted}
-              >
-                {d.month}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
-        {keys.map((k, i) => (
-          <div
-            key={k}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              fontSize: 10,
-              color: C.textMuted,
-            }}
-          >
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 2,
-                background: colors[i],
-              }}
-            />
-            {k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Z-Score Gauge ────────────────────────────────────────────────────────────
 function ZScoreGauge({ label, value, color }) {
   const pct = Math.min(Math.max((value + 4) / 8, 0), 1);
@@ -2123,62 +1976,46 @@ function ZScoreGauge({ label, value, color }) {
   );
 }
 
-// ─── AI Chatbot Demo ──────────────────────────────────────────────────────────
+// ─── AI Chatbot ───────────────────────────────────────────────────────────────
 function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
       role: "assistant",
-      text: "Hello! I'm your SukatKalusugan AI Assistant. I can help you with child health insights, growth tracking, and nutrition recommendations. How can I assist you today?",
+      text: "Hello! I'm your SukatKalusugan AI Assistant. I can help you with child health insights, growth tracking, and nutrition recommendations.",
     },
   ]);
   const [input, setInput] = useState("");
-
   const sampleResponses = {
     growth:
       "Based on the data, children with normal nutritional status are growing at expected rates. Those marked as underweight should focus on calorie-dense meals and frequent check-ins.",
     nutrition:
-      "Nutritional recommendations include: ensure 3 meals and 2-3 snacks daily, include protein sources, iron-rich foods, and calcium for bone development. Consult the guidelines for age-specific portions.",
+      "Nutritional recommendations include: ensure 3 meals and 2-3 snacks daily, include protein sources, iron-rich foods, and calcium for bone development.",
     measurements:
       "Recent measurements show 6 children tracked. The dashboard displays trends over the past 5 months with improvements in normal-status children.",
     default:
       "Thank you for your question. This is a demo chatbot. For detailed assistance, please consult the admin or health worker on duty.",
   };
-
-  const handleSendMessage = () => {
+  const handleSend = () => {
     if (!input.trim()) return;
-
-    const userMsg = {
-      id: messages.length + 1,
-      role: "user",
-      text: input,
-    };
-
-    let botResponse = sampleResponses.default;
-    const inputLower = input.toLowerCase();
-    if (inputLower.includes("growth")) botResponse = sampleResponses.growth;
+    const il = input.toLowerCase();
+    let resp = sampleResponses.default;
+    if (il.includes("growth")) resp = sampleResponses.growth;
     else if (
-      inputLower.includes("nutrition") ||
-      inputLower.includes("diet") ||
-      inputLower.includes("meal")
+      il.includes("nutrition") ||
+      il.includes("diet") ||
+      il.includes("meal")
     )
-      botResponse = sampleResponses.nutrition;
-    else if (inputLower.includes("measurement"))
-      botResponse = sampleResponses.measurements;
-
-    setMessages((prev) => [
-      ...prev,
-      userMsg,
-      {
-        id: messages.length + 2,
-        role: "assistant",
-        text: botResponse,
-      },
+      resp = sampleResponses.nutrition;
+    else if (il.includes("measurement")) resp = sampleResponses.measurements;
+    setMessages((p) => [
+      ...p,
+      { id: p.length + 1, role: "user", text: input },
+      { id: p.length + 2, role: "assistant", text: resp },
     ]);
     setInput("");
   };
-
   return (
     <div
       style={{
@@ -2186,7 +2023,7 @@ function AIChatbot() {
         bottom: 24,
         right: 24,
         zIndex: 9999,
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        fontFamily: "'Segoe UI',system-ui,sans-serif",
       }}
     >
       {isOpen && (
@@ -2199,16 +2036,14 @@ function AIChatbot() {
             border: `1px solid ${C.border}`,
             display: "flex",
             flexDirection: "column",
-            boxShadow:
-              "0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
             marginBottom: 12,
             overflow: "hidden",
           }}
         >
-          {/* Header */}
           <div
             style={{
-              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
+              background: `linear-gradient(135deg,${C.primary} 0%,${C.primaryMid} 100%)`,
               color: "#fff",
               padding: "16px 18px",
               display: "flex",
@@ -2236,19 +2071,16 @@ function AIChatbot() {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                color: "#fff",
               }}
             >
               <Icon name="x" size={14} color="#fff" />
             </button>
           </div>
-
-          {/* Messages */}
           <div
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "16px",
+              padding: 16,
               display: "flex",
               flexDirection: "column",
               gap: 12,
@@ -2284,8 +2116,6 @@ function AIChatbot() {
               </div>
             ))}
           </div>
-
-          {/* Input */}
           <div
             style={{
               padding: "12px 14px",
@@ -2298,7 +2128,7 @@ function AIChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask about growth, nutrition..."
               style={{
                 flex: 1,
@@ -2307,11 +2137,10 @@ function AIChatbot() {
                 padding: "8px 12px",
                 fontSize: 12,
                 outline: "none",
-                background: "#fff",
               }}
             />
             <button
-              onClick={handleSendMessage}
+              onClick={handleSend}
               style={{
                 background: C.primary,
                 color: "#fff",
@@ -2330,15 +2159,13 @@ function AIChatbot() {
           </div>
         </div>
       )}
-
-      {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
           width: 56,
           height: 56,
           borderRadius: "50%",
-          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.primaryMid} 100%)`,
+          background: `linear-gradient(135deg,${C.primary} 0%,${C.primaryMid} 100%)`,
           border: "none",
           color: "#fff",
           display: "flex",
@@ -2346,10 +2173,7 @@ function AIChatbot() {
           justifyContent: "center",
           cursor: "pointer",
           boxShadow: "0 8px 24px rgba(11,110,79,0.3)",
-          transition: "transform 0.2s",
         }}
-        onMouseEnter={(e) => (e.target.style.transform = "scale(1.1)")}
-        onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
       >
         <Icon name="zap" size={24} color="#fff" />
       </button>
@@ -2404,7 +2228,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
     }, 100);
   };
   useEffect(() => () => clearInterval(timerRef.current), []);
-
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
@@ -2460,32 +2283,22 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}></div>
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-                alignItems: "center",
-                marginTop: 2,
-              }}
-            >
-              {["TF Luna LiDAR", "Load Cell", "WiFi"].map((s) => (
-                <span
-                  key={s}
-                  style={{
-                    fontSize: 10,
-                    color: C.primaryMid,
-                    background: "rgba(26,143,104,0.15)",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    border: "1px solid rgba(26,143,104,0.3)",
-                  }}
-                >
-                  ● {s}
-                </span>
-              ))}
-            </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {["TF Luna LiDAR", "Load Cell", "WiFi"].map((s) => (
+              <span
+                key={s}
+                style={{
+                  fontSize: 10,
+                  color: C.primaryMid,
+                  background: "rgba(26,143,104,0.15)",
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid rgba(26,143,104,0.3)",
+                }}
+              >
+                ● {s}
+              </span>
+            ))}
           </div>
           <button
             onClick={onBack}
@@ -2594,25 +2407,8 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 0,
             }}
           >
-            {/* Background accent */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "120%",
-                height: "120%",
-                background:
-                  "radial-gradient(circle, rgba(26,143,104,0.08) 0%, transparent 70%)",
-                zIndex: -1,
-              }}
-            />
-
-            {/* Illustration placeholder with SVG-style graphic */}
             <div
               style={{
                 width: 160,
@@ -2625,19 +2421,8 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 marginBottom: 32,
               }}
             >
-              <div
-                style={{
-                  fontSize: 60,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon name="heart" size={70} color={C.primaryMid} />
-              </div>
+              <Icon name="heart" size={70} color={C.primaryMid} />
             </div>
-
-            {/* Title */}
             <div
               style={{
                 marginBottom: 12,
@@ -2645,7 +2430,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 6,
-                flexWrap: "wrap",
               }}
             >
               <span
@@ -2658,30 +2442,20 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 Sukat
               </span>
               <span
-                style={{
-                  fontSize: 42,
-                  fontWeight: 700,
-                  color: C.primaryMid,
-                  letterSpacing: -1,
-                }}
+                style={{ fontSize: 42, fontWeight: 700, color: C.primaryMid }}
               >
                 Kalusugan
               </span>
             </div>
-
-            {/* Subtitle */}
             <div
               style={{
                 fontSize: 18,
                 color: "rgba(255,255,255,0.5)",
                 marginBottom: 28,
-                fontWeight: 400,
               }}
             >
               Anthropometric Kiosk
             </div>
-
-            {/* Tagline */}
             <p
               style={{
                 color: "rgba(255,255,255,0.4)",
@@ -2693,8 +2467,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             >
               Making health accessible to every child
             </p>
-
-            {/* Time Display */}
             <div
               style={{
                 marginBottom: 24,
@@ -2718,13 +2490,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   hour12: true,
                 })}
               </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.5)",
-                  letterSpacing: 0.5,
-                }}
-              >
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
                 {currentTime.toLocaleDateString("en-PH", {
                   weekday: "long",
                   year: "numeric",
@@ -2733,8 +2499,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 })}
               </div>
             </div>
-
-            {/* Touch to Start Button */}
             <button
               onClick={() => setShowWelcome(false)}
               style={{
@@ -2746,17 +2510,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 fontSize: 16,
                 fontWeight: 700,
                 cursor: "pointer",
-                letterSpacing: 0.5,
-                transition: "all 0.3s",
                 minWidth: 240,
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = "#d42626";
-                e.target.style.transform = "scale(1.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = C.danger;
-                e.target.style.transform = "scale(1)";
               }}
             >
               Touch to Start
@@ -2785,8 +2539,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             >
               Select from registered children
             </p>
-
-            {/* Search Input */}
             <div
               style={{
                 marginBottom: 24,
@@ -2810,7 +2562,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   color: "#fff",
                   fontSize: 14,
                   outline: "none",
-                  fontFamily: "'Segoe UI', sans-serif",
                 }}
               />
               {searchQuery && (
@@ -2826,15 +2577,12 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: "rgba(255,255,255,0.5)",
                   }}
                 >
                   <Icon name="x" size={14} color="rgba(255,255,255,0.5)" />
                 </button>
               )}
             </div>
-
-            {/* Children Grid */}
             <div
               style={{
                 display: "grid",
@@ -2846,12 +2594,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 .filter(
                   (c) =>
                     searchQuery === "" ||
-                    c.first_name
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                    c.last_name
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
                     `${c.first_name} ${c.last_name}`
                       .toLowerCase()
                       .includes(searchQuery.toLowerCase()),
@@ -2871,14 +2613,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                       padding: 16,
                       cursor: "pointer",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(26,143,104,0.12)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(255,255,255,0.05)")
-                    }
                   >
                     <div
                       style={{
@@ -2927,30 +2661,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   </div>
                 ))}
             </div>
-
-            {/* No Results Message */}
-            {children.filter(
-              (c) =>
-                searchQuery === "" ||
-                c.first_name
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                c.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                `${c.first_name} ${c.last_name}`
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()),
-            ).length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 13,
-                  padding: 24,
-                }}
-              >
-                No children found matching "{searchQuery}"
-              </div>
-            )}
           </div>
         )}
         {!showWelcome && step === 1 && selectedChild && (
@@ -3073,7 +2783,6 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 fontWeight: 700,
                 cursor:
                   form.height_cm && form.weight_kg ? "pointer" : "not-allowed",
-                letterSpacing: 0.5,
               }}
             >
               <span
@@ -3380,78 +3089,293 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ children, measurements }) {
+// ─── Dashboard (VitalHealth-style layout) ─────────────────────────────────────
+function Dashboard({ children, measurements, parents, nutritionists }) {
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [chartView, setChartView] = useState("monthly");
+  const [tableTab, setTableTab] = useState("today");
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const EVENTS = {
+    5: [{ type: "timbang", label: "Oplan Timbang – Bagong Silang" }],
+    12: [{ type: "meeting", label: "Health Worker Team Meeting" }],
+    15: [{ type: "timbang", label: "Oplan Timbang – Poblacion" }],
+    20: [{ type: "outreach", label: "Nutrition Outreach – San Jose" }],
+    22: [{ type: "timbang", label: "Oplan Timbang – Sta. Cruz" }],
+    28: [{ type: "meeting", label: "Monthly Review Meeting" }],
+    30: [{ type: "outreach", label: "Nutrition Counseling Session" }],
+  };
+  const EVENT_COLORS = { timbang: C.danger, meeting: C.info, outreach: C.warn };
+
+  const CHART_DATA = {
+    monthly: {
+      labels: ["Dec", "Jan", "Feb", "Mar", "Apr", "May"],
+      normal: [42, 45, 47, 50, 53, 55],
+      risk: [25, 23, 19, 14, 10, 8],
+    },
+    weekly: {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      normal: [5, 6, 4, 7, 6, 3, 5],
+      risk: [3, 2, 3, 1, 2, 1, 2],
+    },
+    today: {
+      labels: [
+        "10am",
+        "11am",
+        "12pm",
+        "1pm",
+        "2pm",
+        "3pm",
+        "4pm",
+        "5pm",
+        "6pm",
+        "7pm",
+      ],
+      normal: [3, 4, 5, 6, 5, 4, 6, 7, 5, 4],
+      risk: [2, 1, 2, 1, 2, 3, 1, 2, 1, 2],
+    },
+  };
+
   const statusCounts = children.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] || 0) + 1;
     return acc;
   }, {});
-  const stats = [
+  const atRisk =
+    (statusCounts["Underweight"] || 0) +
+    (statusCounts["Severely Underweight"] || 0) +
+    (statusCounts["Stunted"] || 0) +
+    (statusCounts["Wasted"] || 0);
+
+  const statCards = [
     {
-      label: "Total Children",
+      label: "Children",
       value: children.length,
-      iconName: "children",
+      delta: "+15.9%",
+      desc: "Total registered children",
+      icon: "children",
       color: C.primary,
       bg: C.primaryLight,
-      delta: "+3",
     },
     {
-      label: "Normal",
-      value: statusCounts["Normal"] || 0,
-      iconName: "checkCircle",
-      color: C.primary,
-      bg: C.primaryLight,
-      delta: "+2",
-    },
-    {
-      label: "Underweight",
-      value: statusCounts["Underweight"] || 0,
-      iconName: "alertTriangle",
-      color: C.warn,
-      bg: C.warnLight,
-      delta: "-1",
-    },
-    {
-      label: "Severely Underweight",
-      value: statusCounts["Severely Underweight"] || 0,
-      iconName: "alertCircle",
-      color: C.danger,
-      bg: C.dangerLight,
-      delta: "0",
-    },
-    {
-      label: "Stunted",
-      value: statusCounts["Stunted"] || 0,
-      iconName: "trendingDown",
+      label: "Nutritionists",
+      value: nutritionists.length,
+      delta: "+15.9%",
+      desc: "Active health workers",
+      icon: "activity",
       color: C.purple,
       bg: C.purpleLight,
-      delta: "-1",
     },
     {
-      label: "Wasted",
-      value: statusCounts["Wasted"] || 0,
-      iconName: "zap",
+      label: "Parents",
+      value: parents.length,
+      delta: "+15.9%",
+      desc: "Registered guardians",
+      icon: "parents",
       color: C.info,
       bg: C.infoLight,
-      delta: "0",
     },
     {
-      label: "Overweight",
-      value: statusCounts["Overweight"] || 0,
-      iconName: "trendingUp",
-      color: C.accent,
-      bg: C.accentLight,
-      delta: "-1",
+      label: "Measurements",
+      value: measurements.length,
+      delta: `${statusCounts["Normal"] || 0} Normal`,
+      desc: `${atRisk} need attention`,
+      icon: "measurements",
+      color: C.warn,
+      bg: C.warnLight,
     },
   ];
-  const recent = measurements.slice(-4).reverse();
+
+  // Chart.js init
+  useEffect(() => {
+    const d = CHART_DATA[chartView];
+    if (chartInstance.current) {
+      chartInstance.current.data.labels = d.labels;
+      chartInstance.current.data.datasets[0].data = d.normal;
+      chartInstance.current.data.datasets[1].data = d.risk;
+      chartInstance.current.update();
+      return;
+    }
+    const init = () => {
+      if (!window.Chart || !chartRef.current) return;
+      chartInstance.current = new window.Chart(chartRef.current, {
+        type: "line",
+        data: {
+          labels: d.labels,
+          datasets: [
+            {
+              label: "Normal",
+              data: d.normal,
+              borderColor: C.primaryMid,
+              backgroundColor: C.primaryMid + "14",
+              tension: 0.4,
+              pointRadius: 4,
+              pointBackgroundColor: C.primaryMid,
+              borderWidth: 2,
+              fill: true,
+            },
+            {
+              label: "At Risk",
+              data: d.risk,
+              borderColor: "#D4637A",
+              backgroundColor: "#D4637A0A",
+              tension: 0.4,
+              pointRadius: 4,
+              pointBackgroundColor: "#D4637A",
+              borderWidth: 2,
+              fill: true,
+              borderDash: [5, 3],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: {
+              grid: { color: "rgba(0,0,0,0.05)" },
+              ticks: { font: { size: 10 } },
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+    };
+    if (window.Chart) {
+      init();
+    } else {
+      const existing = document.querySelector('script[data-chartjs="1"]');
+      if (!existing) {
+        const s = document.createElement("script");
+        s.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
+        s.setAttribute("data-chartjs", "1");
+        s.onload = init;
+        document.head.appendChild(s);
+      } else {
+        existing.addEventListener("load", init);
+        if (window.Chart) init();
+      }
+    }
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+        chartInstance.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!chartInstance.current) return;
+    const d = CHART_DATA[chartView];
+    chartInstance.current.data.labels = d.labels;
+    chartInstance.current.data.datasets[0].data = d.normal;
+    chartInstance.current.data.datasets[1].data = d.risk;
+    chartInstance.current.update();
+  }, [chartView]);
+
+  // Calendar
+  const renderCalendar = () => {
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
+    const prevTotal = new Date(calYear, calMonth, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth =
+      today.getFullYear() === calYear && today.getMonth() === calMonth;
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(
+        <div
+          key={`p${i}`}
+          style={{
+            fontSize: 11,
+            padding: "5px 0",
+            textAlign: "center",
+            color: C.textLight,
+          }}
+        >
+          {prevTotal - firstDay + 1 + i}
+        </div>,
+      );
+    }
+    for (let d = 1; d <= totalDays; d++) {
+      const ev = EVENTS[d];
+      const isToday = isCurrentMonth && d === today.getDate();
+      cells.push(
+        <div
+          key={d}
+          title={ev ? ev.map((e) => e.label).join(", ") : ""}
+          style={{
+            fontSize: 11,
+            textAlign: "center",
+            position: "relative",
+            cursor: ev ? "pointer" : "default",
+            borderRadius: isToday ? "50%" : 6,
+            width: isToday ? 26 : "auto",
+            height: isToday ? 26 : 22,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: isToday ? "auto" : "1px 0",
+            background: isToday ? C.primary : "transparent",
+            color: isToday ? "#fff" : ev ? C.text : C.textMuted,
+            fontWeight: isToday ? 700 : ev ? 600 : 400,
+          }}
+        >
+          {d}
+          {ev && (
+            <span
+              style={{
+                position: "absolute",
+                bottom: 1,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 4,
+                height: 4,
+                borderRadius: "50%",
+                background: EVENT_COLORS[ev[0].type],
+              }}
+            />
+          )}
+        </div>,
+      );
+    }
+    return cells;
+  };
+
+  const tableChildren =
+    tableTab === "today"
+      ? children.slice(0, 4)
+      : tableTab === "weekly"
+        ? children.slice(0, 6)
+        : children;
+
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>
+      {/* Greeting */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}>
           Good morning, Admin!
         </h1>
-        <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
+        <p style={{ color: C.textMuted, fontSize: 13, margin: "3px 0 0" }}>
           Here's a summary of child health monitoring —{" "}
           {new Date().toLocaleDateString("en-PH", {
             month: "long",
@@ -3459,271 +3383,445 @@ function Dashboard({ children, measurements }) {
           })}
         </p>
       </div>
+
+      {/* ── Stat Cards ── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))",
+          gridTemplateColumns: "repeat(4,1fr)",
           gap: 12,
-          marginBottom: 24,
+          marginBottom: 18,
         }}
       >
-        {stats.map((s) => (
+        {statCards.map((s, i) => (
           <div
             key={s.label}
             style={{
-              background: C.card,
+              background: i === 1 ? C.primaryMid : C.card,
               borderRadius: 14,
               padding: "16px 18px",
-              border: `1px solid ${C.border}`,
+              border: `1px solid ${i === 1 ? C.primaryMid : C.border}`,
               position: "relative",
               overflow: "hidden",
+              cursor: "pointer",
             }}
           >
             <div
               style={{
-                position: "absolute",
-                top: 12,
-                right: 14,
-                opacity: 0.15,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
               }}
             >
-              <Icon name={s.iconName} size={22} color={s.color} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    background: i === 1 ? "rgba(255,255,255,0.2)" : s.bg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon
+                    name={s.icon}
+                    size={14}
+                    color={i === 1 ? "#fff" : s.color}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: i === 1 ? "rgba(255,255,255,0.85)" : C.textMuted,
+                    fontWeight: 500,
+                  }}
+                >
+                  {s.label}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: 18,
+                  color: i === 1 ? "rgba(255,255,255,0.4)" : C.textLight,
+                  letterSpacing: 2,
+                  cursor: "pointer",
+                }}
+              >
+                ···
+              </span>
             </div>
             <div
               style={{
-                fontSize: 11,
-                color: C.textMuted,
-                marginBottom: 6,
-                fontWeight: 500,
+                fontSize: 28,
+                fontWeight: 800,
+                color: i === 1 ? "#fff" : s.color,
+                marginBottom: 3,
               }}
             >
-              {s.label}
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>
               {s.value}
             </div>
             <div
               style={{
                 fontSize: 11,
-                color:
-                  parseFloat(s.delta) > 0
-                    ? C.primary
-                    : parseFloat(s.delta) < 0
-                      ? C.danger
-                      : C.textLight,
-                marginTop: 2,
+                color: i === 1 ? "rgba(255,255,255,0.7)" : C.primary,
+                fontWeight: 600,
+                marginBottom: 2,
               }}
             >
-              {s.delta !== "0" ? s.delta + " this month" : "— no change"}
+              ↑ {s.delta}
             </div>
+            <div
+              style={{
+                fontSize: 10,
+                color: i === 1 ? "rgba(255,255,255,0.55)" : C.textMuted,
+                lineHeight: 1.4,
+              }}
+            >
+              {s.desc}
+            </div>
+            <svg
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                opacity: i === 1 ? 0.18 : 0.06,
+              }}
+              width={80}
+              height={40}
+              viewBox="0 0 80 40"
+            >
+              <polyline
+                points="0,35 15,25 30,30 45,15 60,20 80,5"
+                fill="none"
+                stroke={i === 1 ? "#fff" : s.color}
+                strokeWidth={2}
+              />
+            </svg>
           </div>
         ))}
       </div>
+
+      {/* ── Middle Row: Chart + Calendar ── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
+          gridTemplateColumns: "1fr 288px",
+          gap: 14,
           marginBottom: 16,
         }}
       >
+        {/* Chart */}
         <div
           style={{
             background: C.card,
             borderRadius: 14,
-            padding: 20,
             border: `1px solid ${C.border}`,
+            padding: "18px 20px",
           }}
         >
           <div
             style={{
-              fontWeight: 700,
-              color: C.text,
-              fontSize: 14,
-              marginBottom: 4,
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 12,
             }}
           >
-            Growth Trend (6 Months)
+            <div>
+              <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
+                Patient Overview
+              </div>
+              <div style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>
+                Growth & nutritional status trends
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                {[
+                  ["On Time", C.primaryMid],
+                  ["On Late", "#D4637A"],
+                ].map(([lbl, col]) => (
+                  <span
+                    key={lbl}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 11,
+                      color: C.textMuted,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: col,
+                        display: "inline-block",
+                      }}
+                    />
+                    {lbl}
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["today", "weekly", "monthly"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setChartView(t)}
+                    style={{
+                      padding: "5px 10px",
+                      borderRadius: 20,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontWeight: chartView === t ? 600 : 400,
+                      border: `1px solid ${chartView === t ? C.primary : C.border}`,
+                      background: chartView === t ? C.primaryLight : C.card,
+                      color: chartView === t ? C.primary : C.textMuted,
+                    }}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{ color: C.textMuted, fontSize: 11, marginBottom: 14 }}>
-            Monthly nutritional status distribution
+          <div style={{ position: "relative", width: "100%", height: 180 }}>
+            <canvas ref={chartRef} />
           </div>
-          <MiniBarChart data={TREND_DATA} />
         </div>
+
+        {/* Calendar */}
         <div
           style={{
             background: C.card,
             borderRadius: 14,
-            padding: 20,
             border: `1px solid ${C.border}`,
+            padding: 16,
           }}
         >
           <div
             style={{
-              fontWeight: 700,
-              color: C.text,
-              fontSize: 14,
-              marginBottom: 4,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
             }}
           >
-            Status Breakdown
+            <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+              Calendar
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <button
+                onClick={() => {
+                  let m = calMonth - 1,
+                    y = calYear;
+                  if (m < 0) {
+                    m = 11;
+                    y--;
+                  }
+                  setCalMonth(m);
+                  setCalYear(y);
+                }}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: `1px solid ${C.border}`,
+                  background: C.bg,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  color: C.textMuted,
+                }}
+              >
+                ‹
+              </button>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: C.text,
+                  minWidth: 90,
+                  textAlign: "center",
+                }}
+              >
+                {MONTHS[calMonth]} {calYear}
+              </span>
+              <button
+                onClick={() => {
+                  let m = calMonth + 1,
+                    y = calYear;
+                  if (m > 11) {
+                    m = 0;
+                    y++;
+                  }
+                  setCalMonth(m);
+                  setCalYear(y);
+                }}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: `1px solid ${C.border}`,
+                  background: C.bg,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  color: C.textMuted,
+                }}
+              >
+                ›
+              </button>
+            </div>
           </div>
-          <div style={{ color: C.textMuted, fontSize: 11, marginBottom: 14 }}>
-            Current distribution
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 1,
+              marginBottom: 3,
+            }}
+          >
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <div
+                key={i}
+                style={{
+                  textAlign: "center",
+                  fontSize: 10,
+                  color: C.textMuted,
+                  fontWeight: 600,
+                  padding: "3px 0",
+                }}
+              >
+                {d}
+              </div>
+            ))}
           </div>
-          <svg width="100%" height={160} viewBox="0 0 300 160">
-            {(() => {
-              const items = [
-                {
-                  label: "Normal",
-                  val: statusCounts["Normal"] || 0,
-                  color: C.primary,
-                },
-                {
-                  label: "Underweight",
-                  val: statusCounts["Underweight"] || 0,
-                  color: C.warn,
-                },
-                {
-                  label: "Stunted",
-                  val: statusCounts["Stunted"] || 0,
-                  color: C.purple,
-                },
-                {
-                  label: "Wasted",
-                  val: statusCounts["Wasted"] || 0,
-                  color: C.info,
-                },
-                {
-                  label: "Sev. Underweight",
-                  val: statusCounts["Severely Underweight"] || 0,
-                  color: C.danger,
-                },
-                {
-                  label: "Overweight",
-                  val: statusCounts["Overweight"] || 0,
-                  color: C.accent,
-                },
-              ];
-              const total = items.reduce((a, b) => a + b.val, 0) || 1;
-              let startAngle = -90;
-              const cx = 85,
-                cy = 80,
-                r = 60,
-                inner = 38;
-              return (
-                <>
-                  {items.map((item, i) => {
-                    const angle = (item.val / total) * 360;
-                    const start = (startAngle * Math.PI) / 180,
-                      end = ((startAngle + angle) * Math.PI) / 180;
-                    const x1 = cx + r * Math.cos(start),
-                      y1 = cy + r * Math.sin(start);
-                    const x2 = cx + r * Math.cos(end),
-                      y2 = cy + r * Math.sin(end);
-                    const ix1 = cx + inner * Math.cos(start),
-                      iy1 = cy + inner * Math.sin(start);
-                    const ix2 = cx + inner * Math.cos(end),
-                      iy2 = cy + inner * Math.sin(end);
-                    const lg = angle > 180 ? 1 : 0;
-                    const d = `M${ix1},${iy1} L${x1},${y1} A${r},${r} 0 ${lg} 1 ${x2},${y2} L${ix2},${iy2} A${inner},${inner} 0 ${lg} 0 ${ix1},${iy1} Z`;
-                    startAngle += angle;
-                    return (
-                      <path key={i} d={d} fill={item.color} opacity={0.88} />
-                    );
-                  })}
-                  <text
-                    x={cx}
-                    y={cy - 6}
-                    textAnchor="middle"
-                    fontSize={20}
-                    fontWeight={700}
-                    fill={C.text}
-                  >
-                    {total}
-                  </text>
-                  <text
-                    x={cx}
-                    y={cy + 10}
-                    textAnchor="middle"
-                    fontSize={9}
-                    fill={C.textMuted}
-                  >
-                    children
-                  </text>
-                  {items.map((item, i) => (
-                    <g key={i}>
-                      <rect
-                        x={182}
-                        y={10 + i * 24}
-                        width={10}
-                        height={10}
-                        rx={2}
-                        fill={item.color}
-                      />
-                      <text x={196} y={20 + i * 24} fontSize={11} fill={C.text}>
-                        {item.label}
-                      </text>
-                      <text
-                        x={295}
-                        y={20 + i * 24}
-                        textAnchor="end"
-                        fontSize={11}
-                        fontWeight={600}
-                        fill={item.color}
-                      >
-                        {item.val}
-                      </text>
-                    </g>
-                  ))}
-                </>
-              );
-            })()}
-          </svg>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 1,
+            }}
+          >
+            {renderCalendar()}
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              borderTop: `1px solid ${C.border}`,
+              paddingTop: 8,
+              display: "flex",
+              flexDirection: "column",
+              gap: 5,
+            }}
+          >
+            {[
+              { color: C.danger, label: "Oplan Timbang" },
+              { color: C.info, label: "Team Meeting" },
+              { color: C.warn, label: "Outreach" },
+            ].map((leg) => (
+              <div
+                key={leg.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 10,
+                  color: C.textMuted,
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: leg.color,
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }}
+                />
+                {leg.label}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* ── Patient Table ── */}
       <div
         style={{
           background: C.card,
           borderRadius: 14,
-          padding: 20,
           border: `1px solid ${C.border}`,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
+            padding: "14px 18px",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 16,
+            justifyContent: "space-between",
+            borderBottom: `1px solid ${C.border}`,
           }}
         >
           <div>
             <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
-              Recent Measurements
+              Patient Overview
             </div>
             <div style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>
-              Latest anthropometric records
+              Latest registered children and their health status
             </div>
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {["today", "weekly", "monthly", "yearly"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTableTab(t)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 20,
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: tableTab === t ? 600 : 400,
+                  border: `1px solid ${tableTab === t ? C.primary : C.border}`,
+                  background: tableTab === t ? C.primaryLight : C.card,
+                  color: tableTab === t ? C.primary : C.textMuted,
+                }}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr>
+            <tr style={{ background: C.bg }}>
               {[
-                "Child",
-                "Height",
-                "Weight",
+                "",
+                "No",
+                "Name",
                 "Age",
-                "Date",
-                "Source",
+                "Date of Birth",
                 "Status",
+                "Email address",
+                "Phone",
+                "Action",
               ].map((h) => (
                 <th
                   key={h}
                   style={{
                     textAlign: "left",
-                    padding: "8px 12px",
+                    padding: "9px 14px",
                     fontSize: 11,
                     color: C.textMuted,
                     fontWeight: 600,
@@ -3731,85 +3829,139 @@ function Dashboard({ children, measurements }) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {h}
+                  {h === "" ? (
+                    <input type="checkbox" style={{ width: 13, height: 13 }} />
+                  ) : (
+                    h
+                  )}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {recent.map((m) => (
-              <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td
-                  style={{
-                    padding: "10px 12px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: C.text,
-                  }}
-                >
-                  {m.child}
+            {tableChildren.map((c, i) => (
+              <tr
+                key={c.id}
+                style={{
+                  borderBottom:
+                    i < tableChildren.length - 1
+                      ? `1px solid ${C.border}`
+                      : "none",
+                }}
+              >
+                <td style={{ padding: "10px 14px" }}>
+                  <input type="checkbox" style={{ width: 13, height: 13 }} />
                 </td>
                 <td
                   style={{
-                    padding: "10px 12px",
-                    fontSize: 13,
+                    padding: "10px 14px",
+                    fontSize: 12,
                     color: C.textMuted,
                   }}
                 >
-                  {m.height_cm} cm
+                  {String(i + 1).padStart(2, "0")}
                 </td>
-                <td
-                  style={{
-                    padding: "10px 12px",
-                    fontSize: 13,
-                    color: C.textMuted,
-                  }}
-                >
-                  {m.weight_kg} kg
-                </td>
-                <td
-                  style={{
-                    padding: "10px 12px",
-                    fontSize: 13,
-                    color: C.textMuted,
-                  }}
-                >
-                  {m.age_months} mo
-                </td>
-                <td
-                  style={{
-                    padding: "10px 12px",
-                    fontSize: 13,
-                    color: C.textMuted,
-                  }}
-                >
-                  {m.measurement_date}
-                </td>
-                <td style={{ padding: "10px 12px" }}>
-                  <span
-                    style={{
-                      background: C.bg,
-                      padding: "2px 8px",
-                      borderRadius: 6,
-                      color: C.textMuted,
-                      fontSize: 11,
-                    }}
+                <td style={{ padding: "10px 14px" }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
-                    <span
+                    <div
                       style={{
-                        display: "inline-flex",
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        background: c.sex === "Female" ? "#FCE4EC" : "#E3F2FD",
+                        display: "flex",
                         alignItems: "center",
-                        gap: 4,
-                        verticalAlign: "middle",
+                        justifyContent: "center",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: c.sex === "Female" ? "#F06292" : "#42A5F5",
+                        flexShrink: 0,
                       }}
                     >
-                      <SourceIcon type={m.source_type} size={11} />{" "}
-                      {m.source_type}
-                    </span>
-                  </span>
+                      {(c.first_name[0] + c.last_name[0]).toUpperCase()}
+                    </div>
+                    <div>
+                      <div
+                        style={{ fontSize: 12, fontWeight: 600, color: C.text }}
+                      >
+                        {c.first_name} {c.last_name}
+                      </div>
+                      <div style={{ fontSize: 10, color: C.textMuted }}>
+                        {c.barangay}
+                      </div>
+                    </div>
+                  </div>
                 </td>
-                <td style={{ padding: "10px 12px" }}>
-                  <StatusBadge status={m.nutritional_status} />
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: C.textMuted,
+                  }}
+                >
+                  {c.age_months}
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: C.textMuted,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {c.birthdate}
+                </td>
+                <td style={{ padding: "10px 14px" }}>
+                  <StatusBadge status={c.status} />
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 11,
+                    color: C.textMuted,
+                  }}
+                >
+                  {(c.parent || "parent").toLowerCase().replace(/\s+/g, ".")}
+                  @email.com
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 11,
+                    color: C.textMuted,
+                  }}
+                >
+                  (316) 555-0116
+                </td>
+                <td style={{ padding: "10px 14px" }}>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <button
+                      style={{
+                        background: C.infoLight,
+                        color: C.info,
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "5px 8px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Icon name="edit" size={12} color={C.info} />
+                    </button>
+                    <button
+                      style={{
+                        background: C.dangerLight,
+                        color: C.danger,
+                        border: "none",
+                        borderRadius: 7,
+                        padding: "5px 8px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Icon name="trash" size={12} color={C.danger} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -5197,7 +5349,6 @@ function NutritionistsPage({ nutritionists, onAdd, onEdit, onDelete }) {
               {[
                 ["mail", n.email],
                 ["phone", n.phone],
-                ["mapPin", n.barangay],
               ].map(([icon, val]) => (
                 <div
                   key={val}
@@ -5272,19 +5423,6 @@ function NutritionistsPage({ nutritionists, onAdd, onEdit, onDelete }) {
           </div>
         ))}
       </div>
-      {nutritionists.length === 0 && (
-        <div
-          style={{
-            textAlign: "center",
-            color: C.textMuted,
-            fontSize: 13,
-            padding: "60px 20px",
-          }}
-        >
-          <Icon name="users" size={32} color={C.border} />
-          <div style={{ marginTop: 10 }}>No nutritionists registered yet</div>
-        </div>
-      )}
     </div>
   );
 }
@@ -5433,7 +5571,7 @@ function SettingsPage() {
     },
     {
       key: "eopt_sync_url",
-      value: "https://eopt.doh.gov.ph/api/sync",
+      value: "https://eopt.doh.gov.ph/api",
       desc: "eOPT+ national sync endpoint",
     },
     {
@@ -5516,7 +5654,7 @@ function SettingsPage() {
             <button
               onClick={() => setSaved(s.key)}
               style={{
-                background: saved === s.key ? C.primaryLight : C.primaryLight,
+                background: C.primaryLight,
                 color: C.primary,
                 border: "none",
                 borderRadius: 8,
@@ -5569,7 +5707,7 @@ function LoginPage({ onLogin }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #0D2B20 0%, #0B4A34 100%)",
+        background: "linear-gradient(135deg,#0D2B20 0%,#0B4A34 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -5590,7 +5728,7 @@ function LoginPage({ onLogin }) {
         <div
           style={{
             flex: 1,
-            background: "linear-gradient(160deg, #0B6E4F 0%, #0D4A32 100%)",
+            background: "linear-gradient(160deg,#0B6E4F 0%,#0D4A32 100%)",
             padding: 48,
             display: "flex",
             flexDirection: "column",
@@ -5800,7 +5938,7 @@ function LoginPage({ onLogin }) {
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Nav Items ────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", iconName: "dashboard" },
   { id: "children", label: "Children", iconName: "children" },
@@ -5812,6 +5950,7 @@ const NAV_ITEMS = [
   { id: "settings", label: "Settings", iconName: "settings" },
 ];
 
+// ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
@@ -5819,24 +5958,22 @@ export default function App() {
   const [kioskMode, setKioskMode] = useState(false);
   const [notifications] = useState(3);
 
-  // ─── Data state ──────────────────────────────────────────────────────────
   const [childrenData, setChildrenData] = useState(INIT_CHILDREN);
   const [measurementsData, setMeasurementsData] = useState(INIT_MEASUREMENTS);
   const [parentsData, setParentsData] = useState(INIT_PARENTS);
   const [nutritionistsData, setNutritionistsData] =
     useState(INIT_NUTRITIONISTS);
 
-  // ─── Modal state ─────────────────────────────────────────────────────────
-  const [childModal, setChildModal] = useState(null); // null | "add" | child obj
+  const [childModal, setChildModal] = useState(null);
   const [parentModal, setParentModal] = useState(null);
   const [nutritionistModal, setNutritionistModal] = useState(null);
   const [measureModal, setMeasureModal] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { type, item }
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
-  // ─── CRUD handlers ────────────────────────────────────────────────────────
+  // CRUD
   const handleAddChild = (form) => {
     const newId = Math.max(...childrenData.map((c) => c.id), 0) + 1;
     const newCode = `CHD-${String(newId).padStart(4, "0")}`;
@@ -5910,7 +6047,6 @@ export default function App() {
   const handleAddMeasurement = (form) => {
     const newId = Math.max(...measurementsData.map((m) => m.id), 0) + 1;
     setMeasurementsData((prev) => [...prev, { ...form, id: newId }]);
-    // Update child status
     const child = childrenData.find((c) => c.id === parseInt(form.child_id));
     if (child)
       setChildrenData((prev) =>
@@ -5971,7 +6107,12 @@ export default function App() {
     switch (page) {
       case "dashboard":
         return (
-          <Dashboard children={childrenData} measurements={measurementsData} />
+          <Dashboard
+            children={childrenData}
+            measurements={measurementsData}
+            parents={parentsData}
+            nutritionists={nutritionistsData}
+          />
         );
       case "children":
         return (
@@ -6021,7 +6162,12 @@ export default function App() {
         return <SettingsPage />;
       default:
         return (
-          <Dashboard children={childrenData} measurements={measurementsData} />
+          <Dashboard
+            children={childrenData}
+            measurements={measurementsData}
+            parents={parentsData}
+            nutritionists={nutritionistsData}
+          />
         );
     }
   };
@@ -6031,7 +6177,7 @@ export default function App() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        fontFamily: "'Segoe UI',system-ui,sans-serif",
         background: C.bg,
       }}
     >
@@ -6071,7 +6217,7 @@ export default function App() {
       )}
       {confirmDelete && (
         <ConfirmDialog
-          msg={`Are you sure you want to delete ${confirmDelete.type === "child" ? `${confirmDelete.item.first_name} ${confirmDelete.item.last_name}` : confirmDelete.type === "parent" ? confirmDelete.item.name : confirmDelete.type === "nutritionist" ? confirmDelete.item.name : `this measurement record`}? This action cannot be undone.`}
+          msg={`Are you sure you want to delete ${confirmDelete.type === "child" ? `${confirmDelete.item.first_name} ${confirmDelete.item.last_name}` : confirmDelete.type === "parent" ? confirmDelete.item.name : confirmDelete.type === "nutritionist" ? confirmDelete.item.name : "this measurement record"}? This cannot be undone.`}
           onConfirm={
             confirmDelete.type === "child"
               ? handleDeleteChild
@@ -6282,7 +6428,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* Main content */}
       <div
         style={{
           flex: 1,
@@ -6371,7 +6517,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* AI Chatbot */}
       <AIChatbot />
     </div>
   );
