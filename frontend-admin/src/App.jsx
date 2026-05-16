@@ -6010,7 +6010,9 @@ export default function App() {
             nutritionists={nutritionistsData}
             onAdd={() => setNutritionistModal("add")}
             onEdit={(n) => setNutritionistModal(n)}
-            onDelete={(n) => setConfirmDelete({ type: "nutritionist", item: n })}
+            onDelete={(n) =>
+              setConfirmDelete({ type: "nutritionist", item: n })
+            }
           />
         );
       case "reports":
