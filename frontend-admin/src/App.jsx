@@ -261,6 +261,58 @@ const INIT_PARENTS = [
     status: "Inactive",
   },
 ];
+const INIT_NUTRITIONISTS = [
+  {
+    id: 1,
+    name: "Dr. Maria Santos",
+    email: "maria.santos@health.gov",
+    phone: "09171234560",
+    role: "Registered Dietitian Nutritionist (RDN)",
+    barangay: "Bagong Silang",
+    license_number: "RDN-2020-001",
+    status: "Active",
+  },
+  {
+    id: 2,
+    name: "Nurse Cynthia Reyes",
+    email: "cynthia.reyes@health.gov",
+    phone: "09281234561",
+    role: "Nurse",
+    barangay: "Poblacion",
+    license_number: "PN-2019-045",
+    status: "Active",
+  },
+  {
+    id: 3,
+    name: "Dr. Jose Garcia",
+    email: "jose.garcia@health.gov",
+    phone: "09391234562",
+    role: "Physician/Doctor",
+    barangay: "San Jose",
+    license_number: "MD-2018-023",
+    status: "Active",
+  },
+  {
+    id: 4,
+    name: "Aida Cruz",
+    email: "aida.cruz@health.gov",
+    phone: "09451234563",
+    role: "Barangay Health Scholar (BHS)",
+    barangay: "Sta. Cruz",
+    license_number: "BHS-2022-089",
+    status: "Active",
+  },
+  {
+    id: 5,
+    name: "Robert Lim",
+    email: "robert.lim@health.gov",
+    phone: "09561234564",
+    role: "Health Educator",
+    barangay: "Bagong Silang",
+    license_number: "HE-2021-056",
+    status: "Inactive",
+  },
+];
 const TREND_DATA = [
   {
     month: "Dec",
@@ -1472,6 +1524,174 @@ function ChildModal({ child, parents, onSave, onClose }) {
   );
 }
 
+// ─── Add/Edit Nutritionist Modal ──────────────────────────────────────────────
+function NutritionistModal({ nutritionist, onSave, onClose }) {
+  const isEdit = !!nutritionist;
+  const [form, setForm] = useState(
+    nutritionist || {
+      name: "",
+      email: "",
+      phone: "",
+      role: "Registered Dietitian Nutritionist (RDN)",
+      barangay: "",
+      license_number: "",
+      status: "Active",
+    },
+  );
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    if (
+      !form.name ||
+      !form.email ||
+      !form.phone ||
+      !form.role ||
+      !form.barangay
+    ) {
+      setErr("Please fill all required fields.");
+      return;
+    }
+    onSave(form);
+  };
+
+  const roles = [
+    "Registered Dietitian Nutritionist (RDN)",
+    "Nurse",
+    "Physician/Doctor",
+    "Barangay Health Scholar (BHS)",
+    "Health Educator",
+    "Midwife",
+  ];
+
+  return (
+    <Modal
+      title={isEdit ? "Edit Nutritionist" : "Add New Nutritionist"}
+      onClose={onClose}
+      width={520}
+    >
+      <div style={{ padding: 24 }}>
+        <Field label="Full Name" required>
+          <input
+            style={inputStyle}
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="e.g. Dr. Maria Santos"
+          />
+        </Field>
+        <Field label="Email Address" required>
+          <input
+            type="email"
+            style={inputStyle}
+            value={form.email}
+            onChange={(e) => set("email", e.target.value)}
+            placeholder="e.g. maria@health.gov"
+          />
+        </Field>
+        <Field label="Phone Number" required>
+          <input
+            style={inputStyle}
+            value={form.phone}
+            onChange={(e) => set("phone", e.target.value)}
+            placeholder="e.g. 09171234567"
+          />
+        </Field>
+        <Field label="Professional Role" required>
+          <select
+            style={selectStyle}
+            value={form.role}
+            onChange={(e) => set("role", e.target.value)}
+          >
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Assigned Barangay" required>
+          <input
+            style={inputStyle}
+            value={form.barangay}
+            onChange={(e) => set("barangay", e.target.value)}
+            placeholder="e.g. Bagong Silang"
+          />
+        </Field>
+        <Field label="License/ID Number">
+          <input
+            style={inputStyle}
+            value={form.license_number}
+            onChange={(e) => set("license_number", e.target.value)}
+            placeholder="e.g. RDN-2020-001"
+          />
+        </Field>
+        <Field label="Status">
+          <select
+            style={selectStyle}
+            value={form.status}
+            onChange={(e) => set("status", e.target.value)}
+          >
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </Field>
+        {err && (
+          <div
+            style={{
+              color: C.danger,
+              fontSize: 12,
+              marginBottom: 10,
+              background: C.dangerLight,
+              padding: "8px 12px",
+              borderRadius: 8,
+            }}
+          >
+            {err}
+          </div>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+            marginTop: 6,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.bg,
+              color: C.textMuted,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: "9px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: C.primary,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {isEdit ? "Save Changes" : "Add Nutritionist"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Add/Edit Parent Modal ────────────────────────────────────────────────────
 function ParentModal({ parent, onSave, onClose }) {
   const isEdit = !!parent;
@@ -2139,12 +2359,15 @@ function AIChatbot() {
 
 // ─── Kiosk View ───────────────────────────────────────────────────────────────
 function KioskView({ children, onBack, onSaveMeasurement }) {
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [step, setStep] = useState(0);
   const [selectedChild, setSelectedChild] = useState(null);
   const [form, setForm] = useState({ height_cm: "", weight_kg: "" });
   const [result, setResult] = useState(null);
   const [progress, setProgress] = useState(0);
   const [sensorStage, setSensorStage] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const timerRef = useRef();
   const sensorStages = [
     { label: "Initializing sensors...", iconName: "scan" },
@@ -2181,6 +2404,11 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
     }, 100);
   };
   useEffect(() => () => clearInterval(timerRef.current), []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div
@@ -2233,9 +2461,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ textAlign: "right" }}>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>
-              SENSOR STATUS
-            </div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}></div>
             <div
               style={{
                 display: "flex",
@@ -2244,7 +2470,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 marginTop: 2,
               }}
             >
-              {["LiDAR", "Weight", "WiFi"].map((s) => (
+              {["TF Luna LiDAR", "Load Cell", "WiFi"].map((s) => (
                 <span
                   key={s}
                   style={{
@@ -2277,74 +2503,79 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           </button>
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 0,
-          padding: "20px 0 0",
-        }}
-      >
-        {["Select Child", "Enter Data", "Processing", "Results"].map((s, i) => (
-          <div key={s} style={{ display: "flex", alignItems: "center" }}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background:
-                    step > i
-                      ? C.primaryMid
-                      : step === i
-                        ? "rgba(26,143,104,0.3)"
-                        : "rgba(255,255,255,0.05)",
-                  border: `2px solid ${step >= i ? C.primaryMid : "rgba(255,255,255,0.1)"}`,
-                  color: step >= i ? "#fff" : "rgba(255,255,255,0.3)",
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                {step > i ? (
-                  <Icon name="check" size={14} color="#fff" />
-                ) : (
-                  i + 1
+      {!showWelcome && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 0,
+            padding: "20px 0 0",
+          }}
+        >
+          {["Select Child", "Enter Data", "Processing", "Results"].map(
+            (s, i) => (
+              <div key={s} style={{ display: "flex", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background:
+                        step > i
+                          ? C.primaryMid
+                          : step === i
+                            ? "rgba(26,143,104,0.3)"
+                            : "rgba(255,255,255,0.05)",
+                      border: `2px solid ${step >= i ? C.primaryMid : "rgba(255,255,255,0.1)"}`,
+                      color: step >= i ? "#fff" : "rgba(255,255,255,0.3)",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    {step > i ? (
+                      <Icon name="check" size={14} color="#fff" />
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      color:
+                        step === i ? C.primaryMid : "rgba(255,255,255,0.3)",
+                      fontSize: 10,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {s}
+                  </div>
+                </div>
+                {i < 3 && (
+                  <div
+                    style={{
+                      width: 60,
+                      height: 2,
+                      background:
+                        step > i ? C.primaryMid : "rgba(255,255,255,0.08)",
+                      margin: "0 4px 16px",
+                    }}
+                  />
                 )}
               </div>
-              <div
-                style={{
-                  color: step === i ? C.primaryMid : "rgba(255,255,255,0.3)",
-                  fontSize: 10,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {s}
-              </div>
-            </div>
-            {i < 3 && (
-              <div
-                style={{
-                  width: 60,
-                  height: 2,
-                  background:
-                    step > i ? C.primaryMid : "rgba(255,255,255,0.08)",
-                  margin: "0 4px 16px",
-                }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+            ),
+          )}
+        </div>
+      )}
       <div
         style={{
           flex: 1,
@@ -2354,7 +2585,185 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           padding: 24,
         }}
       >
-        {step === 0 && (
+        {showWelcome && (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 600,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 0,
+            }}
+          >
+            {/* Background accent */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "120%",
+                height: "120%",
+                background:
+                  "radial-gradient(circle, rgba(26,143,104,0.08) 0%, transparent 70%)",
+                zIndex: -1,
+              }}
+            />
+
+            {/* Illustration placeholder with SVG-style graphic */}
+            <div
+              style={{
+                width: 160,
+                height: 160,
+                borderRadius: "50%",
+                background: "rgba(26,143,104,0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 32,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 60,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="heart" size={70} color={C.primaryMid} />
+              </div>
+            </div>
+
+            {/* Title */}
+            <div
+              style={{
+                marginBottom: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 42,
+                  fontWeight: 600,
+                  color: "rgba(255,255,255,0.7)",
+                }}
+              >
+                Sukat
+              </span>
+              <span
+                style={{
+                  fontSize: 42,
+                  fontWeight: 700,
+                  color: C.primaryMid,
+                  letterSpacing: -1,
+                }}
+              >
+                Kalusugan
+              </span>
+            </div>
+
+            {/* Subtitle */}
+            <div
+              style={{
+                fontSize: 18,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 28,
+                fontWeight: 400,
+              }}
+            >
+              Anthropometric Kiosk
+            </div>
+
+            {/* Tagline */}
+            <p
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 13,
+                marginBottom: 32,
+                lineHeight: 1.6,
+                maxWidth: 420,
+              }}
+            >
+              Making health accessible to every child
+            </p>
+
+            {/* Time Display */}
+            <div
+              style={{
+                marginBottom: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 30,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 52,
+                  fontWeight: 700,
+                  color: "#fff",
+                  letterSpacing: -1,
+                }}
+              >
+                {currentTime.toLocaleTimeString("en-PH", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                })}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.5)",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {currentTime.toLocaleDateString("en-PH", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+
+            {/* Touch to Start Button */}
+            <button
+              onClick={() => setShowWelcome(false)}
+              style={{
+                background: C.danger,
+                color: "#fff",
+                border: "none",
+                borderRadius: 12,
+                padding: "16px 48px",
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: "pointer",
+                letterSpacing: 0.5,
+                transition: "all 0.3s",
+                minWidth: 240,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "#d42626";
+                e.target.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = C.danger;
+                e.target.style.transform = "scale(1)";
+              }}
+            >
+              Touch to Start
+            </button>
+          </div>
+        )}
+        {!showWelcome && step === 0 && (
           <div style={{ width: "100%", maxWidth: 700 }}>
             <h2
               style={{
@@ -2376,6 +2785,56 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             >
               Select from registered children
             </p>
+
+            {/* Search Input */}
+            <div
+              style={{
+                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Icon name="search" size={16} color="rgba(255,255,255,0.4)" />
+              <input
+                type="text"
+                placeholder="Search by child name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  color: "#fff",
+                  fontSize: 14,
+                  outline: "none",
+                  fontFamily: "'Segoe UI', sans-serif",
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    border: "none",
+                    borderRadius: 8,
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "rgba(255,255,255,0.5)",
+                  }}
+                >
+                  <Icon name="x" size={14} color="rgba(255,255,255,0.5)" />
+                </button>
+              )}
+            </div>
+
+            {/* Children Grid */}
             <div
               style={{
                 display: "grid",
@@ -2383,76 +2842,118 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 gap: 12,
               }}
             >
-              {children.slice(0, 6).map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => {
-                    setSelectedChild(c);
-                    setStep(1);
-                  }}
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 12,
-                    padding: 16,
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "rgba(26,143,104,0.12)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background =
-                      "rgba(255,255,255,0.05)")
-                  }
-                >
+              {children
+                .filter(
+                  (c) =>
+                    searchQuery === "" ||
+                    c.first_name
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()) ||
+                    c.last_name
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()) ||
+                    `${c.first_name} ${c.last_name}`
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
+                )
+                .slice(searchQuery === "" ? -3 : 0)
+                .map((c) => (
                   <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      background:
-                        c.sex === "Female"
-                          ? "rgba(240,98,146,0.2)"
-                          : "rgba(30,136,229,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: 8,
+                    key={c.id}
+                    onClick={() => {
+                      setSelectedChild(c);
+                      setStep(1);
                     }}
-                  >
-                    <Icon
-                      name={c.sex === "Female" ? "childFemale" : "childMale"}
-                      size={20}
-                      color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
-                    />
-                  </div>
-                  <div style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>
-                    {c.first_name} {c.last_name}
-                  </div>
-                  <div
                     style={{
-                      color: "rgba(255,255,255,0.4)",
-                      fontSize: 11,
-                      marginTop: 2,
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 12,
+                      padding: 16,
+                      cursor: "pointer",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(26,143,104,0.12)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(255,255,255,0.05)")
+                    }
                   >
-                    {c.age_months} months · {c.sex}
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background:
+                          c.sex === "Female"
+                            ? "rgba(240,98,146,0.2)"
+                            : "rgba(30,136,229,0.2)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Icon
+                        name={c.sex === "Female" ? "childFemale" : "childMale"}
+                        size={20}
+                        color={c.sex === "Female" ? "#F06292" : "#42A5F5"}
+                      />
+                    </div>
+                    <div
+                      style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}
+                    >
+                      {c.first_name} {c.last_name}
+                    </div>
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.4)",
+                        fontSize: 11,
+                        marginTop: 2,
+                      }}
+                    >
+                      {c.age_months} months · {c.sex}
+                    </div>
+                    <div
+                      style={{
+                        color: "rgba(255,255,255,0.4)",
+                        fontSize: 10,
+                        marginTop: 2,
+                      }}
+                    >
+                      {c.child_code}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.4)",
-                      fontSize: 10,
-                      marginTop: 2,
-                    }}
-                  >
-                    {c.child_code}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
+
+            {/* No Results Message */}
+            {children.filter(
+              (c) =>
+                searchQuery === "" ||
+                c.first_name
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()) ||
+                c.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                `${c.first_name} ${c.last_name}`
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()),
+            ).length === 0 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 13,
+                  padding: 24,
+                }}
+              >
+                No children found matching "{searchQuery}"
+              </div>
+            )}
           </div>
         )}
-        {step === 1 && selectedChild && (
+        {!showWelcome && step === 1 && selectedChild && (
           <div
             style={{
               width: "100%",
@@ -2588,7 +3089,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             </button>
           </div>
         )}
-        {step === 2 && (
+        {!showWelcome && step === 2 && (
           <div style={{ textAlign: "center", width: "100%", maxWidth: 420 }}>
             <div
               style={{
@@ -2700,7 +3201,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             </div>
           </div>
         )}
-        {step === 3 && result && selectedChild && (
+        {!showWelcome && step === 3 && result && selectedChild && (
           <div style={{ width: "100%", maxWidth: 560 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>
@@ -4565,6 +5066,229 @@ function ParentsPage({
   );
 }
 
+// ─── Nutritionists Page ───────────────────────────────────────────────────────
+function NutritionistsPage({ nutritionists, onAdd, onEdit, onDelete }) {
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <h1
+            style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}
+          >
+            Nutritionists & Health Workers
+          </h1>
+          <p style={{ color: C.textMuted, fontSize: 13, margin: "4px 0 0" }}>
+            {nutritionists.length} registered professionals
+          </p>
+        </div>
+        <button
+          onClick={onAdd}
+          style={{
+            background: C.primary,
+            color: "#fff",
+            border: "none",
+            borderRadius: 10,
+            padding: "10px 20px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Icon name="plus" size={14} color="#fff" /> Add Nutritionist
+        </button>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))",
+          gap: 14,
+        }}
+      >
+        {nutritionists.map((n) => (
+          <div
+            key={n.id}
+            style={{
+              background: C.card,
+              borderRadius: 14,
+              border: `1px solid ${C.border}`,
+              padding: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  background: C.info,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: "#fff",
+                }}
+              >
+                {n.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>
+                  {n.name}
+                </div>
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: "2px 8px",
+                    borderRadius: 6,
+                    background:
+                      n.status === "Active" ? C.primaryLight : "#f5f5f5",
+                    color: n.status === "Active" ? C.primary : C.textMuted,
+                    fontWeight: 600,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {n.status}
+                </span>
+              </div>
+            </div>
+            <div
+              style={{
+                background: "#f9faf8",
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 12,
+                fontSize: 12,
+                fontWeight: 600,
+                color: C.primary,
+              }}
+            >
+              {n.role}
+            </div>
+            <div
+              style={{
+                borderTop: `1px solid ${C.border}`,
+                paddingTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              {[
+                ["mail", n.email],
+                ["phone", n.phone],
+                ["mapPin", n.barangay],
+              ].map(([icon, val]) => (
+                <div
+                  key={val}
+                  style={{
+                    fontSize: 11,
+                    color: C.textMuted,
+                    display: "flex",
+                    gap: 6,
+                    alignItems: "center",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Icon name={icon} size={13} color={C.textMuted} />
+                  <span>{val}</span>
+                </div>
+              ))}
+              {n.license_number && (
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: C.textMuted,
+                    display: "flex",
+                    gap: 6,
+                    alignItems: "center",
+                    paddingTop: 6,
+                    borderTop: `1px solid ${C.border}`,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>
+                    ID: {n.license_number}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+              <button
+                onClick={() => onEdit(n)}
+                style={{
+                  flex: 1,
+                  background: C.infoLight,
+                  color: C.info,
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "8px 0",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                }}
+              >
+                <Icon name="edit" size={13} color={C.info} /> Edit
+              </button>
+              <button
+                onClick={() => onDelete(n)}
+                style={{
+                  background: C.dangerLight,
+                  color: C.danger,
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                <Icon name="trash" size={13} color={C.danger} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {nutritionists.length === 0 && (
+        <div
+          style={{
+            textAlign: "center",
+            color: C.textMuted,
+            fontSize: 13,
+            padding: "60px 20px",
+          }}
+        >
+          <Icon name="users" size={32} color={C.border} />
+          <div style={{ marginTop: 10 }}>No nutritionists registered yet</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Reports Page ─────────────────────────────────────────────────────────────
 function ReportsPage() {
   return (
@@ -5082,6 +5806,7 @@ const NAV_ITEMS = [
   { id: "children", label: "Children", iconName: "children" },
   { id: "measurements", label: "Measurements", iconName: "measurements" },
   { id: "parents", label: "Parents", iconName: "parents" },
+  { id: "nutritionists", label: "Nutritionists", iconName: "activity" },
   { id: "reports", label: "Reports", iconName: "reports" },
   { id: "kiosk", label: "Kiosk Interface", iconName: "kiosk" },
   { id: "settings", label: "Settings", iconName: "settings" },
@@ -5098,10 +5823,13 @@ export default function App() {
   const [childrenData, setChildrenData] = useState(INIT_CHILDREN);
   const [measurementsData, setMeasurementsData] = useState(INIT_MEASUREMENTS);
   const [parentsData, setParentsData] = useState(INIT_PARENTS);
+  const [nutritionistsData, setNutritionistsData] =
+    useState(INIT_NUTRITIONISTS);
 
   // ─── Modal state ─────────────────────────────────────────────────────────
   const [childModal, setChildModal] = useState(null); // null | "add" | child obj
   const [parentModal, setParentModal] = useState(null);
+  const [nutritionistModal, setNutritionistModal] = useState(null);
   const [measureModal, setMeasureModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null); // { type, item }
   const [toast, setToast] = useState(null);
@@ -5157,6 +5885,26 @@ export default function App() {
     setParentsData((prev) => prev.filter((x) => x.id !== p.id));
     setConfirmDelete(null);
     showToast(`${p.name} removed`, "danger");
+  };
+
+  const handleAddNutritionist = (form) => {
+    const newId = Math.max(...nutritionistsData.map((n) => n.id), 0) + 1;
+    setNutritionistsData((prev) => [...prev, { ...form, id: newId }]);
+    setNutritionistModal(null);
+    showToast(`${form.name} added as nutritionist`);
+  };
+  const handleEditNutritionist = (form) => {
+    setNutritionistsData((prev) =>
+      prev.map((n) => (n.id === form.id ? { ...n, ...form } : n)),
+    );
+    setNutritionistModal(null);
+    showToast("Nutritionist profile updated");
+  };
+  const handleDeleteNutritionist = () => {
+    const n = confirmDelete.item;
+    setNutritionistsData((prev) => prev.filter((x) => x.id !== n.id));
+    setConfirmDelete(null);
+    showToast(`${n.name} removed`, "danger");
   };
 
   const handleAddMeasurement = (form) => {
@@ -5256,6 +6004,15 @@ export default function App() {
             onDelete={(p) => setConfirmDelete({ type: "parent", item: p })}
           />
         );
+      case "nutritionists":
+        return (
+          <NutritionistsPage
+            nutritionists={nutritionistsData}
+            onAdd={() => setNutritionistModal("add")}
+            onEdit={(n) => setNutritionistModal(n)}
+            onDelete={(n) => setConfirmDelete({ type: "nutritionist", item: n })}
+          />
+        );
       case "reports":
         return <ReportsPage />;
       case "settings":
@@ -5292,6 +6049,17 @@ export default function App() {
           onClose={() => setParentModal(null)}
         />
       )}
+      {nutritionistModal && (
+        <NutritionistModal
+          nutritionist={nutritionistModal === "add" ? null : nutritionistModal}
+          onSave={
+            nutritionistModal === "add"
+              ? handleAddNutritionist
+              : handleEditNutritionist
+          }
+          onClose={() => setNutritionistModal(null)}
+        />
+      )}
       {measureModal && (
         <MeasurementModal
           children={childrenData}
@@ -5301,13 +6069,15 @@ export default function App() {
       )}
       {confirmDelete && (
         <ConfirmDialog
-          msg={`Are you sure you want to delete ${confirmDelete.type === "child" ? `${confirmDelete.item.first_name} ${confirmDelete.item.last_name}` : confirmDelete.type === "parent" ? confirmDelete.item.name : `this measurement record`}? This action cannot be undone.`}
+          msg={`Are you sure you want to delete ${confirmDelete.type === "child" ? `${confirmDelete.item.first_name} ${confirmDelete.item.last_name}` : confirmDelete.type === "parent" ? confirmDelete.item.name : confirmDelete.type === "nutritionist" ? confirmDelete.item.name : `this measurement record`}? This action cannot be undone.`}
           onConfirm={
             confirmDelete.type === "child"
               ? handleDeleteChild
               : confirmDelete.type === "parent"
                 ? handleDeleteParent
-                : handleDeleteMeasurement
+                : confirmDelete.type === "nutritionist"
+                  ? handleDeleteNutritionist
+                  : handleDeleteMeasurement
           }
           onCancel={() => setConfirmDelete(null)}
         />
