@@ -632,6 +632,29 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
         <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
       </svg>
     ),
+    sun: (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={style}
+      >
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="M4.93 4.93l1.41 1.41" />
+        <path d="M17.66 17.66l1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="M6.34 17.66l-1.41 1.41" />
+        <path d="M19.07 4.93l-1.41 1.41" />
+      </svg>
+    ),
     bell: (
       <svg
         width={size}
@@ -1177,25 +1200,30 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
   return icons[name] || null;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const statusColor = (s) =>
-  ({
-    Normal: C.primary,
-    Underweight: C.warn,
-    "Severely Underweight": C.danger,
-    Stunted: C.purple,
-    Wasted: C.info,
-    Overweight: C.accent,
-  })[s] || C.textMuted;
-const statusBg = (s) =>
-  ({
-    Normal: C.primaryLight,
-    Underweight: C.warnLight,
-    "Severely Underweight": C.dangerLight,
-    Stunted: C.purpleLight,
-    Wasted: C.infoLight,
-    Overweight: C.accentLight,
-  })[s] || "#f5f5f5";
+const statusColor = (s) => {
+  return (
+    {
+      Normal: C.primary,
+      Underweight: C.warn,
+      "Severely Underweight": C.danger,
+      Stunted: C.purple,
+      Wasted: C.info,
+      Overweight: C.accent,
+    }[s] || C.textMuted
+  );
+};
+const statusBg = (s) => {
+  return (
+    {
+      Normal: C.primaryLight,
+      Underweight: C.warnLight,
+      "Severely Underweight": C.dangerLight,
+      Stunted: C.purpleLight,
+      Wasted: C.infoLight,
+      Overweight: C.accentLight,
+    }[s] || "#f5f5f5"
+  );
+};
 
 const StatusBadge = ({ status }) => (
   <span
@@ -2224,7 +2252,7 @@ function AIChatbot() {
 }
 
 // ─── Kiosk View ───────────────────────────────────────────────────────────────
-function KioskView({ children, onBack, onSaveMeasurement }) {
+function KioskView({ children, onBack, onSaveMeasurement, theme }) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [step, setStep] = useState(0);
@@ -2245,6 +2273,52 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
     { label: "Saving to database...", iconName: "save" },
     { label: "Complete!", iconName: "checkCircle" },
   ];
+  const kioskColors =
+    theme === "dark"
+      ? {
+          bg: "linear-gradient(135deg,#0D2B20 0%,#0B3D2A 50%,#0D2B20 100%)",
+          text: "#fff",
+          textSoft: "rgba(255,255,255,0.7)",
+          textMuted: "rgba(255,255,255,0.5)",
+          textWeak: "rgba(255,255,255,0.4)",
+          textFaint: "rgba(255,255,255,0.2)",
+          shellAccent: C.primaryMid,
+          shellAccentSoft: "rgba(26,143,104,0.2)",
+          borderSoft: "rgba(255,255,255,0.08)",
+          borderSoftAlt: "rgba(255,255,255,0.12)",
+          panel: "rgba(255,255,255,0.04)",
+          panelAlt: "rgba(255,255,255,0.05)",
+          inputBg: "rgba(255,255,255,0.06)",
+          inputBorder: "rgba(255,255,255,0.12)",
+          buttonSoft: "rgba(255,255,255,0.06)",
+          buttonSoftBorder: "rgba(255,255,255,0.1)",
+          chipBg: "rgba(26,143,104,0.15)",
+          chipBorder: "rgba(26,143,104,0.3)",
+          chipText: C.primaryMid,
+          cardBorder: "rgba(255,255,255,0.08)",
+        }
+      : {
+          bg: "linear-gradient(135deg,#F7FBF9 0%,#EEF5F1 50%,#F8FAF9 100%)",
+          text: C.text,
+          textSoft: C.textMuted,
+          textMuted: C.textMuted,
+          textWeak: C.textLight,
+          textFaint: "rgba(26,43,37,0.22)",
+          shellAccent: C.primaryMid,
+          shellAccentSoft: C.primaryLight,
+          borderSoft: "rgba(11,110,79,0.12)",
+          borderSoftAlt: "rgba(11,110,79,0.18)",
+          panel: "rgba(255,255,255,0.92)",
+          panelAlt: "rgba(255,255,255,0.96)",
+          inputBg: "#fff",
+          inputBorder: "rgba(11,110,79,0.16)",
+          buttonSoft: "rgba(11,110,79,0.08)",
+          buttonSoftBorder: "rgba(11,110,79,0.16)",
+          chipBg: C.primaryLight,
+          chipBorder: "rgba(26,143,104,0.18)",
+          chipText: C.primaryMid,
+          cardBorder: C.border,
+        };
   const startMeasurement = () => {
     if (!form.height_cm || !form.weight_kg) return;
     setStep(2);
@@ -2279,8 +2353,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg,#0D2B20 0%,#0B3D2A 50%,#0D2B20 100%)",
+        background: kioskColors.bg,
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Segoe UI',sans-serif",
@@ -2292,7 +2365,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 24px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: `1px solid ${kioskColors.borderSoft}`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -2301,7 +2374,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
               width: 36,
               height: 36,
               borderRadius: 8,
-              background: C.primaryMid,
+              background: kioskColors.shellAccent,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -2310,12 +2383,14 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             <Icon name="heart" size={18} color="#fff" />
           </div>
           <div>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
+            <div
+              style={{ color: kioskColors.text, fontWeight: 700, fontSize: 15 }}
+            >
               SukatKalusugan
             </div>
             <div
               style={{
-                color: "rgba(255,255,255,0.5)",
+                color: kioskColors.textMuted,
                 fontSize: 10,
                 letterSpacing: 1,
               }}
@@ -2331,11 +2406,11 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 key={s}
                 style={{
                   fontSize: 10,
-                  color: C.primaryMid,
-                  background: "rgba(26,143,104,0.15)",
+                  color: kioskColors.chipText,
+                  background: kioskColors.chipBg,
                   padding: "2px 6px",
                   borderRadius: 4,
-                  border: "1px solid rgba(26,143,104,0.3)",
+                  border: `1px solid ${kioskColors.chipBorder}`,
                 }}
               >
                 ● {s}
@@ -2345,9 +2420,9 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           <button
             onClick={onBack}
             style={{
-              background: "rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              background: kioskColors.buttonSoft,
+              color: kioskColors.textSoft,
+              border: `1px solid ${kioskColors.buttonSoftBorder}`,
               borderRadius: 8,
               padding: "8px 16px",
               fontSize: 12,
@@ -2390,10 +2465,11 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                         step > i
                           ? C.primaryMid
                           : step === i
-                            ? "rgba(26,143,104,0.3)"
-                            : "rgba(255,255,255,0.05)",
-                      border: `2px solid ${step >= i ? C.primaryMid : "rgba(255,255,255,0.1)"}`,
-                      color: step >= i ? "#fff" : "rgba(255,255,255,0.3)",
+                            ? kioskColors.shellAccentSoft
+                            : kioskColors.panelAlt,
+                      border: `2px solid ${step >= i ? kioskColors.shellAccent : kioskColors.borderSoftAlt}`,
+                      color:
+                        step >= i ? kioskColors.text : kioskColors.textFaint,
                       fontWeight: 700,
                       fontSize: 13,
                     }}
@@ -2407,7 +2483,9 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   <div
                     style={{
                       color:
-                        step === i ? C.primaryMid : "rgba(255,255,255,0.3)",
+                        step === i
+                          ? kioskColors.shellAccent
+                          : kioskColors.textFaint,
                       fontSize: 10,
                       whiteSpace: "nowrap",
                     }}
@@ -2421,7 +2499,9 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                       width: 60,
                       height: 2,
                       background:
-                        step > i ? C.primaryMid : "rgba(255,255,255,0.08)",
+                        step > i
+                          ? kioskColors.shellAccent
+                          : kioskColors.borderSoft,
                       margin: "0 4px 16px",
                     }}
                   />
@@ -2456,7 +2536,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 width: 160,
                 height: 160,
                 borderRadius: "50%",
-                background: "rgba(26,143,104,0.15)",
+                background: kioskColors.shellAccentSoft,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -2478,13 +2558,17 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 style={{
                   fontSize: 42,
                   fontWeight: 600,
-                  color: "rgba(255,255,255,0.7)",
+                  color: kioskColors.textSoft,
                 }}
               >
                 Sukat
               </span>
               <span
-                style={{ fontSize: 42, fontWeight: 700, color: C.primaryMid }}
+                style={{
+                  fontSize: 42,
+                  fontWeight: 700,
+                  color: kioskColors.shellAccent,
+                }}
               >
                 Kalusugan
               </span>
@@ -2492,7 +2576,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             <div
               style={{
                 fontSize: 18,
-                color: "rgba(255,255,255,0.5)",
+                color: kioskColors.textMuted,
                 marginBottom: 28,
               }}
             >
@@ -2500,7 +2584,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             </div>
             <p
               style={{
-                color: "rgba(255,255,255,0.4)",
+                color: kioskColors.textWeak,
                 fontSize: 13,
                 marginBottom: 32,
                 lineHeight: 1.6,
@@ -2521,7 +2605,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 style={{
                   fontSize: 52,
                   fontWeight: 700,
-                  color: "#fff",
+                  color: kioskColors.text,
                   letterSpacing: -1,
                 }}
               >
@@ -2532,7 +2616,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   hour12: true,
                 })}
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
+              <div style={{ fontSize: 13, color: kioskColors.textMuted }}>
                 {currentTime.toLocaleDateString("en-PH", {
                   weekday: "long",
                   year: "numeric",
@@ -2545,7 +2629,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
               onClick={() => setShowWelcome(false)}
               style={{
                 background: C.danger,
-                color: "#fff",
+                color: kioskColors.text,
                 border: "none",
                 borderRadius: 12,
                 padding: "16px 48px",
@@ -2563,7 +2647,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
           <div style={{ width: "100%", maxWidth: 700 }}>
             <h2
               style={{
-                color: "#fff",
+                color: kioskColors.text,
                 textAlign: "center",
                 fontSize: 20,
                 marginBottom: 6,
@@ -2573,7 +2657,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             </h2>
             <p
               style={{
-                color: "rgba(255,255,255,0.4)",
+                color: kioskColors.textWeak,
                 textAlign: "center",
                 fontSize: 13,
                 marginBottom: 24,
@@ -2589,7 +2673,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 gap: 8,
               }}
             >
-              <Icon name="search" size={16} color="rgba(255,255,255,0.4)" />
+              <Icon name="search" size={16} color={kioskColors.textWeak} />
               <input
                 type="text"
                 placeholder="Search by child name..."
@@ -2597,11 +2681,11 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: kioskColors.inputBg,
+                  border: `1px solid ${kioskColors.inputBorder}`,
                   borderRadius: 10,
                   padding: "12px 14px",
-                  color: "#fff",
+                  color: kioskColors.text,
                   fontSize: 14,
                   outline: "none",
                 }}
@@ -2610,7 +2694,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 <button
                   onClick={() => setSearchQuery("")}
                   style={{
-                    background: "rgba(255,255,255,0.1)",
+                    background: kioskColors.buttonSoft,
                     border: "none",
                     borderRadius: 8,
                     width: 32,
@@ -2621,7 +2705,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     cursor: "pointer",
                   }}
                 >
-                  <Icon name="x" size={14} color="rgba(255,255,255,0.5)" />
+                  <Icon name="x" size={14} color={kioskColors.textMuted} />
                 </button>
               )}
             </div>
@@ -2649,8 +2733,8 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                       setStep(1);
                     }}
                     style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: kioskColors.panelAlt,
+                      border: `1px solid ${kioskColors.cardBorder}`,
                       borderRadius: 12,
                       padding: 16,
                       cursor: "pointer",
@@ -2678,13 +2762,17 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                       />
                     </div>
                     <div
-                      style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}
+                      style={{
+                        color: kioskColors.text,
+                        fontWeight: 600,
+                        fontSize: 13,
+                      }}
                     >
                       {c.first_name} {c.last_name}
                     </div>
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.4)",
+                        color: kioskColors.textMuted,
                         fontSize: 11,
                         marginTop: 2,
                       }}
@@ -2693,7 +2781,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     </div>
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.4)",
+                        color: kioskColors.textMuted,
                         fontSize: 10,
                         marginTop: 2,
                       }}
@@ -2710,9 +2798,9 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             style={{
               width: "100%",
               maxWidth: 520,
-              background: "rgba(255,255,255,0.04)",
+              background: kioskColors.panel,
               borderRadius: 20,
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: `1px solid ${kioskColors.cardBorder}`,
               padding: 32,
             }}
           >
@@ -2729,7 +2817,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   width: 48,
                   height: 48,
                   borderRadius: "50%",
-                  background: "rgba(26,143,104,0.2)",
+                  background: kioskColors.shellAccentSoft,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -2744,10 +2832,16 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 />
               </div>
               <div>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>
+                <div
+                  style={{
+                    color: kioskColors.text,
+                    fontWeight: 700,
+                    fontSize: 16,
+                  }}
+                >
                   {selectedChild.first_name} {selectedChild.last_name}
                 </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+                <div style={{ color: kioskColors.textMuted, fontSize: 12 }}>
                   {selectedChild.child_code} · {selectedChild.age_months} months
                 </div>
               </div>
@@ -2776,7 +2870,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   <label
                     style={{
                       display: "block",
-                      color: "rgba(255,255,255,0.6)",
+                      color: kioskColors.textMuted,
                       fontSize: 11,
                       marginBottom: 6,
                       letterSpacing: 0.5,
@@ -2794,11 +2888,11 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     }
                     style={{
                       width: "100%",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: kioskColors.inputBg,
+                      border: `1px solid ${kioskColors.inputBorder}`,
                       borderRadius: 10,
                       padding: "12px 14px",
-                      color: "#fff",
+                      color: kioskColors.text,
                       fontSize: 16,
                       fontWeight: 600,
                       outline: "none",
@@ -2816,8 +2910,8 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 background:
                   form.height_cm && form.weight_kg
                     ? C.primaryMid
-                    : "rgba(255,255,255,0.05)",
-                color: "#fff",
+                    : kioskColors.panelAlt,
+                color: kioskColors.text,
                 border: "none",
                 borderRadius: 12,
                 padding: "14px 0",
@@ -2835,7 +2929,8 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   justifyContent: "center",
                 }}
               >
-                <Icon name="scan" size={16} color="#fff" /> START MEASUREMENT
+                <Icon name="scan" size={16} color={kioskColors.text} /> START
+                MEASUREMENT
               </span>
             </button>
           </div>
@@ -2860,7 +2955,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   cy={70}
                   r={60}
                   fill="none"
-                  stroke="rgba(255,255,255,0.06)"
+                  stroke={kioskColors.borderSoft}
                   strokeWidth={6}
                 />
                 <circle
@@ -2890,16 +2985,22 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 <Icon
                   name={sensorStages[sensorStage]?.iconName || "activity"}
                   size={28}
-                  color={C.primaryMid}
+                  color={kioskColors.shellAccent}
                 />
-                <div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>
+                <div
+                  style={{
+                    color: kioskColors.text,
+                    fontSize: 20,
+                    fontWeight: 700,
+                  }}
+                >
                   {Math.round(progress)}%
                 </div>
               </div>
             </div>
             <div
               style={{
-                color: C.primaryMid,
+                color: kioskColors.shellAccent,
                 fontSize: 14,
                 fontWeight: 600,
                 marginBottom: 8,
@@ -2925,13 +3026,17 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     fontSize: 11,
                     color:
                       i <= sensorStage
-                        ? "rgba(255,255,255,0.7)"
-                        : "rgba(255,255,255,0.2)",
+                        ? kioskColors.textSoft
+                        : kioskColors.textFaint,
                   }}
                 >
                   <span>
                     {i < sensorStage ? (
-                      <Icon name="check" size={12} color={C.primaryMid} />
+                      <Icon
+                        name="check"
+                        size={12}
+                        color={kioskColors.shellAccent}
+                      />
                     ) : i === sensorStage ? (
                       <Icon name="playCircle" size={12} color={C.accent} />
                     ) : (
@@ -2941,7 +3046,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                           width: 12,
                           height: 12,
                           borderRadius: "50%",
-                          border: "1px solid rgba(255,255,255,0.2)",
+                          border: `1px solid ${kioskColors.borderSoftAlt}`,
                         }}
                       />
                     )}
@@ -2962,10 +3067,10 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   <Icon name="alertCircle" size={48} color={C.danger} />
                 )}
               </div>
-              <h2 style={{ color: "#fff", fontSize: 22, margin: 0 }}>
+              <h2 style={{ color: kioskColors.text, fontSize: 22, margin: 0 }}>
                 Measurement Complete
               </h2>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+              <p style={{ color: kioskColors.textWeak, fontSize: 13 }}>
                 {selectedChild.first_name} {selectedChild.last_name} ·{" "}
                 {selectedChild.age_months} months
               </p>
@@ -2985,22 +3090,28 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 <div
                   key={l}
                   style={{
-                    background: "rgba(255,255,255,0.04)",
+                    background: kioskColors.panel,
                     borderRadius: 12,
                     padding: 16,
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: `1px solid ${kioskColors.cardBorder}`,
                   }}
                 >
                   <div
                     style={{
-                      color: "rgba(255,255,255,0.4)",
+                      color: kioskColors.textMuted,
                       fontSize: 10,
                       letterSpacing: 1,
                     }}
                   >
                     {l}
                   </div>
-                  <div style={{ color: "#fff", fontSize: 28, fontWeight: 700 }}>
+                  <div
+                    style={{
+                      color: kioskColors.text,
+                      fontSize: 28,
+                      fontWeight: 700,
+                    }}
+                  >
                     {v}
                     <span style={{ fontSize: 14, marginLeft: 2 }}>{u}</span>
                   </div>
@@ -3009,7 +3120,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
             </div>
             <div
               style={{
-                background: "rgba(255,255,255,0.04)",
+                background: kioskColors.panel,
                 borderRadius: 16,
                 padding: 20,
                 border: `1px solid ${statusColor(result.status)}40`,
@@ -3024,7 +3135,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                   marginBottom: 16,
                 }}
               >
-                <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
+                <div style={{ color: kioskColors.textMuted, fontSize: 12 }}>
                   NUTRITIONAL STATUS
                 </div>
                 <div
@@ -3061,7 +3172,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                     </div>
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.35)",
+                        color: kioskColors.textMuted,
                         fontSize: 9,
                         marginTop: 2,
                       }}
@@ -3096,7 +3207,7 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 style={{
                   flex: 1,
                   background: C.primaryMid,
-                  color: "#fff",
+                  color: kioskColors.text,
                   border: "none",
                   borderRadius: 10,
                   padding: "12px 0",
@@ -3111,9 +3222,9 @@ function KioskView({ children, onBack, onSaveMeasurement }) {
                 onClick={onBack}
                 style={{
                   flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: kioskColors.buttonSoft,
+                  color: kioskColors.text,
+                  border: `1px solid ${kioskColors.buttonSoftBorder}`,
                   borderRadius: 10,
                   padding: "12px 0",
                   fontSize: 14,
@@ -6136,6 +6247,7 @@ export default function App() {
     return (
       <KioskView
         children={childrenData}
+        theme={theme}
         onBack={() => setKioskMode(false)}
         onSaveMeasurement={handleKioskSave}
       />
@@ -6591,7 +6703,7 @@ export default function App() {
               }
             >
               <Icon
-                name={theme === "dark" ? "sun" : "moon"}
+                name={theme === "dark" ? "moon" : "sun"}
                 size={15}
                 color={C.textMuted}
               />
