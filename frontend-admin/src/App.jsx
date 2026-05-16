@@ -3281,7 +3281,11 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
         chartInstance.current = null;
       }
     };
+<<<<<<< HEAD
   }, );
+=======
+  }, []);
+>>>>>>> 637d974 (v2 dashboard)
 
   useEffect(() => {
     if (!chartInstance.current) return;
@@ -3290,15 +3294,27 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
     chartInstance.current.data.datasets[0].data = d.normal;
     chartInstance.current.data.datasets[1].data = d.risk;
     chartInstance.current.update();
+<<<<<<< HEAD
   });
 
   // Calendar
   function renderCalendar() {
+=======
+  }, [chartView]);
+
+  // Calendar
+  const renderCalendar = () => {
+>>>>>>> 637d974 (v2 dashboard)
     const firstDay = new Date(calYear, calMonth, 1).getDay();
     const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
     const prevTotal = new Date(calYear, calMonth, 0).getDate();
     const today = new Date();
+<<<<<<< HEAD
     const isCurrentMonth = today.getFullYear() === calYear && today.getMonth() === calMonth;
+=======
+    const isCurrentMonth =
+      today.getFullYear() === calYear && today.getMonth() === calMonth;
+>>>>>>> 637d974 (v2 dashboard)
     const cells = [];
     for (let i = 0; i < firstDay; i++) {
       cells.push(
@@ -3312,7 +3328,11 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
           }}
         >
           {prevTotal - firstDay + 1 + i}
+<<<<<<< HEAD
         </div>
+=======
+        </div>,
+>>>>>>> 637d974 (v2 dashboard)
       );
     }
     for (let d = 1; d <= totalDays; d++) {
@@ -3351,6 +3371,7 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                 height: 4,
                 borderRadius: "50%",
                 background: EVENT_COLORS[ev[0].type],
+<<<<<<< HEAD
               }} />
           )}
         </div>
@@ -3358,6 +3379,16 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
     }
     return cells;
   }
+=======
+              }}
+            />
+          )}
+        </div>,
+      );
+    }
+    return cells;
+  };
+>>>>>>> 637d974 (v2 dashboard)
 
   const tableChildren =
     tableTab === "today"
@@ -3805,9 +3836,16 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
           <thead>
             <tr style={{ background: C.bg }}>
               {[
+<<<<<<< HEAD
                 "No",
                 "Name",
                 "Age (months)",
+=======
+                "",
+                "No",
+                "Name",
+                "Age",
+>>>>>>> 637d974 (v2 dashboard)
                 "Date of Birth",
                 "Status",
                 "Email address",
@@ -3826,7 +3864,15 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                     whiteSpace: "nowrap",
                   }}
                 >
+<<<<<<< HEAD
                  {h === "" ? null : h}
+=======
+                  {h === "" ? (
+                    <input type="checkbox" style={{ width: 13, height: 13 }} />
+                  ) : (
+                    h
+                  )}
+>>>>>>> 637d974 (v2 dashboard)
                 </th>
               ))}
             </tr>
@@ -3842,9 +3888,18 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                       : "none",
                 }}
               >
+<<<<<<< HEAD
                 <td
                   style={{
                     padding: "px 14px",
+=======
+                <td style={{ padding: "10px 14px" }}>
+                  <input type="checkbox" style={{ width: 13, height: 13 }} />
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+>>>>>>> 637d974 (v2 dashboard)
                     fontSize: 12,
                     color: C.textMuted,
                   }}
