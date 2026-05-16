@@ -3281,7 +3281,7 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
         chartInstance.current = null;
       }
     };
-  }, );
+  });
 
   useEffect(() => {
     if (!chartInstance.current) return;
@@ -3298,7 +3298,8 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
     const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
     const prevTotal = new Date(calYear, calMonth, 0).getDate();
     const today = new Date();
-    const isCurrentMonth = today.getFullYear() === calYear && today.getMonth() === calMonth;
+    const isCurrentMonth =
+      today.getFullYear() === calYear && today.getMonth() === calMonth;
     const cells = [];
     for (let i = 0; i < firstDay; i++) {
       cells.push(
@@ -3312,7 +3313,7 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
           }}
         >
           {prevTotal - firstDay + 1 + i}
-        </div>
+        </div>,
       );
     }
     for (let d = 1; d <= totalDays; d++) {
@@ -3351,9 +3352,10 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                 height: 4,
                 borderRadius: "50%",
                 background: EVENT_COLORS[ev[0].type],
-              }} />
+              }}
+            />
           )}
-        </div>
+        </div>,
       );
     }
     return cells;
@@ -3826,7 +3828,7 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                 {h === "" ? null : h}
+                  {h === "" ? null : h}
                 </th>
               ))}
             </tr>
@@ -6243,15 +6245,15 @@ export default function App() {
       >
         <div
           style={{
-            padding: "20px 18px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            padding: "18px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
-                width: 34,
-                height: 34,
+                width: 32,
+                height: 32,
                 borderRadius: 8,
                 background: C.primaryMid,
                 display: "flex",
@@ -6259,32 +6261,39 @@ export default function App() {
                 justifyContent: "center",
               }}
             >
-              <Icon name="heart" size={18} color="#fff" />
+              <Icon name="heart" size={16} color="#fff" />
             </div>
             <div>
               <div
                 style={{
                   color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  letterSpacing: 0.3,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  lineHeight: 1.2,
                 }}
               >
                 SukatKalusugan
               </div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9 }}>
-                eOPT+ Admin Panel
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 9,
+                  letterSpacing: 1,
+                  marginTop: 2,
+                }}
+              >
+                ADMIN PANEL
               </div>
             </div>
           </div>
         </div>
-        <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
+        <nav style={{ flex: 1, padding: "8px 10px 4px", overflowY: "auto" }}>
           <div
             style={{
               fontSize: 9,
               color: "rgba(255,255,255,0.25)",
               letterSpacing: 1.5,
-              padding: "4px 8px 8px",
+              padding: "8px 8px 6px",
               fontWeight: 600,
             }}
           >
@@ -6298,26 +6307,24 @@ export default function App() {
                 width: "100%",
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 10,
+                gap: 9,
+                padding: "9px 12px",
+                borderRadius: 9,
                 border: "none",
                 cursor: "pointer",
                 marginBottom: 2,
                 textAlign: "left",
                 transition: "all 0.15s",
                 background:
-                  page === n.id ? "rgba(26,143,104,0.25)" : "transparent",
-                color: page === n.id ? C.primaryMid : "rgba(255,255,255,0.6)",
+                  page === n.id ? "rgba(26,143,104,0.22)" : "transparent",
+                color: page === n.id ? "#2BC88A" : "rgba(255,255,255,0.55)",
                 borderLeft:
-                  page === n.id
-                    ? `3px solid ${C.primaryMid}`
-                    : "3px solid transparent",
+                  page === n.id ? `2px solid #2BC88A` : "3px solid transparent",
               }}
             >
               <span
                 style={{
-                  width: 18,
+                  width: 16,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -6326,11 +6333,11 @@ export default function App() {
                 <Icon
                   name={n.iconName}
                   size={15}
-                  color={page === n.id ? C.primaryMid : "rgba(255,255,255,0.6)"}
+                  color={page === n.id ? "#2BC88A" : "rgba(255,255,255,0.55)"}
                 />
               </span>
               <span
-                style={{ fontSize: 13, fontWeight: page === n.id ? 700 : 400 }}
+                style={{ fontSize: 12, fontWeight: page === n.id ? 600 : 400 }}
               >
                 {n.label}
               </span>
@@ -6338,11 +6345,12 @@ export default function App() {
                 <span
                   style={{
                     marginLeft: "auto",
-                    fontSize: 9,
+                    fontSize: 8,
                     background: C.primaryMid,
                     color: "#fff",
-                    padding: "2px 6px",
+                    padding: "1px 5px",
                     borderRadius: 4,
+                    lineHeight: 1.2,
                   }}
                 >
                   LIVE
@@ -6350,24 +6358,65 @@ export default function App() {
               )}
             </button>
           ))}
+          <div
+            style={{
+              fontSize: 9,
+              color: "rgba(255,255,255,0.25)",
+              letterSpacing: 1.5,
+              padding: "10px 8px 6px",
+              fontWeight: 600,
+            }}
+          >
+            OTHERS
+          </div>
+          <button
+            onClick={() => setUser(null)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 9,
+              padding: "9px 12px",
+              borderRadius: 9,
+              border: "none",
+              cursor: "pointer",
+              marginBottom: 2,
+              textAlign: "left",
+              background: "transparent",
+              color: "#E03131",
+            }}
+            title="Sign out"
+          >
+            <span
+              style={{
+                width: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="logout" size={14} color="#E03131" />
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 500 }}>Log Out</span>
+          </button>
         </nav>
         <div
           style={{
             padding: "12px 14px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 borderRadius: "50%",
                 background: C.primaryMid,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: 700,
                 color: "#fff",
               }}
@@ -6431,7 +6480,7 @@ export default function App() {
           style={{
             background: C.card,
             borderBottom: `1px solid ${C.border}`,
-            padding: "14px 24px",
+            padding: "12px 20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -6442,9 +6491,9 @@ export default function App() {
         >
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
-              {NAV_ITEMS.find((n) => n.id === page)?.label || "Dashboard"}
+              Good morning, {user?.name?.split(" ")?.[0] || "Admin"}!
             </div>
-            <div style={{ fontSize: 11, color: C.textMuted }}>
+            <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2 }}>
               SukatKalusugan ·{" "}
               {new Date().toLocaleDateString("en-PH", {
                 weekday: "long",
@@ -6455,6 +6504,9 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ cursor: "pointer" }}>
+              <Icon name="sun" size={18} color={C.textMuted} />
+            </div>
             <div style={{ position: "relative", cursor: "pointer" }}>
               <Icon name="bell" size={18} color={C.textMuted} />
               {notifications > 0 && (
@@ -6479,6 +6531,9 @@ export default function App() {
                 </span>
               )}
             </div>
+            <div style={{ cursor: "pointer" }}>
+              <Icon name="mail" size={18} color={C.textMuted} />
+            </div>
             <div
               style={{
                 width: 32,
@@ -6499,6 +6554,9 @@ export default function App() {
                 .map((n) => n[0])
                 .join("")
                 .slice(0, 2)}
+            </div>
+            <div style={{ cursor: "pointer" }}>
+              <Icon name="settings" size={18} color={C.textMuted} />
             </div>
           </div>
         </div>
