@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "SukatKalusugan Mobile",
+    "slug": "sukat-kalusugan-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "platforms": ["ios", "android", "web"]
+  }
+}
