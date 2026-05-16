@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
-const C = {
+const LIGHT_THEME = {
   primary: "#0B6E4F",
   primaryLight: "#E6F4EF",
   primaryMid: "#1A8F68",
@@ -25,6 +25,33 @@ const C = {
   sidebarHover: "#163D2E",
   sidebarActive: "#1A8F68",
 };
+
+const DARK_THEME = {
+  primary: "#34C38F",
+  primaryLight: "#17352B",
+  primaryMid: "#2BC88A",
+  accent: "#F5A623",
+  accentLight: "#4A3613",
+  danger: "#FF6B6B",
+  dangerLight: "#3B1A1A",
+  warn: "#F2A65A",
+  warnLight: "#3B2A12",
+  info: "#5AA9FF",
+  infoLight: "#112D46",
+  purple: "#9B7BFF",
+  purpleLight: "#241A46",
+  bg: "#0C1411",
+  card: "#121D19",
+  border: "#23342E",
+  text: "#EEF4F1",
+  textMuted: "#9AB1A8",
+  textLight: "#748A82",
+  sidebar: "#0D2B20",
+  sidebarHover: "#163D2E",
+  sidebarActive: "#2BC88A",
+};
+
+const C = { ...LIGHT_THEME };
 
 // ─── Initial Mock Data ────────────────────────────────────────────────────────
 const INIT_CHILDREN = [
@@ -588,6 +615,21 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
       >
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+    moon: (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={style}
+      >
+        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
       </svg>
     ),
     bell: (
@@ -5949,6 +5991,27 @@ export default function App() {
   const [selectedChild, setSelectedChild] = useState(null);
   const [kioskMode, setKioskMode] = useState(false);
   const [notifications] = useState(3);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    const savedTheme = window.localStorage?.getItem("sk-theme");
+    if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+    return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches
+      ? "dark"
+      : "light";
+  });
+
+  const activeTheme = theme === "dark" ? DARK_THEME : LIGHT_THEME;
+  Object.assign(C, activeTheme);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage?.setItem("sk-theme", theme);
+    }
+    if (typeof document !== "undefined") {
+      document.body.style.background = activeTheme.bg;
+      document.body.style.color = activeTheme.text;
+    }
+  }, [theme, activeTheme.bg, activeTheme.text]);
 
   const [childrenData, setChildrenData] = useState(INIT_CHILDREN);
   const [measurementsData, setMeasurementsData] = useState(INIT_MEASUREMENTS);
@@ -6504,9 +6567,36 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ cursor: "pointer" }}>
-              <Icon name="sun" size={18} color={C.textMuted} />
-            </div>
+            <button
+              onClick={() =>
+                setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+              }
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                border: `1px solid ${C.border}`,
+                background: C.bg,
+                color: C.textMuted,
+                borderRadius: 999,
+                padding: "7px 11px",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+              title={
+                theme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to night mode"
+              }
+            >
+              <Icon
+                name={theme === "dark" ? "sun" : "moon"}
+                size={15}
+                color={C.textMuted}
+              />
+              <span>{theme === "dark" ? "Light mode" : "Night mode"}</span>
+            </button>
             <div style={{ position: "relative", cursor: "pointer" }}>
               <Icon name="bell" size={18} color={C.textMuted} />
               {notifications > 0 && (
