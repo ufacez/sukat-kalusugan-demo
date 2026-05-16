@@ -13,15 +13,17 @@ import {
   View,
 } from "react-native";
 
-// ─── Design Tokens (App.jsx Colors + SukatKalusugan Layout) ──────────────────
-const COLORS = {
+// ─── Design Tokens (mirrors frontend-admin App.jsx) ─────────────────────────
+const C = {
   primary: "#0B6E4F",
-  primaryDark: "#083F2E",
   primaryLight: "#E6F4EF",
+  primaryMid: "#1A8F68",
   accent: "#F5A623",
   accentLight: "#FFF8EC",
   danger: "#E03131",
   dangerLight: "#FFF0F0",
+  warn: "#E67E22",
+  warnLight: "#FFF4E5",
   info: "#1971C2",
   infoLight: "#E7F5FF",
   purple: "#7048E8",
@@ -30,33 +32,44 @@ const COLORS = {
   card: "#FFFFFF",
   border: "#E2E8E5",
   text: "#1A2B25",
-  muted: "#6D867C",
-  dark: "#0D2B20",
+  textMuted: "#6B8C7D",
+  textLight: "#9BB5AC",
+  sidebar: "#0D2B20",
 };
 
-const NUTRITIONIST_TABS = [
-  { id: "dashboard", label: "Home", icon: "🏠" },
-  { id: "children", label: "Children", icon: "👥" },
-  { id: "measurements", label: "Measurements", icon: "📊" },
-  { id: "specialists", label: "Staff", icon: "💚" },
-  { id: "reports", label: "Reports", icon: "📈" },
-];
+// ─── Status helpers (mirrors frontend-admin) ─────────────────────────────────
+function statusColor(s) {
+  return (
+    {
+      Normal: C.primary,
+      Underweight: C.warn,
+      "Severely Underweight": C.danger,
+      Stunted: C.purple,
+      Wasted: C.info,
+      Overweight: C.accent,
+    }[s] || C.textMuted
+  );
+}
+function statusBg(s) {
+  return (
+    {
+      Normal: C.primaryLight,
+      Underweight: C.warnLight,
+      "Severely Underweight": C.dangerLight,
+      Stunted: C.purpleLight,
+      Wasted: C.infoLight,
+      Overweight: C.accentLight,
+    }[s] || "#f5f5f5"
+  );
+}
 
-const PARENT_TABS = [
-  { id: "dashboard", label: "Home", icon: "🏠" },
-  { id: "child", label: "My Child", icon: "👧" },
-  { id: "growth", label: "Growth", icon: "📈" },
-  { id: "tips", label: "Tips", icon: "💡" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
-];
-
+// ─── Mock Data ────────────────────────────────────────────────────────────────
 const INITIAL_PARENTS = [
   {
     id: 1,
     name: "Ana Santos",
     email: "ana.santos@email.com",
     phone: "09171234567",
-    children: 1,
     status: "Active",
   },
   {
@@ -64,7 +77,6 @@ const INITIAL_PARENTS = [
     name: "Rosa Dela Cruz",
     email: "rosa.dc@email.com",
     phone: "09281234567",
-    children: 1,
     status: "Active",
   },
   {
@@ -72,7 +84,6 @@ const INITIAL_PARENTS = [
     name: "Carla Reyes",
     email: "carla.reyes@email.com",
     phone: "09391234567",
-    children: 1,
     status: "Active",
   },
   {
@@ -80,7 +91,6 @@ const INITIAL_PARENTS = [
     name: "Pedro Torres",
     email: "pedro.torres@email.com",
     phone: "09451234567",
-    children: 1,
     status: "Active",
   },
   {
@@ -88,7 +98,6 @@ const INITIAL_PARENTS = [
     name: "Lena Garcia",
     email: "lena.garcia@email.com",
     phone: "09561234567",
-    children: 1,
     status: "Inactive",
   },
 ];
@@ -312,147 +321,180 @@ const INITIAL_NUTRITIONISTS = [
   },
 ];
 
-const INITIAL_TIPS = [
+const NUTRITION_TIPS = [
   "Serve iron-rich meals twice a week to support healthy development.",
   "Track height and weight every month so trends are easy to spot.",
   "Encourage water intake before snacks to reduce empty calories.",
   "Bring the child to the next weigh-in even when they feel healthy.",
 ];
 
-// ─── Helper Functions ──────────────────────────────────────────────────────────
-function getChildName(child) {
-  return `${child.firstName} ${child.lastName}`;
-}
-
-function getParentName(parents, parentId) {
-  return parents.find((p) => p.id === parentId)?.name ?? "Unassigned";
-}
-
-function formatDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
+// ─── WHO Z-Score helper ───────────────────────────────────────────────────────
 function computeWHO({ weightKg, heightCm, ageMonths }) {
   const wazMedian = 9.5 + ageMonths * 0.15;
   const hazMedian = 65 + ageMonths * 0.9;
   const whzMedian = 10.5 + (heightCm - 65) * 0.09;
-  const waz = Number(((weightKg - wazMedian) / 1.2).toFixed(2));
-  const haz = Number(((heightCm - hazMedian) / 3.2).toFixed(2));
-  const whz = Number(((weightKg - whzMedian) / 1.1).toFixed(2));
-
+  const waz = +((weightKg - wazMedian) / 1.2).toFixed(2);
+  const haz = +((heightCm - hazMedian) / 3.2).toFixed(2);
+  const whz = +((weightKg - whzMedian) / 1.1).toFixed(2);
   let status = "Normal";
   if (waz < -3 || whz < -3) status = "Severely Underweight";
   else if (waz < -2) status = "Underweight";
   else if (haz < -2) status = "Stunted";
   else if (whz < -2) status = "Wasted";
   else if (whz > 2) status = "Overweight";
-
   return { waz, haz, whz, status };
 }
 
-function getStatusTheme(status) {
-  const themes = {
-    Normal: {
-      bg: COLORS.primaryLight,
-      fg: COLORS.primary,
-      dot: COLORS.primary,
-    },
-    Underweight: { bg: COLORS.accentLight, fg: "#B66B00", dot: COLORS.accent },
-    "Severely Underweight": {
-      bg: COLORS.dangerLight,
-      fg: COLORS.danger,
-      dot: COLORS.danger,
-    },
-    Stunted: { bg: COLORS.purpleLight, fg: COLORS.purple, dot: COLORS.purple },
-    Wasted: { bg: COLORS.infoLight, fg: COLORS.info, dot: COLORS.info },
-    Overweight: { bg: "#FFF0D5", fg: "#B56A00", dot: COLORS.accent },
-  };
-  return (
-    themes[status] || { bg: "#EEF3F0", fg: COLORS.muted, dot: COLORS.muted }
-  );
+function getChildName(c) {
+  return `${c.firstName} ${c.lastName}`;
+}
+function getParentName(parents, id) {
+  return parents.find((p) => p.id === id)?.name ?? "—";
+}
+function formatDate(v) {
+  if (!v) return "—";
+  return new Date(v).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+function initials(name) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
-// ─── UI Components ────────────────────────────────────────────────────────────
-function StatCard({ title, value, hint, tone = "Normal" }) {
-  const theme = getStatusTheme(tone);
+// ─── Minimal SVG-free icon text symbols ──────────────────────────────────────
+// Using Unicode symbols to keep icon weight minimal
+const ICONS = {
+  home: "⊞",
+  children: "⊹",
+  measure: "≡",
+  parents: "⊕",
+  staff: "⊛",
+  reports: "⊟",
+  tips: "⊙",
+  settings: "⊡",
+  logout: "⤷",
+  plus: "+",
+  edit: "✎",
+  trash: "⌫",
+  check: "✓",
+  alert: "!",
+  info: "i",
+  search: "⌕",
+  male: "♂",
+  female: "♀",
+  heart: "♥",
+};
+
+const NUTRITIONIST_TABS = [
+  { id: "dashboard", label: "Home", icon: ICONS.home },
+  { id: "children", label: "Children", icon: ICONS.children },
+  { id: "measurements", label: "Records", icon: ICONS.measure },
+  { id: "staff", label: "Staff", icon: ICONS.staff },
+  { id: "reports", label: "Reports", icon: ICONS.reports },
+];
+
+const PARENT_TABS = [
+  { id: "dashboard", label: "Home", icon: ICONS.home },
+  { id: "child", label: "My Child", icon: ICONS.children },
+  { id: "growth", label: "Growth", icon: ICONS.reports },
+  { id: "tips", label: "Tips", icon: ICONS.tips },
+  { id: "settings", label: "Settings", icon: ICONS.settings },
+];
+
+// ─── Shared UI Components ─────────────────────────────────────────────────────
+function StatusBadge({ status }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: theme.bg }]}>
-      <Text style={[styles.statValue, { color: theme.fg }]}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-      <Text style={styles.statHint}>{hint}</Text>
+    <View style={[ss.badge, { backgroundColor: statusBg(status) }]}>
+      <View style={[ss.badgeDot, { backgroundColor: statusColor(status) }]} />
+      <Text style={[ss.badgeText, { color: statusColor(status) }]}>
+        {status}
+      </Text>
     </View>
   );
 }
 
-function Badge({ children, status }) {
-  const theme = getStatusTheme(status);
+function Card({ children, style }) {
+  return <View style={[ss.card, style]}>{children}</View>;
+}
+
+function SectionTitle({ title, subtitle }) {
   return (
-    <View style={[styles.badge, { backgroundColor: theme.bg }]}>
-      <View style={[styles.badgeDot, { backgroundColor: theme.dot }]} />
-      <Text style={[styles.badgeText, { color: theme.fg }]}>{children}</Text>
+    <View style={{ marginBottom: 12 }}>
+      <Text style={ss.sectionTitle}>{title}</Text>
+      {subtitle ? <Text style={ss.sectionSubtitle}>{subtitle}</Text> : null}
     </View>
   );
 }
 
-function ScreenTitle({ title, subtitle }) {
+function StatCard({ label, value, hint, color }) {
+  const bg = color ? `${color}15` : C.primaryLight;
+  const fg = color || C.primary;
   return (
-    <View>
-      <Text style={styles.screenTitle}>{title}</Text>
-      {subtitle ? <Text style={styles.screenSubtitle}>{subtitle}</Text> : null}
+    <View
+      style={[ss.statCard, { backgroundColor: bg, borderColor: `${fg}20` }]}
+    >
+      <Text style={[ss.statValue, { color: fg }]}>{value}</Text>
+      <Text style={ss.statLabel}>{label}</Text>
+      {hint ? <Text style={ss.statHint}>{hint}</Text> : null}
     </View>
   );
-}
-
-function Card({ children }) {
-  return <View style={styles.card}>{children}</View>;
 }
 
 function Field({ label, required, children }) {
   return (
-    <View style={styles.fieldWrap}>
-      <Text style={styles.fieldLabel}>
+    <View style={{ marginBottom: 12 }}>
+      <Text style={ss.fieldLabel}>
         {label}
-        {required ? <Text style={{ color: COLORS.danger }}> *</Text> : null}
+        {required ? <Text style={{ color: C.danger }}> *</Text> : null}
       </Text>
       {children}
     </View>
   );
 }
 
-function Input({ value, onChangeText, placeholder, keyboardType, multiline }) {
+function Input({
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  secureTextEntry,
+}) {
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={COLORS.muted}
+      placeholderTextColor={C.textLight}
       keyboardType={keyboardType}
-      multiline={multiline}
-      style={[styles.input, multiline && styles.inputMultiline]}
+      secureTextEntry={secureTextEntry}
+      style={ss.input}
     />
   );
 }
 
 function ChoiceGroup({ value, options, onChange }) {
   return (
-    <View style={styles.choiceGroup}>
-      {options.map((option) => {
-        const selected = option.value === value;
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      {options.map((o) => {
+        const sel = o.value === value;
         return (
           <Pressable
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={[styles.choice, selected && styles.choiceSelected]}
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            style={[
+              ss.choiceBtn,
+              sel && { backgroundColor: C.primary, borderColor: C.primary },
+            ]}
           >
-            <Text
-              style={[styles.choiceText, selected && styles.choiceTextSelected]}
-            >
-              {option.label}
+            <Text style={[ss.choiceBtnText, sel && { color: "#fff" }]}>
+              {o.label}
             </Text>
           </Pressable>
         );
@@ -461,126 +503,249 @@ function ChoiceGroup({ value, options, onChange }) {
   );
 }
 
-// ─── Login Screen ──────────────────────────────────────────────────────────────
+function AvatarCircle({
+  name,
+  size = 36,
+  color = C.primary,
+  bg = C.primaryLight,
+}) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: bg,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ fontSize: size * 0.35, fontWeight: "700", color }}>
+        {initials(name)}
+      </Text>
+    </View>
+  );
+}
+
+function PrimaryButton({ label, onPress, loading, style }) {
+  return (
+    <Pressable onPress={onPress} style={[ss.primaryBtn, style]}>
+      <Text style={ss.primaryBtnText}>{loading ? "Please wait…" : label}</Text>
+    </Pressable>
+  );
+}
+
+function SecondaryButton({ label, onPress, danger }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[ss.secondaryBtn, danger && { borderColor: C.danger }]}
+    >
+      <Text style={[ss.secondaryBtnText, danger && { color: C.danger }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ListRow({ title, meta, right, onPress, style }) {
+  return (
+    <Pressable onPress={onPress} style={[ss.listRow, style]}>
+      <View style={{ flex: 1 }}>
+        <Text style={ss.listRowTitle}>{title}</Text>
+        {meta ? <Text style={ss.listRowMeta}>{meta}</Text> : null}
+      </View>
+      {right}
+    </Pressable>
+  );
+}
+
+function TabBar({ tabs, active, onChange }) {
+  return (
+    <View style={ss.tabBar}>
+      {tabs.map((t) => {
+        const sel = t.id === active;
+        return (
+          <Pressable
+            key={t.id}
+            onPress={() => onChange(t.id)}
+            style={ss.tabItem}
+          >
+            <Text style={[ss.tabIcon, sel && { color: C.primaryMid }]}>
+              {t.icon}
+            </Text>
+            <Text
+              style={[
+                ss.tabLabel,
+                sel && { color: C.primaryMid, fontWeight: "700" },
+              ]}
+            >
+              {t.label}
+            </Text>
+            {sel && <View style={ss.tabIndicator} />}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function AppHeader({ title, subtitle }) {
+  return (
+    <View style={ss.appHeader}>
+      <View style={ss.appHeaderBrand}>
+        <Text style={ss.appHeaderIcon}>{ICONS.heart}</Text>
+      </View>
+      <View>
+        <Text style={ss.appHeaderTitle}>{title}</Text>
+        {subtitle ? <Text style={ss.appHeaderSub}>{subtitle}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+// ─── Login Screen ─────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [role, setRole] = useState("nutritionist");
-  const [name, setName] = useState("Dr. Maria Santos");
   const [email, setEmail] = useState("maria.santos@health.gov");
+  const [password, setPassword] = useState("admin123");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (role === "nutritionist") {
-      setName("Dr. Maria Santos");
-      setEmail("maria.santos@health.gov");
-    } else {
-      setName("Ana Santos");
-      setEmail("ana.santos@email.com");
-    }
+    setEmail(
+      role === "nutritionist"
+        ? "maria.santos@health.gov"
+        : "ana.santos@email.com",
+    );
   }, [role]);
 
   const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert("Missing fields", "Please enter email and password.");
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
+      const name = role === "nutritionist" ? "Dr. Maria Santos" : "Ana Santos";
       onLogin({ role, name, email, parentId: role === "parent" ? 1 : null });
       setLoading(false);
-    }, 650);
+    }, 800);
   };
 
   return (
-    <SafeAreaView style={styles.loginSafeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.dark} />
-      <View style={styles.loginBackgroundTop} />
-      <View style={styles.loginBackgroundBottom} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.sidebar }}>
+      <StatusBar barStyle="light-content" backgroundColor={C.sidebar} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.loginRoot}
+        style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.loginScroll}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>💚</Text>
+        <ScrollView
+          contentContainerStyle={ss.loginScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Brand */}
+          <View style={ss.loginBrand}>
+            <View style={ss.loginBrandMark}>
+              <Text style={{ fontSize: 28, color: C.primaryMid }}>
+                {ICONS.heart}
+              </Text>
             </View>
             <View>
-              <Text style={styles.brandTitle}>SukatKalusugan</Text>
-              <Text style={styles.brandSubtitle}>Child Health Monitoring</Text>
+              <Text style={ss.loginBrandTitle}>SukatKalusugan</Text>
+              <Text style={ss.loginBrandSub}>Child Health Monitoring</Text>
             </View>
           </View>
 
-          <View style={styles.heroCard}>
-            <Text style={styles.heroTitle}>
-              Child nutrition monitoring made simple
-            </Text>
-            <Text style={styles.heroText}>
-              Track growth, nutrition, and health records all in one place with
-              local data storage.
-            </Text>
+          {/* Card */}
+          <View style={ss.loginCard}>
+            <Text style={ss.loginHeading}>Welcome back</Text>
+            <Text style={ss.loginCaption}>Sign in to continue</Text>
 
-            <View style={styles.roleSwitch}>
-              <Pressable
-                onPress={() => setRole("nutritionist")}
-                style={[
-                  styles.roleButton,
-                  role === "nutritionist" && styles.roleButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.roleButtonText,
-                    role === "nutritionist" && styles.roleButtonTextActive,
-                  ]}
-                >
-                  Nutritionist
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setRole("parent")}
-                style={[
-                  styles.roleButton,
-                  role === "parent" && styles.roleButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.roleButtonText,
-                    role === "parent" && styles.roleButtonTextActive,
-                  ]}
-                >
-                  Parent
-                </Text>
-              </Pressable>
+            {/* Role toggle */}
+            <View style={ss.roleRow}>
+              {["nutritionist", "parent"].map((r) => {
+                const sel = role === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => setRole(r)}
+                    style={[
+                      ss.roleBtn,
+                      sel && {
+                        backgroundColor: C.primary,
+                        borderColor: C.primary,
+                      },
+                    ]}
+                  >
+                    <Text style={[ss.roleBtnText, sel && { color: "#fff" }]}>
+                      {r === "nutritionist" ? "Nutritionist" : "Parent"}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
-            <Field label="Display name">
-              <Input
-                value={name}
-                onChangeText={setName}
-                placeholder="Your name"
-              />
-            </Field>
-
-            <Field label="Email address">
+            <Field label="EMAIL ADDRESS">
               <Input
                 value={email}
                 onChangeText={setEmail}
-                placeholder="name@email.com"
+                placeholder="email@example.com"
+                keyboardType="email-address"
+              />
+            </Field>
+            <Field label="PASSWORD">
+              <Input
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
               />
             </Field>
 
-            <Pressable onPress={handleLogin} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>
-                {loading
-                  ? "Signing in..."
-                  : `Continue as ${role === "nutritionist" ? "Nutritionist" : "Parent"}`}
-              </Text>
-            </Pressable>
+            <PrimaryButton
+              label="Sign In"
+              onPress={handleLogin}
+              loading={loading}
+              style={{ marginTop: 4 }}
+            />
 
-            <View style={styles.demoBox}>
-              <Text style={styles.demoLabel}>Demo Access</Text>
-              <Text style={styles.demoText}>
+            <View style={ss.loginDemo}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: C.textMuted,
+                  marginBottom: 3,
+                }}
+              >
+                Demo Access
+              </Text>
+              <Text
+                style={{ fontSize: 11, color: C.textLight, lineHeight: 17 }}
+              >
                 Nutritionist: maria.santos@health.gov{"\n"}Parent:
-                ana.santos@email.com
+                ana.santos@email.com{"\n"}Password: admin123
               </Text>
             </View>
+          </View>
+
+          {/* Feature tags */}
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              justifyContent: "center",
+              marginTop: 24,
+            }}
+          >
+            {["WHO Standards", "eOPT+ Ready", "IoT Kiosk", "Mobile App"].map(
+              (t) => (
+                <View key={t} style={ss.featureTag}>
+                  <Text style={ss.featureTagText}>{t}</Text>
+                </View>
+              ),
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -588,109 +753,81 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// ─── Nutritionist Dashboard ───────────────────────────────────────────────────
+// ─── Nutritionist: Dashboard ──────────────────────────────────────────────────
 function NutritionistDashboard({
   children,
   measurements,
   parents,
   nutritionists,
 }) {
-  const normalCount = children.filter(
-    (child) => child.status === "Normal",
-  ).length;
-  const alertCount = children.length - normalCount;
-  const recentMeasurements = measurements.slice(0, 3);
+  const normalCount = children.filter((c) => c.status === "Normal").length;
+  const atRisk = children.filter((c) => c.status !== "Normal").length;
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="👋 Welcome" subtitle="Nutritionist Dashboard" />
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="Good morning!" subtitle="Nutritionist Dashboard" />
 
-      <Card>
-        <View style={styles.heroStats}>
-          <View style={styles.heroStatItem}>
-            <Text style={styles.heroStatValue}>{children.length}</Text>
-            <Text style={styles.heroStatLabel}>Children</Text>
-          </View>
-          <View style={styles.heroStatItem}>
-            <Text style={styles.heroStatValue}>{measurements.length}</Text>
-            <Text style={styles.heroStatLabel}>Records</Text>
-          </View>
-          <View style={styles.heroStatItem}>
-            <Text style={styles.heroStatValue}>{alertCount}</Text>
-            <Text style={styles.heroStatLabel}>At Risk</Text>
-          </View>
-        </View>
-      </Card>
-
-      <View style={styles.statsGrid}>
+      {/* Hero stats row */}
+      <View style={ss.statsRow}>
+        <StatCard label="Children" value={children.length} hint="registered" />
         <StatCard
-          title="Children"
-          value={String(children.length)}
-          hint="registered"
-          tone="Normal"
+          label="At Risk"
+          value={atRisk}
+          hint="need attention"
+          color={C.danger}
         />
         <StatCard
-          title="Parents"
-          value={String(parents.length)}
-          hint="linked"
-          tone="Wasted"
-        />
-        <StatCard
-          title="Staff"
-          value={String(nutritionists.length)}
+          label="Staff"
+          value={nutritionists.length}
           hint="active"
-          tone="Wasted"
+          color={C.info}
         />
       </View>
 
+      {/* Attention queue */}
       <Card>
-        <ScreenTitle
-          title="⚠️ Attention Queue"
+        <SectionTitle
+          title="Attention Queue"
           subtitle="Children needing follow-up"
         />
         {children
-          .filter((child) => child.status !== "Normal")
-          .map((child) => (
-            <View key={child.id} style={styles.listRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.listTitle}>{getChildName(child)}</Text>
-                <Text style={styles.listMeta}>
-                  {child.barangay} • {child.ageMonths} months
-                </Text>
-              </View>
-              <Badge status={child.status}>{child.status}</Badge>
-            </View>
+          .filter((c) => c.status !== "Normal")
+          .slice(0, 5)
+          .map((c) => (
+            <ListRow
+              key={c.id}
+              title={getChildName(c)}
+              meta={`${c.barangay} · ${c.ageMonths} months`}
+              right={<StatusBadge status={c.status} />}
+              style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
+            />
           ))}
-        {children.filter((child) => child.status !== "Normal").length === 0 ? (
-          <Text style={styles.emptyText}>
-            No children need immediate attention
-          </Text>
-        ) : null}
+        {atRisk === 0 && (
+          <Text style={ss.emptyText}>No children need immediate attention</Text>
+        )}
       </Card>
 
+      {/* Recent measurements */}
       <Card>
-        <ScreenTitle
-          title="📊 Recent Measurements"
+        <SectionTitle
+          title="Recent Measurements"
           subtitle="Latest saved entries"
         />
-        {recentMeasurements.map((measurement) => (
-          <View key={measurement.id} style={styles.listRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>{measurement.childName}</Text>
-              <Text style={styles.listMeta}>
-                {formatDate(measurement.measurementDate)} •{" "}
-                {measurement.sourceType}
-              </Text>
-            </View>
-            <Badge status={measurement.status}>{measurement.status}</Badge>
-          </View>
+        {measurements.slice(0, 4).map((m) => (
+          <ListRow
+            key={m.id}
+            title={m.childName}
+            meta={`${formatDate(m.measurementDate)} · ${m.sourceType}`}
+            right={<StatusBadge status={m.status} />}
+            style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
+          />
         ))}
       </Card>
     </ScrollView>
   );
 }
 
-// ─── Children Screen ───────────────────────────────────────────────────────────
+// ─── Nutritionist: Children ───────────────────────────────────────────────────
 function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -703,12 +840,6 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
     barangay: "",
     address: "",
     parentId: parents[0]?.id ?? null,
-  });
-
-  const filteredChildren = children.filter((child) => {
-    const haystack =
-      `${child.firstName} ${child.lastName} ${child.barangay}`.toLowerCase();
-    return haystack.includes(search.toLowerCase());
   });
 
   const resetForm = () => {
@@ -724,6 +855,13 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
       parentId: parents[0]?.id ?? null,
     });
   };
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const filtered = children.filter((c) =>
+    `${c.firstName} ${c.lastName} ${c.barangay}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
+  );
 
   const handleSubmit = () => {
     if (
@@ -732,41 +870,36 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
       !form.birthdate ||
       !form.parentId
     ) {
-      Alert.alert("Missing data", "Please complete the required fields.");
+      Alert.alert("Missing data", "Please complete required fields.");
       return;
     }
-
-    const payload = {
+    onSaveChild(editingId, {
       ...form,
       ageMonths: Number(form.ageMonths || 0),
       parentId: Number(form.parentId),
-    };
-    onSaveChild(editingId, payload);
+    });
     resetForm();
   };
 
-  const editChild = (child) => {
-    setEditingId(child.id);
+  const editChild = (c) => {
+    setEditingId(c.id);
     setForm({
-      firstName: child.firstName,
-      lastName: child.lastName,
-      birthdate: child.birthdate,
-      sex: child.sex,
-      ageMonths: String(child.ageMonths ?? ""),
-      barangay: child.barangay,
-      address: child.address,
-      parentId: child.parentId,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      birthdate: c.birthdate,
+      sex: c.sex,
+      ageMonths: String(c.ageMonths ?? ""),
+      barangay: c.barangay,
+      address: c.address,
+      parentId: c.parentId,
     });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="👧 Children"
-        subtitle="Add, review, and update profiles"
-      />
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="Children" subtitle="Add, review & update profiles" />
 
-      <Field label="Search children">
+      <Field label="SEARCH">
         <Input
           value={search}
           onChangeText={setSearch}
@@ -774,173 +907,166 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
         />
       </Field>
 
+      {/* Add/Edit form */}
       <Card>
-        <Text style={styles.formTitle}>
+        <Text style={ss.cardTitle}>
           {editingId ? "Edit child profile" : "Add new child"}
         </Text>
-
-        <View style={styles.twoColumn}>
-          <View style={styles.columnHalf}>
-            <Field label="First name" required>
+        <View style={ss.twoCol}>
+          <View style={{ flex: 1 }}>
+            <Field label="FIRST NAME" required>
               <Input
                 value={form.firstName}
-                onChangeText={(value) =>
-                  setForm((prev) => ({ ...prev, firstName: value }))
-                }
+                onChangeText={(v) => set("firstName", v)}
                 placeholder="Maria"
               />
             </Field>
           </View>
-          <View style={styles.columnHalf}>
-            <Field label="Last name" required>
+          <View style={{ flex: 1 }}>
+            <Field label="LAST NAME" required>
               <Input
                 value={form.lastName}
-                onChangeText={(value) =>
-                  setForm((prev) => ({ ...prev, lastName: value }))
-                }
+                onChangeText={(v) => set("lastName", v)}
                 placeholder="Santos"
               />
             </Field>
           </View>
         </View>
-
-        <View style={styles.twoColumn}>
-          <View style={styles.columnHalf}>
-            <Field label="Birthdate" required>
+        <View style={ss.twoCol}>
+          <View style={{ flex: 1 }}>
+            <Field label="BIRTHDATE" required>
               <Input
                 value={form.birthdate}
-                onChangeText={(value) =>
-                  setForm((prev) => ({ ...prev, birthdate: value }))
-                }
+                onChangeText={(v) => set("birthdate", v)}
                 placeholder="2022-03-15"
               />
             </Field>
           </View>
-          <View style={styles.columnHalf}>
-            <Field label="Age in months">
+          <View style={{ flex: 1 }}>
+            <Field label="AGE (MONTHS)">
               <Input
                 value={String(form.ageMonths)}
-                onChangeText={(value) =>
-                  setForm((prev) => ({ ...prev, ageMonths: value }))
-                }
+                onChangeText={(v) => set("ageMonths", v)}
                 placeholder="26"
                 keyboardType="numeric"
               />
             </Field>
           </View>
         </View>
-
-        <Field label="Sex">
+        <Field label="SEX">
           <ChoiceGroup
             value={form.sex}
-            onChange={(value) => setForm((prev) => ({ ...prev, sex: value }))}
+            onChange={(v) => set("sex", v)}
             options={[
               { label: "Female", value: "Female" },
               { label: "Male", value: "Male" },
             ]}
           />
         </Field>
-
-        <Field label="Parent">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalChoiceWrap}
-          >
-            {parents.map((parent) => {
-              const selected = parent.id === form.parentId;
-              return (
-                <Pressable
-                  key={parent.id}
-                  onPress={() =>
-                    setForm((prev) => ({ ...prev, parentId: parent.id }))
-                  }
-                  style={[
-                    styles.parentChip,
-                    selected && styles.parentChipSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.parentChipText,
-                      selected && styles.parentChipTextSelected,
-                    ]}
-                  >
-                    {parent.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </Field>
-
-        <Field label="Barangay">
+        <Field label="BARANGAY">
           <Input
             value={form.barangay}
-            onChangeText={(value) =>
-              setForm((prev) => ({ ...prev, barangay: value }))
-            }
+            onChangeText={(v) => set("barangay", v)}
             placeholder="Bagong Silang"
           />
         </Field>
-
-        <Field label="Address">
+        <Field label="ADDRESS">
           <Input
             value={form.address}
-            onChangeText={(value) =>
-              setForm((prev) => ({ ...prev, address: value }))
-            }
-            placeholder="House number and street"
+            onChangeText={(v) => set("address", v)}
+            placeholder="House no. and street"
           />
         </Field>
-
-        <View style={styles.formActionRow}>
-          <Pressable onPress={handleSubmit} style={styles.primaryButtonSmall}>
-            <Text style={styles.primaryButtonText}>
-              {editingId ? "Update child" : "Save child"}
-            </Text>
-          </Pressable>
-          <Pressable onPress={resetForm} style={styles.secondaryButtonSmall}>
-            <Text style={styles.secondaryButtonText}>Clear</Text>
-          </Pressable>
+        <Field label="PARENT">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {parents.map((p) => {
+                const sel = p.id === form.parentId;
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => set("parentId", p.id)}
+                    style={[
+                      ss.choiceBtn,
+                      sel && {
+                        backgroundColor: C.primary,
+                        borderColor: C.primary,
+                      },
+                    ]}
+                  >
+                    <Text style={[ss.choiceBtnText, sel && { color: "#fff" }]}>
+                      {p.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </Field>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+          <PrimaryButton
+            label={editingId ? "Update" : "Save Child"}
+            onPress={handleSubmit}
+            style={{ flex: 1 }}
+          />
+          <SecondaryButton label="Clear" onPress={resetForm} />
         </View>
       </Card>
 
+      {/* List */}
       <Card>
-        <ScreenTitle title="📋 Child Records" subtitle="Tap to manage" />
-        {filteredChildren.map((child) => (
-          <View key={child.id} style={styles.listRowVertical}>
-            <View style={styles.listHeaderRow}>
+        <SectionTitle
+          title="Child Records"
+          subtitle={`${filtered.length} children`}
+        />
+        {filtered.map((c) => (
+          <View key={c.id} style={ss.childRow}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 6,
+              }}
+            >
+              <AvatarCircle
+                name={getChildName(c)}
+                size={36}
+                color={c.sex === "Female" ? "#E91E8C" : C.info}
+                bg={c.sex === "Female" ? "#FCE4EC" : C.infoLight}
+              />
               <View style={{ flex: 1 }}>
-                <Text style={styles.listTitle}>{getChildName(child)}</Text>
-                <Text style={styles.listMeta}>
-                  {getParentName(parents, child.parentId)} • {child.barangay}
+                <Text style={ss.listRowTitle}>{getChildName(c)}</Text>
+                <Text style={ss.listRowMeta}>
+                  {getParentName(parents, c.parentId)} · {c.barangay}
                 </Text>
               </View>
-              <Badge status={child.status}>{child.status}</Badge>
+              <StatusBadge status={c.status} />
             </View>
-            <View style={styles.inlineMetaRow}>
-              <Text style={styles.inlineMeta}>{child.sex}</Text>
-              <Text style={styles.inlineMeta}>{child.ageMonths} months</Text>
-              <Text style={styles.inlineMeta}>
-                {formatDate(child.birthdate)}
-              </Text>
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              <Text style={ss.metaChip}>{c.sex}</Text>
+              <Text style={ss.metaChip}>{c.ageMonths} mo</Text>
+              <Text style={ss.metaChip}>{formatDate(c.birthdate)}</Text>
             </View>
-            <View style={styles.formActionRow}>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               <Pressable
-                onPress={() => editChild(child)}
-                style={styles.secondaryButtonSmall}
-              >
-                <Text style={styles.secondaryButtonText}>Edit</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => onDeleteChild(child)}
-                style={[styles.secondaryButtonSmall, styles.dangerButtonSmall]}
+                onPress={() => editChild(c)}
+                style={[ss.iconBtn, { backgroundColor: C.infoLight }]}
               >
                 <Text
-                  style={[styles.secondaryButtonText, { color: COLORS.danger }]}
+                  style={{ color: C.info, fontSize: 13, fontWeight: "700" }}
                 >
-                  Delete
+                  {ICONS.edit} Edit
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => onDeleteChild(c)}
+                style={[ss.iconBtn, { backgroundColor: C.dangerLight }]}
+              >
+                <Text
+                  style={{ color: C.danger, fontSize: 13, fontWeight: "700" }}
+                >
+                  {ICONS.trash} Delete
                 </Text>
               </Pressable>
             </View>
@@ -951,7 +1077,7 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
   );
 }
 
-// ─── Measurements Screen ──────────────────────────────────────────────────────
+// ─── Nutritionist: Measurements ───────────────────────────────────────────────
 function MeasurementsScreen({
   children,
   measurements,
@@ -959,117 +1085,100 @@ function MeasurementsScreen({
   onDeleteMeasurement,
 }) {
   const [childId, setChildId] = useState(children[0]?.id ?? null);
-  const [sourceType, setSourceType] = useState("Kiosk");
+  const [sourceType, setSourceType] = useState("Manual");
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [measurementDate, setMeasurementDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
 
-  useEffect(() => {
-    if (!childId && children[0]?.id) {
-      setChildId(children[0].id);
-    }
-  }, [children, childId]);
+  const preview = useMemo(() => {
+    const child = children.find((c) => c.id === childId);
+    if (!child || !heightCm || !weightKg) return null;
+    return computeWHO({
+      weightKg: +weightKg,
+      heightCm: +heightCm,
+      ageMonths: child.ageMonths,
+    });
+  }, [childId, heightCm, weightKg, children]);
 
-  const submitMeasurement = () => {
-    const selectedChild = children.find((child) => child.id === childId);
-    const numericHeight = Number(heightCm);
-    const numericWeight = Number(weightKg);
-
-    if (
-      !selectedChild ||
-      !numericHeight ||
-      !numericWeight ||
-      !measurementDate
-    ) {
+  const submit = () => {
+    const child = children.find((c) => c.id === childId);
+    if (!child || !heightCm || !weightKg || !measurementDate) {
       Alert.alert(
         "Missing data",
-        "Choose a child and enter height, weight, and date.",
+        "Choose a child and enter all required fields.",
       );
       return;
     }
-
     const computed = computeWHO({
-      weightKg: numericWeight,
-      heightCm: numericHeight,
-      ageMonths: selectedChild.ageMonths,
+      weightKg: +weightKg,
+      heightCm: +heightCm,
+      ageMonths: child.ageMonths,
     });
-
     onSaveMeasurement({
-      childId: selectedChild.id,
-      childName: getChildName(selectedChild),
+      childId: child.id,
+      childName: getChildName(child),
       measurementDate,
       sourceType,
-      heightCm: numericHeight,
-      weightKg: numericWeight,
-      ageMonths: selectedChild.ageMonths,
-      waz: computed.waz,
-      haz: computed.haz,
-      whz: computed.whz,
+      heightCm: +heightCm,
+      weightKg: +weightKg,
+      ageMonths: child.ageMonths,
+      ...computed,
       status: computed.status,
     });
-
     setHeightCm("");
     setWeightKg("");
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="📊 Measurements"
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle
+        title="Measurements"
         subtitle="Record anthropometric entries"
       />
 
       <Card>
-        <Text style={styles.formTitle}>Add measurement</Text>
-
-        <Field label="Child" required>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalChoiceWrap}
-          >
-            {children.map((child) => {
-              const selected = child.id === childId;
-              return (
-                <Pressable
-                  key={child.id}
-                  onPress={() => setChildId(child.id)}
-                  style={[
-                    styles.parentChip,
-                    selected && styles.parentChipSelected,
-                  ]}
-                >
-                  <Text
+        <Text style={ss.cardTitle}>Add measurement</Text>
+        <Field label="CHILD" required>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {children.map((c) => {
+                const sel = c.id === childId;
+                return (
+                  <Pressable
+                    key={c.id}
+                    onPress={() => setChildId(c.id)}
                     style={[
-                      styles.parentChipText,
-                      selected && styles.parentChipTextSelected,
+                      ss.choiceBtn,
+                      sel && {
+                        backgroundColor: C.primary,
+                        borderColor: C.primary,
+                      },
                     ]}
                   >
-                    {getChildName(child)}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    <Text style={[ss.choiceBtnText, sel && { color: "#fff" }]}>
+                      {getChildName(c)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </ScrollView>
         </Field>
-
-        <Field label="Source">
+        <Field label="SOURCE">
           <ChoiceGroup
             value={sourceType}
             onChange={setSourceType}
-            options={[
-              { label: "Kiosk", value: "Kiosk" },
-              { label: "Mobile", value: "Mobile" },
-              { label: "Manual", value: "Manual" },
-            ]}
+            options={["Kiosk", "Mobile", "Manual"].map((v) => ({
+              label: v,
+              value: v,
+            }))}
           />
         </Field>
-
-        <View style={styles.twoColumn}>
-          <View style={styles.columnHalf}>
-            <Field label="Height cm" required>
+        <View style={ss.twoCol}>
+          <View style={{ flex: 1 }}>
+            <Field label="HEIGHT (CM)" required>
               <Input
                 value={heightCm}
                 onChangeText={setHeightCm}
@@ -1078,8 +1187,8 @@ function MeasurementsScreen({
               />
             </Field>
           </View>
-          <View style={styles.columnHalf}>
-            <Field label="Weight kg" required>
+          <View style={{ flex: 1 }}>
+            <Field label="WEIGHT (KG)" required>
               <Input
                 value={weightKg}
                 onChangeText={setWeightKg}
@@ -1089,8 +1198,7 @@ function MeasurementsScreen({
             </Field>
           </View>
         </View>
-
-        <Field label="Measurement date" required>
+        <Field label="DATE">
           <Input
             value={measurementDate}
             onChangeText={setMeasurementDate}
@@ -1098,46 +1206,73 @@ function MeasurementsScreen({
           />
         </Field>
 
-        <Pressable onPress={submitMeasurement} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Save measurement</Text>
-        </Pressable>
+        {/* Live preview */}
+        {preview && (
+          <View
+            style={[
+              ss.previewBox,
+              {
+                backgroundColor: statusBg(preview.status),
+                borderColor: `${statusColor(preview.status)}30`,
+              },
+            ]}
+          >
+            <StatusBadge status={preview.status} />
+            <Text style={{ fontSize: 12, color: C.textMuted, marginTop: 6 }}>
+              WAZ {preview.waz > 0 ? "+" : ""}
+              {preview.waz} · HAZ {preview.haz > 0 ? "+" : ""}
+              {preview.haz} · WHZ {preview.whz > 0 ? "+" : ""}
+              {preview.whz}
+            </Text>
+          </View>
+        )}
+
+        <PrimaryButton
+          label="Save Measurement"
+          onPress={submit}
+          style={{ marginTop: 8 }}
+        />
       </Card>
 
+      {/* Records list */}
       <Card>
-        <ScreenTitle title="📋 Recent Entries" subtitle="Saved measurements" />
-        {measurements.map((measurement) => (
-          <View key={measurement.id} style={styles.listRowVertical}>
-            <View style={styles.listHeaderRow}>
+        <SectionTitle
+          title="Recent Entries"
+          subtitle={`${measurements.length} records`}
+        />
+        {measurements.map((m) => (
+          <View key={m.id} style={ss.childRow}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
               <View style={{ flex: 1 }}>
-                <Text style={styles.listTitle}>{measurement.childName}</Text>
-                <Text style={styles.listMeta}>
-                  {formatDate(measurement.measurementDate)} •{" "}
-                  {measurement.sourceType}
+                <Text style={ss.listRowTitle}>{m.childName}</Text>
+                <Text style={ss.listRowMeta}>
+                  {formatDate(m.measurementDate)} · {m.sourceType}
                 </Text>
               </View>
-              <Badge status={measurement.status}>{measurement.status}</Badge>
+              <StatusBadge status={m.status} />
             </View>
-            <View style={styles.inlineMetaRow}>
-              <Text style={styles.inlineMeta}>
-                {measurement.heightCm.toFixed(1)} cm
-              </Text>
-              <Text style={styles.inlineMeta}>
-                {measurement.weightKg.toFixed(1)} kg
-              </Text>
-              <Text style={styles.inlineMeta}>WAZ {measurement.waz}</Text>
+            <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+              <Text style={ss.metaChip}>{m.heightCm} cm</Text>
+              <Text style={ss.metaChip}>{m.weightKg} kg</Text>
+              <Text style={ss.metaChip}>WAZ {m.waz}</Text>
             </View>
             <Pressable
-              onPress={() => onDeleteMeasurement(measurement)}
+              onPress={() => onDeleteMeasurement(m)}
               style={[
-                styles.secondaryButtonSmall,
-                styles.dangerButtonSmall,
-                { alignSelf: "flex-start" },
+                ss.iconBtn,
+                {
+                  backgroundColor: C.dangerLight,
+                  marginTop: 8,
+                  alignSelf: "flex-start",
+                },
               ]}
             >
               <Text
-                style={[styles.secondaryButtonText, { color: COLORS.danger }]}
+                style={{ color: C.danger, fontSize: 12, fontWeight: "700" }}
               >
-                Delete
+                {ICONS.trash} Delete
               </Text>
             </Pressable>
           </View>
@@ -1147,44 +1282,69 @@ function MeasurementsScreen({
   );
 }
 
-// ─── Specialists/Staff Screen ─────────────────────────────────────────────────
-function SpecialistsScreen({ parents, children, nutritionists }) {
+// ─── Nutritionist: Staff ──────────────────────────────────────────────────────
+function StaffScreen({ parents, children, nutritionists }) {
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="👩‍⚕️ Health Workers" subtitle="Staff directory" />
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle
+        title="Staff Directory"
+        subtitle="Health workers & parents"
+      />
 
       <Card>
-        <Text style={styles.formTitle}>Nutritionists & Medical Staff</Text>
+        <Text style={ss.cardTitle}>Nutritionists & Medical Staff</Text>
         {nutritionists.map((n) => (
-          <View key={n.id} style={styles.listRowVertical}>
-            <Text style={styles.listTitle}>{n.name}</Text>
-            <Text style={styles.listMeta}>{n.role}</Text>
-            <Text style={styles.listMeta}>
-              {n.barangay} • {n.license}
-            </Text>
-            <Badge status={n.status}>{n.status}</Badge>
+          <View key={n.id} style={ss.childRow}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <AvatarCircle name={n.name} size={36} color="#fff" bg={C.info} />
+              <View style={{ flex: 1 }}>
+                <Text style={ss.listRowTitle}>{n.name}</Text>
+                <Text style={ss.listRowMeta}>
+                  {n.role} · {n.barangay}
+                </Text>
+                <Text style={ss.listRowMeta}>{n.license}</Text>
+              </View>
+              <StatusBadge status={n.status} />
+            </View>
           </View>
         ))}
       </Card>
 
       <Card>
-        <Text style={styles.formTitle}>Parents/Guardians</Text>
-        {parents.map((parent) => {
-          const linkedChildren = children.filter(
-            (child) => child.parentId === parent.id,
-          );
+        <Text style={ss.cardTitle}>Parents / Guardians</Text>
+        {parents.map((p) => {
+          const linked = children.filter((c) => c.parentId === p.id);
           return (
-            <View key={parent.id} style={styles.listRowVertical}>
-              <Text style={styles.listTitle}>{parent.name}</Text>
-              <Text style={styles.listMeta}>{parent.email}</Text>
-              <Text style={styles.inlineMeta}>
-                {linkedChildren.length} child(ren)
-              </Text>
-              <Badge status={parent.status}>{parent.status}</Badge>
-              {linkedChildren.map((child) => (
-                <Text key={child.id} style={styles.childLinkText}>
-                  • {getChildName(child)} ({child.status})
-                </Text>
+            <View key={p.id} style={ss.childRow}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+              >
+                <AvatarCircle name={p.name} size={36} />
+                <View style={{ flex: 1 }}>
+                  <Text style={ss.listRowTitle}>{p.name}</Text>
+                  <Text style={ss.listRowMeta}>{p.email}</Text>
+                  <Text style={ss.listRowMeta}>{linked.length} child(ren)</Text>
+                </View>
+                <StatusBadge status={p.status} />
+              </View>
+              {linked.map((c) => (
+                <View
+                  key={c.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    marginTop: 4,
+                    paddingLeft: 46,
+                  }}
+                >
+                  <Text style={{ color: C.textMuted, fontSize: 11 }}>
+                    • {getChildName(c)}
+                  </Text>
+                  <StatusBadge status={c.status} />
+                </View>
               ))}
             </View>
           );
@@ -1194,407 +1354,505 @@ function SpecialistsScreen({ parents, children, nutritionists }) {
   );
 }
 
-// ─── Reports Screen ───────────────────────────────────────────────────────────
+// ─── Nutritionist: Reports ────────────────────────────────────────────────────
 function ReportsScreen({ children, measurements }) {
-  const counts = useMemo(() => {
-    return measurements.reduce((result, measurement) => {
-      result[measurement.status] = (result[measurement.status] || 0) + 1;
-      return result;
-    }, {});
-  }, [measurements]);
-
-  const chartRows = [
+  const counts = measurements.reduce((acc, m) => {
+    acc[m.status] = (acc[m.status] || 0) + 1;
+    return acc;
+  }, {});
+  const statuses = [
     "Normal",
     "Underweight",
     "Stunted",
     "Wasted",
     "Overweight",
     "Severely Underweight",
-  ].map((status) => ({ status, count: counts[status] || 0 }));
-  const maxCount = Math.max(...chartRows.map((row) => row.count), 1);
+  ];
+  const maxCount = Math.max(...statuses.map((s) => counts[s] || 0), 1);
 
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="📈 Reports" subtitle="Growth and nutrition status" />
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="Reports" subtitle="Growth & nutrition status" />
 
-      <View style={styles.statsGrid}>
+      <View style={ss.statsRow}>
+        <StatCard label="Children" value={children.length} hint="Profiles" />
         <StatCard
-          title="All children"
-          value={String(children.length)}
-          hint="Profiles"
-          tone="Normal"
+          label="Records"
+          value={measurements.length}
+          hint="Measurements"
+          color={C.info}
         />
         <StatCard
-          title="Measurements"
-          value={String(measurements.length)}
-          hint="Records"
-          tone="Wasted"
-        />
-        <StatCard
-          title="Healthy"
-          value={String(counts.Normal || 0)}
-          hint="Normal status"
-          tone="Normal"
-        />
-        <StatCard
-          title="Alerts"
-          value={String(measurements.length - (counts.Normal || 0))}
-          hint="Review needed"
-          tone="Underweight"
+          label="Healthy"
+          value={counts["Normal"] || 0}
+          hint="Normal"
+          color={C.primary}
         />
       </View>
 
       <Card>
-        <ScreenTitle
-          title="📊 Status Distribution"
-          subtitle="Relative counts"
-        />
-        {chartRows.map((row) => (
-          <View key={row.status} style={styles.chartRow}>
-            <Text style={styles.chartLabel}>{row.status}</Text>
-            <View style={styles.chartTrack}>
+        <SectionTitle title="Status Distribution" subtitle="Relative counts" />
+        {statuses.map((s) => (
+          <View
+            key={s}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                width: 130,
+                fontSize: 11,
+                color: C.text,
+                fontWeight: "600",
+              }}
+            >
+              {s}
+            </Text>
+            <View
+              style={{
+                flex: 1,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: C.border,
+                overflow: "hidden",
+              }}
+            >
               <View
-                style={[
-                  styles.chartFill,
-                  { width: `${(row.count / maxCount) * 100}%` },
-                ]}
+                style={{
+                  height: "100%",
+                  width: `${((counts[s] || 0) / maxCount) * 100}%`,
+                  backgroundColor: statusColor(s),
+                  borderRadius: 5,
+                }}
               />
             </View>
-            <Text style={styles.chartValue}>{row.count}</Text>
-          </View>
-        ))}
-      </Card>
-    </ScrollView>
-  );
-}
-
-// ─── Parent Screens ───────────────────────────────────────────────────────────
-function TipsScreen() {
-  return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="💡 Nutrition Tips" subtitle="Health reminders" />
-      <Card>
-        {INITIAL_TIPS.map((tip, index) => (
-          <View key={tip} style={styles.tipRow}>
-            <View style={styles.tipNumber}>
-              <Text style={styles.tipNumberText}>{index + 1}</Text>
-            </View>
-            <Text style={styles.tipText}>{tip}</Text>
-          </View>
-        ))}
-      </Card>
-    </ScrollView>
-  );
-}
-
-function ParentDashboard({ child, latestMeasurement, history }) {
-  if (!child) {
-    return (
-      <ScrollView contentContainerStyle={styles.screenContent}>
-        <ScreenTitle
-          title="👋 Parent Home"
-          subtitle="No child profile linked"
-        />
-      </ScrollView>
-    );
-  }
-
-  return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="👋 Parent Home" subtitle="Your child's health" />
-
-      <Card>
-        <View style={styles.childHero}>
-          <Text style={styles.childHeroName}>{getChildName(child)}</Text>
-          <Text style={styles.childHeroMeta}>
-            {child.sex} • {child.ageMonths} months • {child.barangay}
-          </Text>
-          <Badge status={child.status}>{child.status}</Badge>
-        </View>
-      </Card>
-
-      {latestMeasurement ? (
-        <View style={styles.statsGrid}>
-          <StatCard
-            title="Height"
-            value={`${latestMeasurement.heightCm.toFixed(1)} cm`}
-            hint="Latest"
-            tone="Normal"
-          />
-          <StatCard
-            title="Weight"
-            value={`${latestMeasurement.weightKg.toFixed(1)} kg`}
-            hint="Latest"
-            tone="Wasted"
-          />
-          <StatCard
-            title="WAZ"
-            value={String(latestMeasurement.waz)}
-            hint="Weight for age"
-            tone="Stunted"
-          />
-          <StatCard
-            title="Status"
-            value={latestMeasurement.status}
-            hint={latestMeasurement.sourceType}
-            tone={latestMeasurement.status}
-          />
-        </View>
-      ) : null}
-
-      <Card>
-        <ScreenTitle title="📊 Recent History" subtitle="Latest records" />
-        {history.slice(0, 3).map((measurement) => (
-          <View key={measurement.id} style={styles.listRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>
-                {formatDate(measurement.measurementDate)}
-              </Text>
-              <Text style={styles.listMeta}>
-                {measurement.heightCm.toFixed(1)} cm •{" "}
-                {measurement.weightKg.toFixed(1)} kg
-              </Text>
-            </View>
-            <Badge status={measurement.status}>{measurement.status}</Badge>
-          </View>
-        ))}
-      </Card>
-    </ScrollView>
-  );
-}
-
-function ParentChildScreen({ child, latestMeasurement }) {
-  return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="👧 My Child" subtitle="Profile details" />
-      {child ? (
-        <Card>
-          <Text style={styles.childDetailName}>{getChildName(child)}</Text>
-          <Text style={styles.childDetailMeta}>
-            {child.birthdate} • {child.sex}
-          </Text>
-          <Text style={styles.childDetailMeta}>{child.address}</Text>
-          <View style={styles.inlineMetaRow}>
-            <Text style={styles.inlineMeta}>{child.barangay}</Text>
-            <Text style={styles.inlineMeta}>{child.ageMonths} months</Text>
-            <Text style={styles.inlineMeta}>
-              {latestMeasurement
-                ? `Last: ${latestMeasurement.status}`
-                : "No measurement yet"}
+            <Text
+              style={{
+                width: 20,
+                textAlign: "right",
+                fontSize: 11,
+                color: C.textMuted,
+                fontWeight: "700",
+              }}
+            >
+              {counts[s] || 0}
             </Text>
           </View>
-        </Card>
-      ) : null}
+        ))}
+      </Card>
     </ScrollView>
   );
 }
 
-function ParentGrowthScreen({ history }) {
-  const points = history.slice(0, 6).reverse();
-  const maxWeight = Math.max(...points.map((item) => item.weightKg), 1);
-
+// ─── Parent: Dashboard ────────────────────────────────────────────────────────
+function ParentDashboard({ child, latestMeasurement, history }) {
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="📈 Growth" subtitle="Weight trend" />
-      <Card>
-        {points.length === 0 ? (
-          <Text style={styles.emptyText}>No growth history available yet.</Text>
-        ) : (
-          points.map((point) => (
-            <View key={point.id} style={styles.chartRow}>
-              <Text style={styles.chartLabel}>
-                {new Date(point.measurementDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="My Child's Health" subtitle="Latest overview" />
+
+      {child ? (
+        <Card>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 12,
+            }}
+          >
+            <AvatarCircle
+              name={getChildName(child)}
+              size={48}
+              color={child.sex === "Female" ? "#E91E8C" : C.info}
+              bg={child.sex === "Female" ? "#FCE4EC" : C.infoLight}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={[ss.sectionTitle, { marginBottom: 0 }]}>
+                {getChildName(child)}
               </Text>
-              <View style={styles.chartTrack}>
-                <View
-                  style={[
-                    styles.chartFill,
-                    { width: `${(point.weightKg / maxWeight) * 100}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.chartValue}>{point.weightKg.toFixed(1)}</Text>
+              <Text style={ss.sectionSubtitle}>
+                {child.sex} · {child.ageMonths} months · {child.barangay}
+              </Text>
             </View>
-          ))
+            <StatusBadge status={child.status} />
+          </View>
+          {latestMeasurement && (
+            <View
+              style={[
+                ss.previewBox,
+                {
+                  backgroundColor: statusBg(latestMeasurement.status),
+                  borderColor: `${statusColor(latestMeasurement.status)}30`,
+                },
+              ]}
+            >
+              <Text
+                style={{ fontSize: 12, color: C.textMuted, marginBottom: 4 }}
+              >
+                Latest Measurement ·{" "}
+                {formatDate(latestMeasurement.measurementDate)}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Text style={ss.metaChip}>{latestMeasurement.heightCm} cm</Text>
+                <Text style={ss.metaChip}>{latestMeasurement.weightKg} kg</Text>
+                <Text style={ss.metaChip}>WAZ {latestMeasurement.waz}</Text>
+              </View>
+            </View>
+          )}
+        </Card>
+      ) : (
+        <Card>
+          <Text style={ss.emptyText}>
+            No child profile linked to your account.
+          </Text>
+        </Card>
+      )}
+
+      <Card>
+        <SectionTitle title="Recent History" subtitle="Latest records" />
+        {history.slice(0, 4).map((m) => (
+          <ListRow
+            key={m.id}
+            title={formatDate(m.measurementDate)}
+            meta={`${m.heightCm} cm · ${m.weightKg} kg`}
+            right={<StatusBadge status={m.status} />}
+            style={{ borderBottomWidth: 1, borderBottomColor: C.border }}
+          />
+        ))}
+        {history.length === 0 && (
+          <Text style={ss.emptyText}>No measurement history yet.</Text>
         )}
       </Card>
     </ScrollView>
   );
 }
 
-function SettingsScreen({ user, onLogout, role }) {
+// ─── Parent: My Child ─────────────────────────────────────────────────────────
+function ParentChildScreen({ child, latestMeasurement }) {
   return (
-    <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle title="⚙️ Settings" subtitle="Account and preferences" />
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="My Child" subtitle="Profile details" />
+      {child ? (
+        <Card>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 14,
+            }}
+          >
+            <AvatarCircle
+              name={getChildName(child)}
+              size={52}
+              color={child.sex === "Female" ? "#E91E8C" : C.info}
+              bg={child.sex === "Female" ? "#FCE4EC" : C.infoLight}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={ss.sectionTitle}>{getChildName(child)}</Text>
+              <StatusBadge status={child.status} />
+            </View>
+          </View>
+          {[
+            ["Birthdate", child.birthdate],
+            ["Age", `${child.ageMonths} months`],
+            ["Sex", child.sex],
+            ["Barangay", child.barangay],
+            ["Address", child.address],
+            [
+              "Last Status",
+              latestMeasurement ? latestMeasurement.status : "No record",
+            ],
+          ].map(([k, v]) => (
+            <View
+              key={k}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: C.border,
+              }}
+            >
+              <Text style={{ fontSize: 12, color: C.textMuted }}>{k}</Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: C.text,
+                  maxWidth: "55%",
+                  textAlign: "right",
+                }}
+              >
+                {v}
+              </Text>
+            </View>
+          ))}
+        </Card>
+      ) : (
+        <Card>
+          <Text style={ss.emptyText}>No child linked.</Text>
+        </Card>
+      )}
+    </ScrollView>
+  );
+}
+
+// ─── Parent: Growth ───────────────────────────────────────────────────────────
+function ParentGrowthScreen({ history }) {
+  const pts = history.slice(0, 6).reverse();
+  const maxW = Math.max(...pts.map((p) => p.weightKg), 1);
+  return (
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="Growth Trend" subtitle="Weight over time" />
       <Card>
-        <Text style={styles.settingsName}>{user.name}</Text>
-        <Text style={styles.settingsMeta}>{user.email}</Text>
-        <Text style={styles.settingsMeta}>
-          Role: {role === "nutritionist" ? "Nutritionist" : "Parent"}
-        </Text>
+        {pts.length === 0 && (
+          <Text style={ss.emptyText}>No growth history available yet.</Text>
+        )}
+        {pts.map((p) => (
+          <View
+            key={p.id}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ width: 60, fontSize: 11, color: C.textMuted }}>
+              {new Date(p.measurementDate).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </Text>
+            <View
+              style={{
+                flex: 1,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: C.border,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: "100%",
+                  width: `${(p.weightKg / maxW) * 100}%`,
+                  backgroundColor: statusColor(p.status),
+                  borderRadius: 5,
+                }}
+              />
+            </View>
+            <Text
+              style={{
+                width: 36,
+                textAlign: "right",
+                fontSize: 11,
+                color: C.textMuted,
+                fontWeight: "700",
+              }}
+            >
+              {p.weightKg}
+            </Text>
+          </View>
+        ))}
+      </Card>
+    </ScrollView>
+  );
+}
+
+// ─── Shared: Tips ─────────────────────────────────────────────────────────────
+function TipsScreen() {
+  return (
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle
+        title="Nutrition Tips"
+        subtitle="Health reminders for parents"
+      />
+      <Card>
+        {NUTRITION_TIPS.map((tip, i) => (
+          <View
+            key={i}
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              paddingVertical: 10,
+              borderBottomWidth: i < NUTRITION_TIPS.length - 1 ? 1 : 0,
+              borderBottomColor: C.border,
+            }}
+          >
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 13,
+                backgroundColor: C.primaryLight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{ fontSize: 12, fontWeight: "700", color: C.primary }}
+              >
+                {i + 1}
+              </Text>
+            </View>
+            <Text
+              style={{ flex: 1, fontSize: 13, color: C.text, lineHeight: 20 }}
+            >
+              {tip}
+            </Text>
+          </View>
+        ))}
+      </Card>
+    </ScrollView>
+  );
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function SettingsScreen({ user, role, onLogout }) {
+  return (
+    <ScrollView contentContainerStyle={ss.screen}>
+      <SectionTitle title="Settings" subtitle="Account & preferences" />
+      <Card>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <AvatarCircle name={user.name} size={48} />
+          <View>
+            <Text style={ss.sectionTitle}>{user.name}</Text>
+            <Text style={ss.sectionSubtitle}>{user.email}</Text>
+            <Text
+              style={[
+                ss.sectionSubtitle,
+                { color: C.primaryMid, fontWeight: "600" },
+              ]}
+            >
+              {role === "nutritionist" ? "Nutritionist" : "Parent"}
+            </Text>
+          </View>
+        </View>
         <Pressable
           onPress={onLogout}
-          style={[styles.primaryButton, { marginTop: 16 }]}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingVertical: 12,
+            borderTopWidth: 1,
+            borderTopColor: C.border,
+          }}
         >
-          <Text style={styles.primaryButtonText}>Sign out</Text>
+          <Text style={{ color: C.danger, fontSize: 13, fontWeight: "700" }}>
+            {ICONS.logout} Sign Out
+          </Text>
         </Pressable>
       </Card>
     </ScrollView>
   );
 }
 
-function TabBar({ tabs, activeTab, onChange }) {
-  return (
-    <View style={styles.tabBar}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabBarContent}
-      >
-        {tabs.map((tab) => {
-          const selected = tab.id === activeTab;
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => onChange(tab.id)}
-              style={[styles.tabButton, selected && styles.tabButtonActive]}
-            >
-              <Text style={[styles.tabButtonEmoji]}>{tab.icon}</Text>
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  selected && styles.tabButtonTextActive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-}
-
-// ─── Main App Component ───────────────────────────────────────────────────────
+// ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [parents, setParents] = useState(INITIAL_PARENTS);
+  const [parents] = useState(INITIAL_PARENTS);
   const [children, setChildren] = useState(INITIAL_CHILDREN);
   const [measurements, setMeasurements] = useState(INITIAL_MEASUREMENTS);
   const [nutritionists] = useState(INITIAL_NUTRITIONISTS);
 
-  useEffect(() => {
-    if (!user) return;
-    const tabs = user.role === "nutritionist" ? NUTRITIONIST_TABS : PARENT_TABS;
-    if (!tabs.some((tab) => tab.id === activeTab)) {
-      setActiveTab(tabs[0].id);
-    }
-  }, [user, activeTab]);
-
   const tabs = user?.role === "nutritionist" ? NUTRITIONIST_TABS : PARENT_TABS;
+
+  // Reset tab when role changes
+  useEffect(() => {
+    if (user && !tabs.some((t) => t.id === activeTab))
+      setActiveTab("dashboard");
+  }, [user]);
 
   const currentParent = useMemo(() => {
     if (!user || user.role !== "parent") return null;
-    return (
-      parents.find((parent) => parent.id === user.parentId) ??
-      parents[0] ??
-      null
-    );
+    return parents.find((p) => p.id === user.parentId) ?? parents[0] ?? null;
   }, [parents, user]);
 
   const parentChild = useMemo(() => {
     if (!currentParent) return null;
-    return (
-      children.find((child) => child.parentId === currentParent.id) ?? null
-    );
+    return children.find((c) => c.parentId === currentParent.id) ?? null;
   }, [children, currentParent]);
 
   const parentHistory = useMemo(() => {
     if (!parentChild) return [];
-    return measurements.filter(
-      (measurement) => measurement.childId === parentChild.id,
-    );
+    return measurements.filter((m) => m.childId === parentChild.id);
   }, [measurements, parentChild]);
 
   const latestParentMeasurement = parentHistory[0] ?? null;
 
   const handleSaveChild = (editingId, payload) => {
     if (editingId) {
-      setChildren((current) =>
-        current.map((child) =>
-          child.id === editingId ? { ...child, ...payload } : child,
-        ),
+      setChildren((prev) =>
+        prev.map((c) => (c.id === editingId ? { ...c, ...payload } : c)),
       );
-      return;
+    } else {
+      const newId = Math.max(...children.map((c) => c.id), 0) + 1;
+      setChildren((prev) => [
+        ...prev,
+        { id: newId, ...payload, status: "Normal" },
+      ]);
     }
-    const nextId = Math.max(...children.map((child) => child.id), 0) + 1;
-    setChildren((current) => [
-      ...current,
-      { id: nextId, ...payload, status: "Normal" },
+  };
+
+  const handleDeleteChild = (c) => {
+    Alert.alert(
+      "Delete child",
+      `Remove ${getChildName(c)} and all measurements?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setChildren((prev) => prev.filter((x) => x.id !== c.id));
+            setMeasurements((prev) => prev.filter((x) => x.childId !== c.id));
+          },
+        },
+      ],
+    );
+  };
+
+  const handleSaveMeasurement = (m) => {
+    const newId = Math.max(...measurements.map((x) => x.id), 0) + 1;
+    setMeasurements((prev) => [{ ...m, id: newId }, ...prev]);
+    setChildren((prev) =>
+      prev.map((c) => (c.id === m.childId ? { ...c, status: m.status } : c)),
+    );
+  };
+
+  const handleDeleteMeasurement = (m) => {
+    Alert.alert("Delete measurement", `Delete record for ${m.childName}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          setMeasurements((prev) => prev.filter((x) => x.id !== m.id)),
+      },
     ]);
   };
 
-  const handleDeleteChild = (child) => {
-    Alert.alert(
-      "Delete child",
-      `Remove ${getChildName(child)} and all measurements?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            setChildren((current) =>
-              current.filter((item) => item.id !== child.id),
-            );
-            setMeasurements((current) =>
-              current.filter((item) => item.childId !== child.id),
-            );
-          },
-        },
-      ],
-    );
-  };
+  if (!user) return <LoginScreen onLogin={setUser} />;
 
-  const handleSaveMeasurement = (measurement) => {
-    const nextId = Math.max(...measurements.map((item) => item.id), 0) + 1;
-    setMeasurements((current) => [{ ...measurement, id: nextId }, ...current]);
-    setChildren((current) =>
-      current.map((child) =>
-        child.id === measurement.childId
-          ? { ...child, status: measurement.status }
-          : child,
-      ),
-    );
-  };
-
-  const handleDeleteMeasurement = (measurement) => {
-    Alert.alert(
-      "Delete measurement",
-      `Delete the record for ${measurement.childName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            setMeasurements((current) =>
-              current.filter((item) => item.id !== measurement.id),
-            );
-          },
-        },
-      ],
-    );
-  };
-
-  if (!user) {
-    return <LoginScreen onLogin={setUser} />;
-  }
+  const subtitle =
+    user.role === "nutritionist"
+      ? "Nutritionist workspace"
+      : "Parent workspace";
 
   const renderScreen = () => {
     if (user.role === "nutritionist") {
@@ -1626,9 +1884,9 @@ export default function App() {
               onDeleteMeasurement={handleDeleteMeasurement}
             />
           );
-        case "specialists":
+        case "staff":
           return (
-            <SpecialistsScreen
+            <StaffScreen
               parents={parents}
               children={children}
               nutritionists={nutritionists}
@@ -1638,18 +1896,8 @@ export default function App() {
           return (
             <ReportsScreen children={children} measurements={measurements} />
           );
-        default:
-          return (
-            <NutritionistDashboard
-              children={children}
-              measurements={measurements}
-              parents={parents}
-              nutritionists={nutritionists}
-            />
-          );
       }
     }
-
     switch (activeTab) {
       case "dashboard":
         return (
@@ -1678,364 +1926,283 @@ export default function App() {
             onLogout={() => setUser(null)}
           />
         );
-      default:
-        return (
-          <ParentDashboard
-            child={parentChild}
-            latestMeasurement={latestParentMeasurement}
-            history={parentHistory}
-          />
-        );
     }
   };
 
   return (
-    <SafeAreaView style={styles.appRoot}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.dark} />
-      <View style={styles.appHeader}>
-        <View>
-          <Text style={styles.appHeaderTitle}>💚 SukatKalusugan</Text>
-          <Text style={styles.appHeaderSubtitle}>
-            {user.role === "nutritionist"
-              ? "Nutritionist workspace"
-              : "Parent workspace"}
-          </Text>
-        </View>
-      </View>
-
-      {renderScreen()}
-
-      <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+      <StatusBar barStyle="light-content" backgroundColor={C.sidebar} />
+      <AppHeader title="SukatKalusugan" subtitle={subtitle} />
+      <View style={{ flex: 1 }}>{renderScreen()}</View>
+      <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  appRoot: { flex: 1, backgroundColor: COLORS.bg },
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const ss = StyleSheet.create({
+  // App shell
   appHeader: {
-    backgroundColor: COLORS.dark,
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: C.sidebar,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
+  appHeaderBrand: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(26,143,104,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  appHeaderIcon: { fontSize: 18, color: C.primaryMid },
   appHeaderTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: "800",
+    color: "#fff",
     letterSpacing: 0.2,
   },
-  appHeaderSubtitle: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 12,
-    marginTop: 2,
-  },
-  screenContent: { padding: 16, paddingBottom: 32, gap: 14 },
-  screenTitle: {
-    color: COLORS.text,
-    fontSize: 24,
-    fontWeight: "800",
-    marginBottom: 8,
-  },
-  screenSubtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  statCard: {
-    width: "48%",
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  statValue: { fontSize: 24, fontWeight: "800", marginBottom: 6 },
-  statTitle: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
-  statHint: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
+  appHeaderSub: { fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 },
+
+  // Screens
+  screen: { padding: 14, paddingBottom: 28, gap: 14 },
+
+  // Cards
   card: {
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
+    backgroundColor: C.card,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 16,
-    gap: 12,
+    borderColor: C.border,
+    padding: 14,
   },
-  heroCard: {
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 20,
-    padding: 18,
-    gap: 14,
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 12,
   },
-  heroStats: { flexDirection: "row", justifyContent: "space-around", gap: 12 },
-  heroStatItem: { alignItems: "center" },
-  heroStatValue: { color: COLORS.primary, fontSize: 22, fontWeight: "800" },
-  heroStatLabel: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
+
+  // Section titles
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: C.text,
+    marginBottom: 2,
+  },
+  sectionSubtitle: { fontSize: 12, color: C.textMuted, lineHeight: 17 },
+
+  // Stat cards
+  statsRow: { flexDirection: "row", gap: 10 },
+  statCard: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+  },
+  statValue: { fontSize: 22, fontWeight: "800", marginBottom: 2 },
+  statLabel: { fontSize: 11, fontWeight: "700", color: C.text },
+  statHint: { fontSize: 10, color: C.textMuted, marginTop: 2 },
+
+  // Badges
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    alignSelf: "flex-start",
   },
-  badgeDot: { width: 6, height: 6, borderRadius: 3 },
-  badgeText: { fontSize: 11, fontWeight: "800" },
+  badgeDot: { width: 5, height: 5, borderRadius: 3 },
+  badgeText: { fontSize: 10, fontWeight: "700" },
+
+  // List rows
   listRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(221,231,225,0.65)",
-  },
-  listRowVertical: {
     gap: 10,
+  },
+  listRowTitle: { fontSize: 13, fontWeight: "600", color: C.text },
+  listRowMeta: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+
+  // Child rows
+  childRow: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(221,231,225,0.65)",
+    borderBottomColor: C.border,
   },
-  listHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  listTitle: { color: COLORS.text, fontSize: 15, fontWeight: "800" },
-  listMeta: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
-  emptyText: { color: COLORS.muted, fontSize: 13, paddingVertical: 6 },
-  fieldWrap: { gap: 6 },
-  fieldLabel: { color: COLORS.muted, fontSize: 12, fontWeight: "700" },
+
+  // Meta chips
+  metaChip: {
+    fontSize: 11,
+    color: C.textMuted,
+    backgroundColor: C.bg,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+
+  // Form
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 5,
+  },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: COLORS.text,
-    fontSize: 14,
-  },
-  inputMultiline: { minHeight: 92, textAlignVertical: "top" },
-  choiceGroup: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  choice: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    borderRadius: 10,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    fontSize: 13,
+    color: C.text,
   },
-  choiceSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  choiceText: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
-  choiceTextSelected: { color: "#FFFFFF" },
-  formTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 12,
-  },
-  twoColumn: { flexDirection: "row", gap: 12 },
-  columnHalf: { flex: 1 },
-  horizontalChoiceWrap: { gap: 10, paddingRight: 4 },
-  parentChip: {
+  twoCol: { flexDirection: "row", gap: 10 },
+  choiceBtn: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
+    borderColor: C.border,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: C.card,
   },
-  parentChipSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  parentChipText: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
-  parentChipTextSelected: { color: COLORS.primary },
-  formActionRow: { flexDirection: "row", gap: 10, marginTop: 6 },
-  primaryButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    paddingVertical: 14,
+  choiceBtnText: { fontSize: 12, fontWeight: "600", color: C.text },
+
+  // Buttons
+  primaryBtn: {
+    backgroundColor: C.primary,
+    borderRadius: 12,
+    paddingVertical: 13,
     alignItems: "center",
-    justifyContent: "center",
   },
-  primaryButtonSmall: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
+  primaryBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  secondaryBtn: {
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
   },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  secondaryButtonSmall: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  dangerButtonSmall: { borderColor: COLORS.danger },
-  secondaryButtonText: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
-  childLinkText: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
-  inlineMetaRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  inlineMeta: {
-    color: COLORS.muted,
-    fontSize: 12,
+  secondaryBtnText: { fontSize: 13, fontWeight: "700", color: C.text },
+  iconBtn: {
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#F4F7F5",
-  },
-  chartRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  chartLabel: {
-    width: 128,
-    color: COLORS.text,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  chartTrack: {
-    flex: 1,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: "#EAF0ED",
-    overflow: "hidden",
-  },
-  chartFill: {
-    height: "100%",
-    backgroundColor: COLORS.primary,
-    borderRadius: 999,
-  },
-  chartValue: {
-    width: 28,
-    textAlign: "right",
-    color: COLORS.muted,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  tipRow: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "flex-start",
-    paddingVertical: 8,
-  },
-  tipNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primaryLight,
     alignItems: "center",
     justifyContent: "center",
   },
-  tipNumberText: { color: COLORS.primary, fontSize: 12, fontWeight: "800" },
-  tipText: { flex: 1, color: COLORS.text, fontSize: 13, lineHeight: 19 },
-  childHero: { gap: 8 },
-  childHeroName: { color: COLORS.text, fontSize: 20, fontWeight: "800" },
-  childHeroMeta: { color: COLORS.muted, fontSize: 13 },
-  childDetailName: { color: COLORS.text, fontSize: 20, fontWeight: "800" },
-  childDetailMeta: { color: COLORS.muted, fontSize: 13, marginTop: 3 },
-  settingsName: { color: COLORS.text, fontSize: 18, fontWeight: "800" },
-  settingsMeta: { color: COLORS.muted, fontSize: 13, marginTop: 4 },
-  tabBar: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.card,
-    paddingVertical: 10,
-  },
-  tabBarContent: { paddingHorizontal: 12, gap: 10 },
-  tabButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#F3F7F4",
+
+  // Preview box
+  previewBox: {
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    padding: 12,
+    marginTop: 8,
+  },
+
+  // Empty state
+  emptyText: {
+    fontSize: 12,
+    color: C.textMuted,
+    paddingVertical: 8,
+    textAlign: "center",
+  },
+
+  // Tab bar
+  tabBar: {
+    flexDirection: "row",
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    paddingBottom: Platform.OS === "ios" ? 8 : 0,
+  },
+  tabItem: {
+    flex: 1,
     alignItems: "center",
-  },
-  tabButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  tabButtonEmoji: { fontSize: 18, marginBottom: 2 },
-  tabButtonText: { color: COLORS.text, fontSize: 10, fontWeight: "700" },
-  tabButtonTextActive: { color: "#FFFFFF" },
-  loginSafeArea: { flex: 1, backgroundColor: COLORS.dark },
-  loginBackgroundTop: {
-    position: "absolute",
-    top: -120,
-    right: -80,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.08)",
-  },
-  loginBackgroundBottom: {
-    position: "absolute",
-    left: -90,
-    bottom: -80,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  loginRoot: { flex: 1 },
-  loginScroll: {
-    padding: 18,
-    paddingBottom: 28,
-    gap: 16,
     justifyContent: "center",
-    flexGrow: 1,
+    paddingTop: 8,
+    paddingBottom: 6,
+    position: "relative",
   },
-  brandRow: {
+  tabIcon: { fontSize: 16, color: C.textMuted, marginBottom: 2 },
+  tabLabel: { fontSize: 9, color: C.textMuted, fontWeight: "500" },
+  tabIndicator: {
+    position: "absolute",
+    top: 0,
+    left: "25%",
+    right: "25%",
+    height: 2,
+    backgroundColor: C.primaryMid,
+    borderRadius: 1,
+  },
+
+  // Login
+  loginScroll: { flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 32 },
+  loginBrand: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 28,
   },
-  brandMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.14)",
+  loginBrandMark: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
-  brandMarkText: { color: "#FFFFFF", fontSize: 24, fontWeight: "900" },
-  brandTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
-  brandSubtitle: {
-    color: "rgba(255,255,255,0.65)",
-    fontSize: 12,
+  loginBrandTitle: { fontSize: 18, fontWeight: "900", color: "#fff" },
+  loginBrandSub: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.55)",
     marginTop: 2,
   },
-  heroTitle: {
-    color: COLORS.text,
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "900",
+  loginCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 22,
   },
-  heroText: { color: COLORS.muted, fontSize: 14, lineHeight: 21 },
-  roleSwitch: { flexDirection: "row", gap: 10 },
-  roleButton: {
+  loginHeading: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: C.text,
+    marginBottom: 4,
+  },
+  loginCaption: { fontSize: 13, color: C.textMuted, marginBottom: 20 },
+  roleRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
+  roleBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 16,
-    paddingVertical: 12,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingVertical: 11,
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: C.card,
   },
-  roleButtonActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+  roleBtnText: { fontSize: 13, fontWeight: "700", color: C.text },
+  loginDemo: {
+    marginTop: 16,
+    backgroundColor: C.bg,
+    borderRadius: 10,
+    padding: 12,
   },
-  roleButtonText: { color: COLORS.text, fontSize: 13, fontWeight: "800" },
-  roleButtonTextActive: { color: COLORS.primary },
-  demoBox: {
-    borderRadius: 16,
-    backgroundColor: "#F4F7F5",
-    padding: 14,
-    gap: 6,
+  featureTag: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
-  demoLabel: { color: COLORS.text, fontSize: 12, fontWeight: "800" },
-  demoText: { color: COLORS.muted, fontSize: 12, lineHeight: 18 },
+  featureTagText: { fontSize: 11, color: "rgba(255,255,255,0.65)" },
 });
