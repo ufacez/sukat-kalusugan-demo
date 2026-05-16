@@ -13,41 +13,41 @@ import {
   View,
 } from "react-native";
 
+// ─── Design Tokens (App.jsx Colors + SukatKalusugan Layout) ──────────────────
 const COLORS = {
   primary: "#0B6E4F",
   primaryDark: "#083F2E",
   primaryLight: "#E6F4EF",
   accent: "#F5A623",
-  accentLight: "#FFF6E3",
+  accentLight: "#FFF8EC",
   danger: "#E03131",
-  dangerLight: "#FFF1F1",
+  dangerLight: "#FFF0F0",
   info: "#1971C2",
-  infoLight: "#E8F2FF",
+  infoLight: "#E7F5FF",
   purple: "#7048E8",
-  purpleLight: "#F1EDFF",
-  bg: "#F4F7F5",
+  purpleLight: "#F3F0FF",
+  bg: "#F5F7F6",
   card: "#FFFFFF",
-  border: "#DDE7E1",
-  text: "#173126",
+  border: "#E2E8E5",
+  text: "#1A2B25",
   muted: "#6D867C",
-  dark: "#0D261D",
+  dark: "#0D2B20",
 };
 
 const NUTRITIONIST_TABS = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "children", label: "Children" },
-  { id: "measurements", label: "Measurements" },
-  { id: "parents", label: "Parents" },
-  { id: "reports", label: "Reports" },
-  { id: "settings", label: "Settings" },
+  { id: "dashboard", label: "Home", icon: "🏠" },
+  { id: "children", label: "Children", icon: "👥" },
+  { id: "measurements", label: "Measurements", icon: "📊" },
+  { id: "specialists", label: "Staff", icon: "💚" },
+  { id: "reports", label: "Reports", icon: "📈" },
 ];
 
 const PARENT_TABS = [
-  { id: "dashboard", label: "Home" },
-  { id: "child", label: "My Child" },
-  { id: "growth", label: "Growth" },
-  { id: "tips", label: "Tips" },
-  { id: "settings", label: "Settings" },
+  { id: "dashboard", label: "Home", icon: "🏠" },
+  { id: "child", label: "My Child", icon: "👧" },
+  { id: "growth", label: "Growth", icon: "📈" },
+  { id: "tips", label: "Tips", icon: "💡" },
+  { id: "settings", label: "Settings", icon: "⚙️" },
 ];
 
 const INITIAL_PARENTS = [
@@ -56,6 +56,7 @@ const INITIAL_PARENTS = [
     name: "Ana Santos",
     email: "ana.santos@email.com",
     phone: "09171234567",
+    children: 1,
     status: "Active",
   },
   {
@@ -63,6 +64,7 @@ const INITIAL_PARENTS = [
     name: "Rosa Dela Cruz",
     email: "rosa.dc@email.com",
     phone: "09281234567",
+    children: 1,
     status: "Active",
   },
   {
@@ -70,6 +72,7 @@ const INITIAL_PARENTS = [
     name: "Carla Reyes",
     email: "carla.reyes@email.com",
     phone: "09391234567",
+    children: 1,
     status: "Active",
   },
   {
@@ -77,7 +80,16 @@ const INITIAL_PARENTS = [
     name: "Pedro Torres",
     email: "pedro.torres@email.com",
     phone: "09451234567",
+    children: 1,
     status: "Active",
+  },
+  {
+    id: 5,
+    name: "Lena Garcia",
+    email: "lena.garcia@email.com",
+    phone: "09561234567",
+    children: 1,
+    status: "Inactive",
   },
 ];
 
@@ -129,6 +141,54 @@ const INITIAL_CHILDREN = [
     address: "9 Bonifacio Rd.",
     parentId: 4,
     status: "Normal",
+  },
+  {
+    id: 5,
+    firstName: "Sofia",
+    lastName: "Garcia",
+    birthdate: "2022-01-05",
+    sex: "Female",
+    ageMonths: 28,
+    barangay: "Sta. Cruz",
+    address: "32 Aguinaldo St.",
+    parentId: 5,
+    status: "Severely Underweight",
+  },
+  {
+    id: 6,
+    firstName: "Carlos",
+    lastName: "Lim",
+    birthdate: "2023-01-22",
+    sex: "Male",
+    ageMonths: 16,
+    barangay: "Poblacion",
+    address: "55 Del Pilar St.",
+    parentId: 2,
+    status: "Wasted",
+  },
+  {
+    id: 7,
+    firstName: "Isabella",
+    lastName: "Ramos",
+    birthdate: "2022-07-30",
+    sex: "Female",
+    ageMonths: 22,
+    barangay: "San Jose",
+    address: "101 Burgos Ave.",
+    parentId: 3,
+    status: "Normal",
+  },
+  {
+    id: 8,
+    firstName: "Andres",
+    lastName: "Cruz",
+    birthdate: "2021-05-14",
+    sex: "Male",
+    ageMonths: 36,
+    barangay: "Sta. Cruz",
+    address: "22 Rizal Blvd.",
+    parentId: 4,
+    status: "Overweight",
   },
 ];
 
@@ -189,6 +249,67 @@ const INITIAL_MEASUREMENTS = [
     whz: -0.3,
     status: "Normal",
   },
+  {
+    id: 5,
+    childId: 5,
+    childName: "Sofia Garcia",
+    measurementDate: "2024-05-06",
+    sourceType: "Manual",
+    heightCm: 80.0,
+    weightKg: 7.9,
+    ageMonths: 28,
+    waz: -3.2,
+    haz: -1.5,
+    whz: -3.1,
+    status: "Severely Underweight",
+  },
+  {
+    id: 6,
+    childId: 6,
+    childName: "Carlos Lim",
+    measurementDate: "2024-05-05",
+    sourceType: "Kiosk",
+    heightCm: 72.5,
+    weightKg: 7.1,
+    ageMonths: 16,
+    waz: -1.8,
+    haz: -1.0,
+    whz: -2.2,
+    status: "Wasted",
+  },
+];
+
+const INITIAL_NUTRITIONISTS = [
+  {
+    id: 1,
+    name: "Dr. Maria Santos",
+    email: "maria.santos@health.gov",
+    phone: "09171234560",
+    role: "Registered Dietitian",
+    barangay: "Bagong Silang",
+    license: "RDN-2020-001",
+    status: "Active",
+  },
+  {
+    id: 2,
+    name: "Nurse Cynthia Reyes",
+    email: "cynthia.reyes@health.gov",
+    phone: "09281234561",
+    role: "Nurse",
+    barangay: "Poblacion",
+    license: "PN-2019-045",
+    status: "Active",
+  },
+  {
+    id: 3,
+    name: "Dr. Jose Garcia",
+    email: "jose.garcia@health.gov",
+    phone: "09391234562",
+    role: "Physician",
+    barangay: "San Jose",
+    license: "MD-2018-023",
+    status: "Active",
+  },
 ];
 
 const INITIAL_TIPS = [
@@ -198,12 +319,13 @@ const INITIAL_TIPS = [
   "Bring the child to the next weigh-in even when they feel healthy.",
 ];
 
-function getParentName(parents, parentId) {
-  return parents.find((parent) => parent.id === parentId)?.name ?? "Unassigned";
-}
-
+// ─── Helper Functions ──────────────────────────────────────────────────────────
 function getChildName(child) {
   return `${child.firstName} ${child.lastName}`;
+}
+
+function getParentName(parents, parentId) {
+  return parents.find((p) => p.id === parentId)?.name ?? "Unassigned";
 }
 
 function formatDate(value) {
@@ -233,50 +355,34 @@ function computeWHO({ weightKg, heightCm, ageMonths }) {
   return { waz, haz, whz, status };
 }
 
-function getTone(status) {
-  switch (status) {
-    case "Normal":
-      return { bg: COLORS.primaryLight, fg: COLORS.primary };
-    case "Underweight":
-      return { bg: COLORS.accentLight, fg: "#B66B00" };
-    case "Severely Underweight":
-      return { bg: COLORS.dangerLight, fg: COLORS.danger };
-    case "Stunted":
-      return { bg: COLORS.purpleLight, fg: COLORS.purple };
-    case "Wasted":
-      return { bg: COLORS.infoLight, fg: COLORS.info };
-    case "Overweight":
-      return { bg: "#FFF0D5", fg: "#B56A00" };
-    default:
-      return { bg: "#EEF3F0", fg: COLORS.muted };
-  }
+function getStatusTheme(status) {
+  const themes = {
+    Normal: {
+      bg: COLORS.primaryLight,
+      fg: COLORS.primary,
+      dot: COLORS.primary,
+    },
+    Underweight: { bg: COLORS.accentLight, fg: "#B66B00", dot: COLORS.accent },
+    "Severely Underweight": {
+      bg: COLORS.dangerLight,
+      fg: COLORS.danger,
+      dot: COLORS.danger,
+    },
+    Stunted: { bg: COLORS.purpleLight, fg: COLORS.purple, dot: COLORS.purple },
+    Wasted: { bg: COLORS.infoLight, fg: COLORS.info, dot: COLORS.info },
+    Overweight: { bg: "#FFF0D5", fg: "#B56A00", dot: COLORS.accent },
+  };
+  return (
+    themes[status] || { bg: "#EEF3F0", fg: COLORS.muted, dot: COLORS.muted }
+  );
 }
 
-function StatCard({ title, value, hint, tone = "primary" }) {
-  const background =
-    tone === "danger"
-      ? COLORS.dangerLight
-      : tone === "accent"
-        ? COLORS.accentLight
-        : tone === "info"
-          ? COLORS.infoLight
-          : tone === "purple"
-            ? COLORS.purpleLight
-            : COLORS.primaryLight;
-  const color =
-    tone === "danger"
-      ? COLORS.danger
-      : tone === "accent"
-        ? "#B66B00"
-        : tone === "info"
-          ? COLORS.info
-          : tone === "purple"
-            ? COLORS.purple
-            : COLORS.primary;
-
+// ─── UI Components ────────────────────────────────────────────────────────────
+function StatCard({ title, value, hint, tone = "Normal" }) {
+  const theme = getStatusTheme(tone);
   return (
-    <View style={[styles.statCard, { backgroundColor: background }]}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+    <View style={[styles.statCard, { backgroundColor: theme.bg }]}>
+      <Text style={[styles.statValue, { color: theme.fg }]}>{value}</Text>
       <Text style={styles.statTitle}>{title}</Text>
       <Text style={styles.statHint}>{hint}</Text>
     </View>
@@ -284,30 +390,26 @@ function StatCard({ title, value, hint, tone = "primary" }) {
 }
 
 function Badge({ children, status }) {
-  const tone = getTone(status);
+  const theme = getStatusTheme(status);
   return (
-    <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.badgeText, { color: tone.fg }]}>{children}</Text>
+    <View style={[styles.badge, { backgroundColor: theme.bg }]}>
+      <View style={[styles.badgeDot, { backgroundColor: theme.dot }]} />
+      <Text style={[styles.badgeText, { color: theme.fg }]}>{children}</Text>
     </View>
   );
 }
 
-function ScreenTitle({ title, subtitle, actionLabel, onAction }) {
+function ScreenTitle({ title, subtitle }) {
   return (
-    <View style={styles.screenTitleRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.screenTitle}>{title}</Text>
-        {subtitle ? (
-          <Text style={styles.screenSubtitle}>{subtitle}</Text>
-        ) : null}
-      </View>
-      {actionLabel ? (
-        <Pressable onPress={onAction} style={styles.actionChip}>
-          <Text style={styles.actionChipText}>{actionLabel}</Text>
-        </Pressable>
-      ) : null}
+    <View>
+      <Text style={styles.screenTitle}>{title}</Text>
+      {subtitle ? <Text style={styles.screenSubtitle}>{subtitle}</Text> : null}
     </View>
   );
+}
+
+function Card({ children }) {
+  return <View style={styles.card}>{children}</View>;
 }
 
 function Field({ label, required, children }) {
@@ -359,10 +461,7 @@ function ChoiceGroup({ value, options, onChange }) {
   );
 }
 
-function SectionCard({ children }) {
-  return <View style={styles.sectionCard}>{children}</View>;
-}
-
+// ─── Login Screen ──────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [role, setRole] = useState("nutritionist");
   const [name, setName] = useState("Dr. Maria Santos");
@@ -373,10 +472,10 @@ function LoginScreen({ onLogin }) {
     if (role === "nutritionist") {
       setName("Dr. Maria Santos");
       setEmail("maria.santos@health.gov");
-      return;
+    } else {
+      setName("Ana Santos");
+      setEmail("ana.santos@email.com");
     }
-    setName("Ana Santos");
-    setEmail("ana.santos@email.com");
   }, [role]);
 
   const handleLogin = () => {
@@ -389,7 +488,7 @@ function LoginScreen({ onLogin }) {
 
   return (
     <SafeAreaView style={styles.loginSafeArea}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.dark} />
       <View style={styles.loginBackgroundTop} />
       <View style={styles.loginBackgroundBottom} />
       <KeyboardAvoidingView
@@ -399,11 +498,11 @@ function LoginScreen({ onLogin }) {
         <ScrollView contentContainerStyle={styles.loginScroll}>
           <View style={styles.brandRow}>
             <View style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>+</Text>
+              <Text style={styles.brandMarkText}>💚</Text>
             </View>
             <View>
               <Text style={styles.brandTitle}>SukatKalusugan</Text>
-              <Text style={styles.brandSubtitle}>Mobile health flow</Text>
+              <Text style={styles.brandSubtitle}>Child Health Monitoring</Text>
             </View>
           </View>
 
@@ -412,8 +511,8 @@ function LoginScreen({ onLogin }) {
               Child nutrition monitoring made simple
             </Text>
             <Text style={styles.heroText}>
-              This Expo build mirrors the web system flow with local mock data,
-              role-based access, and no database dependency.
+              Track growth, nutrition, and health records all in one place with
+              local data storage.
             </Text>
 
             <View style={styles.roleSwitch}>
@@ -476,9 +575,10 @@ function LoginScreen({ onLogin }) {
             </Pressable>
 
             <View style={styles.demoBox}>
-              <Text style={styles.demoLabel}>Demo access</Text>
+              <Text style={styles.demoLabel}>Demo Access</Text>
               <Text style={styles.demoText}>
-                Nutritionist: Dr. Maria Santos{`\n`}Parent: Ana Santos
+                Nutritionist: maria.santos@health.gov{"\n"}Parent:
+                ana.santos@email.com
               </Text>
             </View>
           </View>
@@ -488,7 +588,13 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-function NutritionistDashboard({ children, measurements, parents }) {
+// ─── Nutritionist Dashboard ───────────────────────────────────────────────────
+function NutritionistDashboard({
+  children,
+  measurements,
+  parents,
+  nutritionists,
+}) {
   const normalCount = children.filter(
     (child) => child.status === "Normal",
   ).length;
@@ -497,41 +603,50 @@ function NutritionistDashboard({ children, measurements, parents }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Nutritionist Dashboard"
-        subtitle="Track child growth, measurements, and family records in one flow."
-      />
+      <ScreenTitle title="👋 Welcome" subtitle="Nutritionist Dashboard" />
+
+      <Card>
+        <View style={styles.heroStats}>
+          <View style={styles.heroStatItem}>
+            <Text style={styles.heroStatValue}>{children.length}</Text>
+            <Text style={styles.heroStatLabel}>Children</Text>
+          </View>
+          <View style={styles.heroStatItem}>
+            <Text style={styles.heroStatValue}>{measurements.length}</Text>
+            <Text style={styles.heroStatLabel}>Records</Text>
+          </View>
+          <View style={styles.heroStatItem}>
+            <Text style={styles.heroStatValue}>{alertCount}</Text>
+            <Text style={styles.heroStatLabel}>At Risk</Text>
+          </View>
+        </View>
+      </Card>
 
       <View style={styles.statsGrid}>
         <StatCard
           title="Children"
           value={String(children.length)}
-          hint="Active profiles"
+          hint="registered"
+          tone="Normal"
         />
         <StatCard
           title="Parents"
           value={String(parents.length)}
-          hint="Linked accounts"
-          tone="info"
+          hint="linked"
+          tone="Wasted"
         />
         <StatCard
-          title="Normal"
-          value={String(normalCount)}
-          hint="Healthy status"
-          tone="primary"
-        />
-        <StatCard
-          title="Alerts"
-          value={String(alertCount)}
-          hint="Need attention"
-          tone="danger"
+          title="Staff"
+          value={String(nutritionists.length)}
+          hint="active"
+          tone="Wasted"
         />
       </View>
 
-      <SectionCard>
+      <Card>
         <ScreenTitle
-          title="Attention queue"
-          subtitle="Children needing follow-up."
+          title="⚠️ Attention Queue"
+          subtitle="Children needing follow-up"
         />
         {children
           .filter((child) => child.status !== "Normal")
@@ -548,15 +663,15 @@ function NutritionistDashboard({ children, measurements, parents }) {
           ))}
         {children.filter((child) => child.status !== "Normal").length === 0 ? (
           <Text style={styles.emptyText}>
-            No children need immediate follow-up.
+            No children need immediate attention
           </Text>
         ) : null}
-      </SectionCard>
+      </Card>
 
-      <SectionCard>
+      <Card>
         <ScreenTitle
-          title="Recent measurements"
-          subtitle="Latest saved entries from the local flow."
+          title="📊 Recent Measurements"
+          subtitle="Latest saved entries"
         />
         {recentMeasurements.map((measurement) => (
           <View key={measurement.id} style={styles.listRow}>
@@ -570,11 +685,12 @@ function NutritionistDashboard({ children, measurements, parents }) {
             <Badge status={measurement.status}>{measurement.status}</Badge>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
 
+// ─── Children Screen ───────────────────────────────────────────────────────────
 function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -646,8 +762,8 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
       <ScreenTitle
-        title="Children"
-        subtitle="Add, review, and update child profiles locally."
+        title="👧 Children"
+        subtitle="Add, review, and update profiles"
       />
 
       <Field label="Search children">
@@ -658,7 +774,7 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
         />
       </Field>
 
-      <SectionCard>
+      <Card>
         <Text style={styles.formTitle}>
           {editingId ? "Edit child profile" : "Add new child"}
         </Text>
@@ -788,13 +904,10 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
             <Text style={styles.secondaryButtonText}>Clear</Text>
           </Pressable>
         </View>
-      </SectionCard>
+      </Card>
 
-      <SectionCard>
-        <ScreenTitle
-          title="Child records"
-          subtitle="Tap edit or delete for local updates."
-        />
+      <Card>
+        <ScreenTitle title="📋 Child Records" subtitle="Tap to manage" />
         {filteredChildren.map((child) => (
           <View key={child.id} style={styles.listRowVertical}>
             <View style={styles.listHeaderRow}>
@@ -833,11 +946,12 @@ function ChildrenScreen({ children, parents, onSaveChild, onDeleteChild }) {
             </View>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
 
+// ─── Measurements Screen ──────────────────────────────────────────────────────
 function MeasurementsScreen({
   children,
   measurements,
@@ -903,11 +1017,11 @@ function MeasurementsScreen({
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
       <ScreenTitle
-        title="Measurements"
-        subtitle="Record anthropometric entries without a database."
+        title="📊 Measurements"
+        subtitle="Record anthropometric entries"
       />
 
-      <SectionCard>
+      <Card>
         <Text style={styles.formTitle}>Add measurement</Text>
 
         <Field label="Child" required>
@@ -987,13 +1101,10 @@ function MeasurementsScreen({
         <Pressable onPress={submitMeasurement} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Save measurement</Text>
         </Pressable>
-      </SectionCard>
+      </Card>
 
-      <SectionCard>
-        <ScreenTitle
-          title="Recent entries"
-          subtitle="Saved measurements can be deleted locally."
-        />
+      <Card>
+        <ScreenTitle title="📋 Recent Entries" subtitle="Saved measurements" />
         {measurements.map((measurement) => (
           <View key={measurement.id} style={styles.listRowVertical}>
             <View style={styles.listHeaderRow}>
@@ -1031,38 +1142,45 @@ function MeasurementsScreen({
             </Pressable>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
 
-function ParentsScreen({ parents, children }) {
+// ─── Specialists/Staff Screen ─────────────────────────────────────────────────
+function SpecialistsScreen({ parents, children, nutritionists }) {
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Parents"
-        subtitle="Family directory mapped from the same local data flow."
-      />
-      <SectionCard>
+      <ScreenTitle title="👩‍⚕️ Health Workers" subtitle="Staff directory" />
+
+      <Card>
+        <Text style={styles.formTitle}>Nutritionists & Medical Staff</Text>
+        {nutritionists.map((n) => (
+          <View key={n.id} style={styles.listRowVertical}>
+            <Text style={styles.listTitle}>{n.name}</Text>
+            <Text style={styles.listMeta}>{n.role}</Text>
+            <Text style={styles.listMeta}>
+              {n.barangay} • {n.license}
+            </Text>
+            <Badge status={n.status}>{n.status}</Badge>
+          </View>
+        ))}
+      </Card>
+
+      <Card>
+        <Text style={styles.formTitle}>Parents/Guardians</Text>
         {parents.map((parent) => {
           const linkedChildren = children.filter(
             (child) => child.parentId === parent.id,
           );
           return (
             <View key={parent.id} style={styles.listRowVertical}>
-              <View style={styles.listHeaderRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.listTitle}>{parent.name}</Text>
-                  <Text style={styles.listMeta}>{parent.email}</Text>
-                </View>
-                <Badge status={parent.status}>{parent.status}</Badge>
-              </View>
-              <View style={styles.inlineMetaRow}>
-                <Text style={styles.inlineMeta}>{parent.phone}</Text>
-                <Text style={styles.inlineMeta}>
-                  {linkedChildren.length} child/children
-                </Text>
-              </View>
+              <Text style={styles.listTitle}>{parent.name}</Text>
+              <Text style={styles.listMeta}>{parent.email}</Text>
+              <Text style={styles.inlineMeta}>
+                {linkedChildren.length} child(ren)
+              </Text>
+              <Badge status={parent.status}>{parent.status}</Badge>
               {linkedChildren.map((child) => (
                 <Text key={child.id} style={styles.childLinkText}>
                   • {getChildName(child)} ({child.status})
@@ -1071,11 +1189,12 @@ function ParentsScreen({ parents, children }) {
             </View>
           );
         })}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
 
+// ─── Reports Screen ───────────────────────────────────────────────────────────
 function ReportsScreen({ children, measurements }) {
   const counts = useMemo(() => {
     return measurements.reduce((result, measurement) => {
@@ -1096,40 +1215,39 @@ function ReportsScreen({ children, measurements }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Reports"
-        subtitle="A lightweight local report view with the same growth logic."
-      />
+      <ScreenTitle title="📈 Reports" subtitle="Growth and nutrition status" />
+
       <View style={styles.statsGrid}>
         <StatCard
           title="All children"
           value={String(children.length)}
-          hint="Profiles in memory"
+          hint="Profiles"
+          tone="Normal"
         />
         <StatCard
           title="Measurements"
           value={String(measurements.length)}
-          hint="Saved records"
-          tone="info"
+          hint="Records"
+          tone="Wasted"
         />
         <StatCard
           title="Healthy"
           value={String(counts.Normal || 0)}
           hint="Normal status"
-          tone="primary"
+          tone="Normal"
         />
         <StatCard
           title="Alerts"
           value={String(measurements.length - (counts.Normal || 0))}
           hint="Review needed"
-          tone="danger"
+          tone="Underweight"
         />
       </View>
 
-      <SectionCard>
+      <Card>
         <ScreenTitle
-          title="Status distribution"
-          subtitle="Relative counts from the local data set."
+          title="📊 Status Distribution"
+          subtitle="Relative counts"
         />
         {chartRows.map((row) => (
           <View key={row.status} style={styles.chartRow}>
@@ -1145,19 +1263,17 @@ function ReportsScreen({ children, measurements }) {
             <Text style={styles.chartValue}>{row.count}</Text>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
 
+// ─── Parent Screens ───────────────────────────────────────────────────────────
 function TipsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Nutrition tips"
-        subtitle="Static reminders that stay inside the app flow."
-      />
-      <SectionCard>
+      <ScreenTitle title="💡 Nutrition Tips" subtitle="Health reminders" />
+      <Card>
         {INITIAL_TIPS.map((tip, index) => (
           <View key={tip} style={styles.tipRow}>
             <View style={styles.tipNumber}>
@@ -1166,7 +1282,7 @@ function TipsScreen() {
             <Text style={styles.tipText}>{tip}</Text>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
@@ -1176,8 +1292,8 @@ function ParentDashboard({ child, latestMeasurement, history }) {
     return (
       <ScrollView contentContainerStyle={styles.screenContent}>
         <ScreenTitle
-          title="Parent Home"
-          subtitle="No child profile is linked to this account."
+          title="👋 Parent Home"
+          subtitle="No child profile linked"
         />
       </ScrollView>
     );
@@ -1185,11 +1301,9 @@ function ParentDashboard({ child, latestMeasurement, history }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Parent Home"
-        subtitle="A simplified mobile view for monitoring your child's growth."
-      />
-      <SectionCard>
+      <ScreenTitle title="👋 Parent Home" subtitle="Your child's health" />
+
+      <Card>
         <View style={styles.childHero}>
           <Text style={styles.childHeroName}>{getChildName(child)}</Text>
           <Text style={styles.childHeroMeta}>
@@ -1197,41 +1311,39 @@ function ParentDashboard({ child, latestMeasurement, history }) {
           </Text>
           <Badge status={child.status}>{child.status}</Badge>
         </View>
-      </SectionCard>
+      </Card>
 
       {latestMeasurement ? (
         <View style={styles.statsGrid}>
           <StatCard
             title="Height"
             value={`${latestMeasurement.heightCm.toFixed(1)} cm`}
-            hint="Latest check"
+            hint="Latest"
+            tone="Normal"
           />
           <StatCard
             title="Weight"
             value={`${latestMeasurement.weightKg.toFixed(1)} kg`}
-            hint="Latest check"
-            tone="info"
+            hint="Latest"
+            tone="Wasted"
           />
           <StatCard
             title="WAZ"
             value={String(latestMeasurement.waz)}
             hint="Weight for age"
-            tone="purple"
+            tone="Stunted"
           />
           <StatCard
             title="Status"
             value={latestMeasurement.status}
             hint={latestMeasurement.sourceType}
-            tone="accent"
+            tone={latestMeasurement.status}
           />
         </View>
       ) : null}
 
-      <SectionCard>
-        <ScreenTitle
-          title="Recent history"
-          subtitle="Only the most recent records are shown here."
-        />
+      <Card>
+        <ScreenTitle title="📊 Recent History" subtitle="Latest records" />
         {history.slice(0, 3).map((measurement) => (
           <View key={measurement.id} style={styles.listRow}>
             <View style={{ flex: 1 }}>
@@ -1246,7 +1358,7 @@ function ParentDashboard({ child, latestMeasurement, history }) {
             <Badge status={measurement.status}>{measurement.status}</Badge>
           </View>
         ))}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
@@ -1254,12 +1366,9 @@ function ParentDashboard({ child, latestMeasurement, history }) {
 function ParentChildScreen({ child, latestMeasurement }) {
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="My Child"
-        subtitle="Profile details and linked growth information."
-      />
+      <ScreenTitle title="👧 My Child" subtitle="Profile details" />
       {child ? (
-        <SectionCard>
+        <Card>
           <Text style={styles.childDetailName}>{getChildName(child)}</Text>
           <Text style={styles.childDetailMeta}>
             {child.birthdate} • {child.sex}
@@ -1270,11 +1379,11 @@ function ParentChildScreen({ child, latestMeasurement }) {
             <Text style={styles.inlineMeta}>{child.ageMonths} months</Text>
             <Text style={styles.inlineMeta}>
               {latestMeasurement
-                ? `Last status: ${latestMeasurement.status}`
+                ? `Last: ${latestMeasurement.status}`
                 : "No measurement yet"}
             </Text>
           </View>
-        </SectionCard>
+        </Card>
       ) : null}
     </ScrollView>
   );
@@ -1286,11 +1395,8 @@ function ParentGrowthScreen({ history }) {
 
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Growth"
-        subtitle="Visual trend built from local measurements."
-      />
-      <SectionCard>
+      <ScreenTitle title="📈 Growth" subtitle="Weight trend" />
+      <Card>
         {points.length === 0 ? (
           <Text style={styles.emptyText}>No growth history available yet.</Text>
         ) : (
@@ -1314,23 +1420,16 @@ function ParentGrowthScreen({ history }) {
             </View>
           ))
         )}
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
-}
-
-function ParentTipsScreen() {
-  return <TipsScreen />;
 }
 
 function SettingsScreen({ user, onLogout, role }) {
   return (
     <ScrollView contentContainerStyle={styles.screenContent}>
-      <ScreenTitle
-        title="Settings"
-        subtitle="Local preferences and session controls."
-      />
-      <SectionCard>
+      <ScreenTitle title="⚙️ Settings" subtitle="Account and preferences" />
+      <Card>
         <Text style={styles.settingsName}>{user.name}</Text>
         <Text style={styles.settingsMeta}>{user.email}</Text>
         <Text style={styles.settingsMeta}>
@@ -1342,7 +1441,7 @@ function SettingsScreen({ user, onLogout, role }) {
         >
           <Text style={styles.primaryButtonText}>Sign out</Text>
         </Pressable>
-      </SectionCard>
+      </Card>
     </ScrollView>
   );
 }
@@ -1363,6 +1462,7 @@ function TabBar({ tabs, activeTab, onChange }) {
               onPress={() => onChange(tab.id)}
               style={[styles.tabButton, selected && styles.tabButtonActive]}
             >
+              <Text style={[styles.tabButtonEmoji]}>{tab.icon}</Text>
               <Text
                 style={[
                   styles.tabButtonText,
@@ -1379,12 +1479,14 @@ function TabBar({ tabs, activeTab, onChange }) {
   );
 }
 
+// ─── Main App Component ───────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [parents, setParents] = useState(INITIAL_PARENTS);
   const [children, setChildren] = useState(INITIAL_CHILDREN);
   const [measurements, setMeasurements] = useState(INITIAL_MEASUREMENTS);
+  const [nutritionists] = useState(INITIAL_NUTRITIONISTS);
 
   useEffect(() => {
     if (!user) return;
@@ -1430,7 +1532,6 @@ export default function App() {
       );
       return;
     }
-
     const nextId = Math.max(...children.map((child) => child.id), 0) + 1;
     setChildren((current) => [
       ...current,
@@ -1441,7 +1542,7 @@ export default function App() {
   const handleDeleteChild = (child) => {
     Alert.alert(
       "Delete child",
-      `Remove ${getChildName(child)} and all linked measurements?`,
+      `Remove ${getChildName(child)} and all measurements?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -1504,6 +1605,7 @@ export default function App() {
               children={children}
               measurements={measurements}
               parents={parents}
+              nutritionists={nutritionists}
             />
           );
         case "children":
@@ -1524,19 +1626,17 @@ export default function App() {
               onDeleteMeasurement={handleDeleteMeasurement}
             />
           );
-        case "parents":
-          return <ParentsScreen parents={parents} children={children} />;
+        case "specialists":
+          return (
+            <SpecialistsScreen
+              parents={parents}
+              children={children}
+              nutritionists={nutritionists}
+            />
+          );
         case "reports":
           return (
             <ReportsScreen children={children} measurements={measurements} />
-          );
-        case "settings":
-          return (
-            <SettingsScreen
-              user={user}
-              role={user.role}
-              onLogout={() => setUser(null)}
-            />
           );
         default:
           return (
@@ -1544,6 +1644,7 @@ export default function App() {
               children={children}
               measurements={measurements}
               parents={parents}
+              nutritionists={nutritionists}
             />
           );
       }
@@ -1568,7 +1669,7 @@ export default function App() {
       case "growth":
         return <ParentGrowthScreen history={parentHistory} />;
       case "tips":
-        return <ParentTipsScreen />;
+        return <TipsScreen />;
       case "settings":
         return (
           <SettingsScreen
@@ -1593,16 +1694,13 @@ export default function App() {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.dark} />
       <View style={styles.appHeader}>
         <View>
-          <Text style={styles.appHeaderTitle}>SukatKalusugan</Text>
+          <Text style={styles.appHeaderTitle}>💚 SukatKalusugan</Text>
           <Text style={styles.appHeaderSubtitle}>
             {user.role === "nutritionist"
               ? "Nutritionist workspace"
               : "Parent workspace"}
           </Text>
         </View>
-        <Badge status={user.role === "nutritionist" ? "Normal" : "Underweight"}>
-          {user.role === "nutritionist" ? "Nutritionist" : "Parent"}
-        </Badge>
       </View>
 
       {renderScreen()}
@@ -1619,9 +1717,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   appHeaderTitle: {
     color: "#FFFFFF",
@@ -1635,21 +1730,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   screenContent: { padding: 16, paddingBottom: 32, gap: 14 },
-  screenTitleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   screenTitle: {
     color: COLORS.text,
     fontSize: 24,
     fontWeight: "800",
-    marginBottom: 3,
+    marginBottom: 8,
   },
   screenSubtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
-  actionChip: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  actionChipText: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   statCard: {
     width: "48%",
@@ -1661,7 +1748,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 24, fontWeight: "800", marginBottom: 6 },
   statTitle: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
   statHint: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
-  sectionCard: {
+  card: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
     borderWidth: 1,
@@ -1669,6 +1756,27 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  heroCard: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 20,
+    padding: 18,
+    gap: 14,
+  },
+  heroStats: { flexDirection: "row", justifyContent: "space-around", gap: 12 },
+  heroStatItem: { alignItems: "center" },
+  heroStatValue: { color: COLORS.primary, fontSize: 22, fontWeight: "800" },
+  heroStatLabel: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  badgeDot: { width: 6, height: 6, borderRadius: 3 },
+  badgeText: { fontSize: 11, fontWeight: "800" },
   listRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1687,13 +1795,6 @@ const styles = StyleSheet.create({
   listTitle: { color: COLORS.text, fontSize: 15, fontWeight: "800" },
   listMeta: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
   emptyText: { color: COLORS.muted, fontSize: 13, paddingVertical: 6 },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    alignSelf: "flex-start",
-  },
-  badgeText: { fontSize: 11, fontWeight: "800" },
   fieldWrap: { gap: 6 },
   fieldLabel: { color: COLORS.muted, fontSize: 12, fontWeight: "700" },
   input: {
@@ -1722,7 +1823,12 @@ const styles = StyleSheet.create({
   },
   choiceText: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
   choiceTextSelected: { color: "#FFFFFF" },
-  formTitle: { color: COLORS.text, fontSize: 16, fontWeight: "800" },
+  formTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 12,
+  },
   twoColumn: { flexDirection: "row", gap: 12 },
   columnHalf: { flex: 1 },
   horizontalChoiceWrap: { gap: 10, paddingRight: 4 },
@@ -1780,7 +1886,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "#F4F7F5",
-    overflow: "hidden",
   },
   chartRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   chartLabel: {
@@ -1845,12 +1950,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F7F4",
     borderWidth: 1,
     borderColor: COLORS.border,
+    alignItems: "center",
   },
   tabButtonActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  tabButtonText: { color: COLORS.text, fontSize: 12, fontWeight: "700" },
+  tabButtonEmoji: { fontSize: 18, marginBottom: 2 },
+  tabButtonText: { color: COLORS.text, fontSize: 10, fontWeight: "700" },
   tabButtonTextActive: { color: "#FFFFFF" },
   loginSafeArea: { flex: 1, backgroundColor: COLORS.dark },
   loginBackgroundTop: {
@@ -1899,12 +2006,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.65)",
     fontSize: 12,
     marginTop: 2,
-  },
-  heroCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 28,
-    padding: 18,
-    gap: 16,
   },
   heroTitle: {
     color: COLORS.text,
