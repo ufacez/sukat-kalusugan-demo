@@ -3805,10 +3805,9 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
           <thead>
             <tr style={{ background: C.bg }}>
               {[
-                "",
                 "No",
                 "Name",
-                "Age",
+                "Age (months)",
                 "Date of Birth",
                 "Status",
                 "Email address",
@@ -3827,11 +3826,7 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {h === "" ? (
-                    <input type="checkbox" style={{ width: 13, height: 13 }} />
-                  ) : (
-                    h
-                  )}
+                 {h === "" ? null : h}
                 </th>
               ))}
             </tr>
@@ -3847,12 +3842,9 @@ function Dashboard({ children, measurements, parents, nutritionists }) {
                       : "none",
                 }}
               >
-                <td style={{ padding: "10px 14px" }}>
-                  <input type="checkbox" style={{ width: 13, height: 13 }} />
-                </td>
                 <td
                   style={{
-                    padding: "10px 14px",
+                    padding: "px 14px",
                     fontSize: 12,
                     color: C.textMuted,
                   }}
