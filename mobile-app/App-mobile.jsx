@@ -2,6 +2,7 @@
  * SukatKalusugan Mobile — Dual-Role App
  * Nutritionist (health worker) + Parent (guardian) roles
  * Auto-detected from credentials on login
+ * Updated: Appointments tab, SVG icons, AI chatbot for parents
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -10,7 +11,6 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -20,6 +20,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Svg, {
+  Path,
+  Circle,
+  Rect,
+  Line,
+  Polyline,
+  Polygon,
+} from "react-native-svg";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -47,9 +55,293 @@ const C = {
   sidebar: "#0D2B20",
 };
 
+// ─── SVG Icon Components ──────────────────────────────────────────────────────
+const Icon = ({ name, size = 20, color = C.textMuted, strokeWidth = 1.8 }) => {
+  const props = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: color,
+    strokeWidth,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  switch (name) {
+    case "home":
+      return (
+        <Svg {...props}>
+          <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <Polyline points="9 22 9 12 15 12 15 22" />
+        </Svg>
+      );
+    case "users":
+      return (
+        <Svg {...props}>
+          <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <Circle cx="9" cy="7" r="4" />
+          <Path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <Path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </Svg>
+      );
+    case "clipboard":
+      return (
+        <Svg {...props}>
+          <Path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <Rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        </Svg>
+      );
+    case "bar-chart":
+      return (
+        <Svg {...props}>
+          <Line x1="18" y1="20" x2="18" y2="10" />
+          <Line x1="12" y1="20" x2="12" y2="4" />
+          <Line x1="6" y1="20" x2="6" y2="14" />
+          <Line x1="2" y1="20" x2="22" y2="20" />
+        </Svg>
+      );
+    case "user":
+      return (
+        <Svg {...props}>
+          <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <Circle cx="12" cy="7" r="4" />
+        </Svg>
+      );
+    case "heart":
+      return (
+        <Svg {...props}>
+          <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </Svg>
+      );
+    case "lightbulb":
+      return (
+        <Svg {...props}>
+          <Path d="M9 21h6M12 3a6 6 0 0 1 6 6c0 2.2-1.2 4.1-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z" />
+        </Svg>
+      );
+    case "calendar":
+      return (
+        <Svg {...props}>
+          <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <Line x1="16" y1="2" x2="16" y2="6" />
+          <Line x1="8" y1="2" x2="8" y2="6" />
+          <Line x1="3" y1="10" x2="21" y2="10" />
+        </Svg>
+      );
+    case "bell":
+      return (
+        <Svg {...props}>
+          <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </Svg>
+      );
+    case "message-circle":
+      return (
+        <Svg {...props}>
+          <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </Svg>
+      );
+    case "send":
+      return (
+        <Svg {...props}>
+          <Line x1="22" y1="2" x2="11" y2="13" />
+          <Polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </Svg>
+      );
+    case "plus":
+      return (
+        <Svg {...props}>
+          <Line x1="12" y1="5" x2="12" y2="19" />
+          <Line x1="5" y1="12" x2="19" y2="12" />
+        </Svg>
+      );
+    case "x":
+      return (
+        <Svg {...props}>
+          <Line x1="18" y1="6" x2="6" y2="18" />
+          <Line x1="6" y1="6" x2="18" y2="18" />
+        </Svg>
+      );
+    case "check":
+      return (
+        <Svg {...props}>
+          <Polyline points="20 6 9 17 4 12" />
+        </Svg>
+      );
+    case "check-circle":
+      return (
+        <Svg {...props}>
+          <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <Polyline points="22 4 12 14.01 9 11.01" />
+        </Svg>
+      );
+    case "clock":
+      return (
+        <Svg {...props}>
+          <Circle cx="12" cy="12" r="10" />
+          <Polyline points="12 6 12 12 16 14" />
+        </Svg>
+      );
+    case "alert-triangle":
+      return (
+        <Svg {...props}>
+          <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <Line x1="12" y1="9" x2="12" y2="13" />
+          <Line x1="12" y1="17" x2="12.01" y2="17" />
+        </Svg>
+      );
+    case "activity":
+      return (
+        <Svg {...props}>
+          <Polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </Svg>
+      );
+    case "book-open":
+      return (
+        <Svg {...props}>
+          <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <Path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </Svg>
+      );
+    case "map-pin":
+      return (
+        <Svg {...props}>
+          <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <Circle cx="12" cy="10" r="3" />
+        </Svg>
+      );
+    case "phone":
+      return (
+        <Svg {...props}>
+          <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.29 6.29l.72-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.92z" />
+        </Svg>
+      );
+    case "edit":
+      return (
+        <Svg {...props}>
+          <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </Svg>
+      );
+    case "log-out":
+      return (
+        <Svg {...props}>
+          <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <Polyline points="16 17 21 12 16 7" />
+          <Line x1="21" y1="12" x2="9" y2="12" />
+        </Svg>
+      );
+    case "arrow-left":
+      return (
+        <Svg {...props}>
+          <Line x1="19" y1="12" x2="5" y2="12" />
+          <Polyline points="12 19 5 12 12 5" />
+        </Svg>
+      );
+    case "chevron-right":
+      return (
+        <Svg {...props}>
+          <Polyline points="9 18 15 12 9 6" />
+        </Svg>
+      );
+    case "search":
+      return (
+        <Svg {...props}>
+          <Circle cx="11" cy="11" r="8" />
+          <Line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </Svg>
+      );
+    case "sun":
+      return (
+        <Svg {...props}>
+          <Circle cx="12" cy="12" r="5" />
+          <Line x1="12" y1="1" x2="12" y2="3" />
+          <Line x1="12" y1="21" x2="12" y2="23" />
+          <Line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <Line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <Line x1="1" y1="12" x2="3" y2="12" />
+          <Line x1="21" y1="12" x2="23" y2="12" />
+          <Line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <Line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </Svg>
+      );
+    case "moon":
+      return (
+        <Svg {...props}>
+          <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </Svg>
+      );
+    case "zap":
+      return (
+        <Svg {...props}>
+          <Polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </Svg>
+      );
+    case "bot":
+      return (
+        <Svg {...props}>
+          <Rect x="3" y="11" width="18" height="10" rx="2" />
+          <Circle cx="12" cy="5" r="2" />
+          <Path d="M12 7v4" />
+          <Line x1="8" y1="16" x2="8" y2="16" />
+          <Line x1="16" y1="16" x2="16" y2="16" />
+        </Svg>
+      );
+    case "info":
+      return (
+        <Svg {...props}>
+          <Circle cx="12" cy="12" r="10" />
+          <Line x1="12" y1="8" x2="12" y2="12" />
+          <Line x1="12" y1="16" x2="12.01" y2="16" />
+        </Svg>
+      );
+    case "weight":
+      return (
+        <Svg {...props}>
+          <Path d="M6 9H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-2" />
+          <Path d="M6 9c0-3.31 2.69-6 6-6s6 2.69 6 6" />
+          <Path d="M12 12v4" />
+        </Svg>
+      );
+    case "ruler":
+      return (
+        <Svg {...props}>
+          <Path d="M21.3 8.7l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4z" />
+          <Path d="M12 3l4 4-4 4-4-4z" fill="none" />
+        </Svg>
+      );
+    case "trending-up":
+      return (
+        <Svg {...props}>
+          <Polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+          <Polyline points="17 6 23 6 23 12" />
+        </Svg>
+      );
+    case "shield":
+      return (
+        <Svg {...props}>
+          <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </Svg>
+      );
+    case "award":
+      return (
+        <Svg {...props}>
+          <Circle cx="12" cy="8" r="7" />
+          <Polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+        </Svg>
+      );
+    default:
+      return (
+        <Svg {...props}>
+          <Circle cx="12" cy="12" r="10" />
+        </Svg>
+      );
+  }
+};
+
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const USERS = [
-  // Nutritionists / health workers
   {
     id: "n1",
     name: "Dr. Maria Santos",
@@ -74,7 +366,6 @@ const USERS = [
     role: "nutritionist",
     title: "Physician",
   },
-  // Parents / guardians
   {
     id: "p1",
     name: "Ana Santos",
@@ -331,62 +622,178 @@ const INITIAL_MEASUREMENTS = [
   },
 ];
 
+const APPOINTMENTS_DATA = [
+  {
+    id: 1,
+    childName: "Maria Santos",
+    parentName: "Ana Santos",
+    type: "Monthly Weigh-In",
+    date: "2025-05-20",
+    time: "09:00 AM",
+    barangay: "Bagong Silang",
+    status: "confirmed",
+    nutritionist: "Dr. Maria Santos",
+    notes: "Regular monthly check-up",
+  },
+  {
+    id: 2,
+    childName: "Juan Santos",
+    parentName: "Ana Santos",
+    type: "Nutrition Counseling",
+    date: "2025-05-22",
+    time: "10:30 AM",
+    barangay: "Bagong Silang",
+    status: "pending",
+    nutritionist: "Dr. Maria Santos",
+    notes: "Follow-up for underweight status",
+  },
+  {
+    id: 3,
+    childName: "Lucia Dela Cruz",
+    parentName: "Rosa Dela Cruz",
+    type: "Growth Monitoring",
+    date: "2025-05-23",
+    time: "02:00 PM",
+    barangay: "Poblacion",
+    status: "confirmed",
+    nutritionist: "Nurse Cynthia Reyes",
+    notes: "Stunting follow-up",
+  },
+  {
+    id: 4,
+    childName: "Sofia Torres",
+    parentName: "Pedro Torres",
+    type: "Urgent Consultation",
+    date: "2025-05-21",
+    time: "08:00 AM",
+    barangay: "Sta. Cruz",
+    status: "confirmed",
+    nutritionist: "Dr. Jose Garcia",
+    notes: "Severely underweight - priority case",
+  },
+  {
+    id: 5,
+    childName: "Carlos Garcia",
+    parentName: "Lena Garcia",
+    type: "Vitamin A Distribution",
+    date: "2025-05-28",
+    time: "09:00 AM",
+    barangay: "Poblacion",
+    status: "pending",
+    nutritionist: "Nurse Cynthia Reyes",
+    notes: "Scheduled vitamin supplementation",
+  },
+  {
+    id: 6,
+    childName: "Isabella Ramos",
+    parentName: "Rosa Dela Cruz",
+    type: "Monthly Weigh-In",
+    date: "2025-06-03",
+    time: "11:00 AM",
+    barangay: "San Jose",
+    status: "pending",
+    nutritionist: "Dr. Maria Santos",
+    notes: "Routine monitoring",
+  },
+  {
+    id: 7,
+    childName: "Miguel Reyes",
+    parentName: "Carla Reyes",
+    type: "Immunization Check",
+    date: "2025-05-29",
+    time: "03:00 PM",
+    barangay: "San Jose",
+    status: "cancelled",
+    nutritionist: "Dr. Jose Garcia",
+    notes: "Rescheduled from last week",
+  },
+  {
+    id: 8,
+    childName: "Andres Cruz",
+    parentName: "Carla Reyes",
+    type: "Dietary Assessment",
+    date: "2025-05-30",
+    time: "01:00 PM",
+    barangay: "Sta. Cruz",
+    status: "confirmed",
+    nutritionist: "Dr. Maria Santos",
+    notes: "Overweight management",
+  },
+];
+
+const APPOINTMENT_TYPES = [
+  "Monthly Weigh-In",
+  "Nutrition Counseling",
+  "Growth Monitoring",
+  "Vitamin A Distribution",
+  "Immunization Check",
+  "Dietary Assessment",
+  "Urgent Consultation",
+];
+
+const TIME_SLOTS = [
+  "08:00 AM",
+  "08:30 AM",
+  "09:00 AM",
+  "09:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "01:00 PM",
+  "01:30 PM",
+  "02:00 PM",
+  "02:30 PM",
+  "03:00 PM",
+  "03:30 PM",
+  "04:00 PM",
+];
+
+const CALENDAR_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const AI_CHAT_RESPONSES = {
+  weight:
+    "Based on WHO 2006 standards, healthy weight-for-age varies by sex and age. For children 0-5 years, a WAZ (weight-for-age z-score) between -2 and +2 is considered normal. I can see from your child's records what their current status is. Would you like specific advice about improving nutrition?",
+  height:
+    "Height or length-for-age (HAZ) reflects long-term nutritional status. A HAZ below -2 indicates stunting. Stunting can be prevented through adequate nutrition in the first 1000 days of life. Malunggay (moringa), kamote (sweet potato), and mongo beans are excellent local foods to support growth.",
+  food: "Great local foods for young children include: malunggay leaves (high in iron and vitamins), kamote (rich in vitamin A), mongo/munggo beans (protein), bangus (fish, omega-3), and fresh tropical fruits. Offer a variety at every meal and ensure adequate breastfeeding for children under 2.",
+  underweight:
+    "If your child is underweight, here are key steps: (1) Increase feeding frequency to 5-6 small meals daily, (2) Add energy-dense foods like avocado, peanut butter, and eggs, (3) Ensure adequate hydration, (4) Consult your barangay health worker for supplemental feeding programs, (5) Schedule a follow-up weigh-in in 2 weeks.",
+  stunted:
+    "Stunting (low height-for-age) requires consistent nutritional intervention. Focus on: iron-rich foods, vitamin A sources, adequate protein, and zinc. Local programs like Supplementary Feeding and ECCD can help. Please visit your barangay health center for a personalized growth plan.",
+  breastfeeding:
+    "WHO recommends exclusive breastfeeding for the first 6 months, then continued breastfeeding with complementary foods until 2 years or beyond. Breast milk provides complete nutrition and immunity. If you have concerns about breastfeeding, your barangay health worker can connect you with a lactation counselor.",
+  appointment:
+    "To book an appointment, go to the Appointments tab and tap the '+' button. You can choose the type of visit, preferred date and time. Your barangay health worker will confirm the schedule. For urgent concerns, you can also walk in to the health center.",
+  default:
+    "Thank you for your question! I'm here to help with child nutrition and health guidance. You can ask me about: weight and height standards, healthy foods for your child, what to do if your child is underweight or stunted, breastfeeding tips, or how to book appointments. What would you like to know?",
+};
+
 const NUTRITION_TIPS = [
   {
     id: 1,
     tip: "Offer iron-rich foods like malunggay, kangkong and mongo beans twice a week.",
-    icon: "🥬",
+    category: "Iron",
   },
   {
     id: 2,
     tip: "Exclusive breastfeeding for the first 6 months supports healthy growth.",
-    icon: "🤱",
+    category: "Breastfeeding",
   },
   {
     id: 3,
     tip: "Weigh and measure your child monthly to catch growth issues early.",
-    icon: "📏",
+    category: "Monitoring",
   },
   {
     id: 4,
     tip: "Vitamin A–rich foods like camote, squash, and papaya support eye health.",
-    icon: "🍠",
+    category: "Vitamins",
   },
   {
     id: 5,
     tip: "Serve 3 small meals and 2–3 healthy snacks every day.",
-    icon: "🍽️",
-  },
-];
-
-const REMINDERS = [
-  {
-    id: 1,
-    title: "Monthly Weigh-In",
-    date: "May 20",
-    icon: "⚖️",
-    barangay: "Bagong Silang",
-  },
-  {
-    id: 2,
-    title: "Nutrition Counseling",
-    date: "May 22",
-    icon: "🥗",
-    barangay: "Poblacion",
-  },
-  {
-    id: 3,
-    title: "Vitamin A Distribution",
-    date: "May 28",
-    icon: "💊",
-    barangay: "All Barangays",
-  },
-  {
-    id: 4,
-    title: "Growth Monitoring",
-    date: "Jun 3",
-    icon: "📊",
-    barangay: "San Jose",
+    category: "Feeding",
   },
 ];
 
@@ -415,6 +822,21 @@ function statusBg(s) {
     }[s] || "#f5f5f5"
   );
 }
+function apptStatusColor(s) {
+  return (
+    { confirmed: C.primary, pending: C.warn, cancelled: C.danger }[s] ||
+    C.textMuted
+  );
+}
+function apptStatusBg(s) {
+  return (
+    {
+      confirmed: C.primaryLight,
+      pending: C.warnLight,
+      cancelled: C.dangerLight,
+    }[s] || "#f5f5f5"
+  );
+}
 function childName(c) {
   return `${c.firstName} ${c.lastName}`;
 }
@@ -434,10 +856,14 @@ function fmtDate(d) {
     year: "numeric",
   });
 }
+function fmtShortDate(d) {
+  if (!d) return "—";
+  const date = new Date(d);
+  return `${date.toLocaleDateString("en-PH", { month: "short", day: "numeric" })}`;
+}
 function zSign(v) {
   return v > 0 ? `+${v}` : `${v}`;
 }
-
 function computeWHO({ weightKg, heightCm, ageMonths }) {
   const waz = +((weightKg - (9.5 + ageMonths * 0.15)) / 1.2).toFixed(2);
   const haz = +((heightCm - (65 + ageMonths * 0.9)) / 3.2).toFixed(2);
@@ -451,8 +877,52 @@ function computeWHO({ weightKg, heightCm, ageMonths }) {
   return { waz, haz, whz, status };
 }
 
-// ─── Shared UI Components ─────────────────────────────────────────────────────
+function getAIResponse(msg) {
+  const lower = msg.toLowerCase();
+  if (lower.includes("weight") || lower.includes("timbang"))
+    return AI_CHAT_RESPONSES.weight;
+  if (
+    lower.includes("height") ||
+    lower.includes("height") ||
+    lower.includes("tall") ||
+    lower.includes("taas")
+  )
+    return AI_CHAT_RESPONSES.height;
+  if (
+    lower.includes("food") ||
+    lower.includes("eat") ||
+    lower.includes("pagkain") ||
+    lower.includes("diet")
+  )
+    return AI_CHAT_RESPONSES.food;
+  if (
+    lower.includes("underweight") ||
+    lower.includes("thin") ||
+    lower.includes("payat")
+  )
+    return AI_CHAT_RESPONSES.underweight;
+  if (
+    lower.includes("stunt") ||
+    lower.includes("short") ||
+    lower.includes("pandak")
+  )
+    return AI_CHAT_RESPONSES.stunted;
+  if (
+    lower.includes("breast") ||
+    lower.includes("breastfeed") ||
+    lower.includes("gatas")
+  )
+    return AI_CHAT_RESPONSES.breastfeeding;
+  if (
+    lower.includes("appointment") ||
+    lower.includes("schedule") ||
+    lower.includes("book")
+  )
+    return AI_CHAT_RESPONSES.appointment;
+  return AI_CHAT_RESPONSES.default;
+}
 
+// ─── Shared UI Components ─────────────────────────────────────────────────────
 function StatusPill({ status, small }) {
   return (
     <View
@@ -468,6 +938,33 @@ function StatusPill({ status, small }) {
           ss.pillText,
           { color: statusColor(status) },
           small && { fontSize: 10 },
+        ]}
+      >
+        {status}
+      </Text>
+    </View>
+  );
+}
+
+function ApptStatusPill({ status }) {
+  return (
+    <View
+      style={[
+        ss.pill,
+        {
+          backgroundColor: apptStatusBg(status),
+          paddingHorizontal: 9,
+          paddingVertical: 4,
+        },
+      ]}
+    >
+      <View
+        style={[ss.pillDot, { backgroundColor: apptStatusColor(status) }]}
+      />
+      <Text
+        style={[
+          ss.pillText,
+          { color: apptStatusColor(status), textTransform: "capitalize" },
         ]}
       >
         {status}
@@ -582,12 +1079,12 @@ function PrimaryBtn({ label, onPress, loading, style }) {
   );
 }
 
-function GhostBtn({ label, onPress, danger }) {
+function GhostBtn({ label, onPress, danger, style }) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      style={[ss.ghostBtn, danger && { borderColor: C.danger + "60" }]}
+      style={[ss.ghostBtn, danger && { borderColor: C.danger + "60" }, style]}
     >
       <Text style={[ss.ghostBtnText, danger && { color: C.danger }]}>
         {label}
@@ -598,18 +1095,18 @@ function GhostBtn({ label, onPress, danger }) {
 
 // ─── Tab Bar ──────────────────────────────────────────────────────────────────
 const NUTRI_TABS = [
-  { id: "home", label: "Home", sym: "⊞" },
-  { id: "children", label: "Children", sym: "♡" },
-  { id: "records", label: "Records", sym: "◎" },
-  { id: "reports", label: "Reports", sym: "≡" },
-  { id: "profile", label: "Profile", sym: "◉" },
+  { id: "home", label: "Home", icon: "home" },
+  { id: "children", label: "Children", icon: "users" },
+  { id: "records", label: "Records", icon: "clipboard" },
+  { id: "appointments", label: "Schedule", icon: "calendar" },
+  { id: "profile", label: "Profile", icon: "user" },
 ];
 const PARENT_TABS = [
-  { id: "home", label: "Home", sym: "⊞" },
-  { id: "children", label: "My Kids", sym: "♡" },
-  { id: "tips", label: "Tips", sym: "✦" },
-  { id: "reminders", label: "Schedule", sym: "◷" },
-  { id: "profile", label: "Profile", sym: "◉" },
+  { id: "home", label: "Home", icon: "home" },
+  { id: "children", label: "My Kids", icon: "heart" },
+  { id: "appointments", label: "Schedule", icon: "calendar" },
+  { id: "chat", label: "AI Chat", icon: "message-circle" },
+  { id: "profile", label: "Profile", icon: "user" },
 ];
 
 function TabBar({ tabs, active, onChange }) {
@@ -625,9 +1122,12 @@ function TabBar({ tabs, active, onChange }) {
             style={ss.tabItem}
           >
             {sel && <View style={ss.tabIndicator} />}
-            <Text style={[ss.tabSym, sel && { color: C.primaryMid }]}>
-              {t.sym}
-            </Text>
+            <Icon
+              name={t.icon}
+              size={20}
+              color={sel ? C.primaryMid : "rgba(255,255,255,0.4)"}
+              strokeWidth={sel ? 2.2 : 1.6}
+            />
             <Text
               style={[
                 ss.tabLabel,
@@ -649,7 +1149,7 @@ function AppHeader({ title, sub, user, onAvatarPress }) {
     <View style={ss.header}>
       <View style={ss.headerBrand}>
         <View style={ss.headerLogo}>
-          <Text style={{ fontSize: 15, color: "#fff" }}>✚</Text>
+          <Icon name="activity" size={16} color="#fff" strokeWidth={2.5} />
         </View>
         <View>
           <Text style={ss.headerTitle}>{title}</Text>
@@ -664,6 +1164,785 @@ function AppHeader({ title, sub, user, onAvatarPress }) {
         </TouchableOpacity>
       )}
     </View>
+  );
+}
+
+// ─── Calendar Strip Component ──────────────────────────────────────────────────
+function CalendarStrip({ selectedDate, onSelectDate, appointments }) {
+  const today = new Date();
+  const days = [];
+  for (let i = -1; i <= 13; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    days.push(d);
+  }
+
+  const hasAppt = (date) => {
+    const ds = date.toISOString().slice(0, 10);
+    return appointments.some((a) => a.date === ds);
+  };
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={ss.calStrip}
+    >
+      {days.map((d, i) => {
+        const ds = d.toISOString().slice(0, 10);
+        const sel = ds === selectedDate;
+        const dot = hasAppt(d);
+        return (
+          <TouchableOpacity
+            key={i}
+            onPress={() => onSelectDate(ds)}
+            style={[ss.calDay, sel && { backgroundColor: C.primary }]}
+          >
+            <Text style={[ss.calDayName, sel && { color: "#fff" }]}>
+              {dayNames[d.getDay()]}
+            </Text>
+            <Text style={[ss.calDayNum, sel && { color: "#fff" }]}>
+              {d.getDate()}
+            </Text>
+            {dot && (
+              <View style={[ss.calDot, sel && { backgroundColor: "#fff" }]} />
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ─── Appointment Card ─────────────────────────────────────────────────────────
+function AppointmentCard({ appt, isNutri, onStatusChange }) {
+  return (
+    <Card style={[ss.listCard, { marginBottom: 10 }]}>
+      <View style={ss.listRow}>
+        <View style={[ss.apptTypeIcon, { backgroundColor: C.primaryLight }]}>
+          <Icon name="calendar" size={20} color={C.primary} strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={ss.listName}>{appt.childName}</Text>
+          <Text
+            style={[
+              ss.listMeta,
+              { color: C.text, fontWeight: "600", marginBottom: 2 },
+            ]}
+          >
+            {appt.type}
+          </Text>
+          <View style={ss.listRow}>
+            <Icon name="clock" size={12} color={C.textMuted} />
+            <Text style={[ss.listMeta, { marginLeft: 4 }]}>{appt.time}</Text>
+            <Text style={[ss.listMeta, { marginLeft: 8 }]}>·</Text>
+            <Icon
+              name="map-pin"
+              size={12}
+              color={C.textMuted}
+              style={{ marginLeft: 8 }}
+            />
+            <Text style={[ss.listMeta, { marginLeft: 4 }]}>
+              {appt.barangay}
+            </Text>
+          </View>
+        </View>
+        <ApptStatusPill status={appt.status} />
+      </View>
+
+      {isNutri && (
+        <View
+          style={[
+            ss.listRow,
+            {
+              marginTop: 10,
+              paddingTop: 10,
+              borderTopWidth: 1,
+              borderTopColor: C.border,
+              gap: 8,
+            },
+          ]}
+        >
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Icon name="user" size={13} color={C.textMuted} />
+            <Text style={ss.listMeta}>{appt.parentName}</Text>
+          </View>
+          {appt.status === "pending" && (
+            <View style={ss.listRow}>
+              <TouchableOpacity
+                onPress={() => onStatusChange(appt.id, "confirmed")}
+                style={[ss.miniBtn, { backgroundColor: C.primaryLight }]}
+              >
+                <Icon
+                  name="check"
+                  size={12}
+                  color={C.primary}
+                  strokeWidth={2.5}
+                />
+                <Text style={[ss.miniBtnText, { color: C.primary }]}>
+                  Confirm
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onStatusChange(appt.id, "cancelled")}
+                style={[
+                  ss.miniBtn,
+                  { backgroundColor: C.dangerLight, marginLeft: 6 },
+                ]}
+              >
+                <Icon name="x" size={12} color={C.danger} strokeWidth={2.5} />
+                <Text style={[ss.miniBtnText, { color: C.danger }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {appt.notes ? (
+        <View style={[ss.listRow, { marginTop: 8, gap: 6 }]}>
+          <Icon name="info" size={12} color={C.textLight} />
+          <Text style={[ss.listMeta, { flex: 1 }]}>{appt.notes}</Text>
+        </View>
+      ) : null}
+    </Card>
+  );
+}
+
+// ─── Book Appointment Modal ───────────────────────────────────────────────────
+function BookAppointmentModal({ children, onSave, onClose, isNutri }) {
+  const [step, setStep] = useState(1);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
+  const [selectedTime, setSelectedTime] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const canProceed1 = selectedChild && selectedType;
+  const canProceed2 = selectedDate && selectedTime;
+
+  const handleSave = () => {
+    if (!canProceed1 || !canProceed2) return;
+    const child = children.find((c) => c.id === selectedChild);
+    const parent = USERS.find((u) => u.childIds?.includes(selectedChild));
+    onSave({
+      id: Date.now(),
+      childName: childName(child),
+      parentName: parent?.name || "—",
+      type: selectedType,
+      date: selectedDate,
+      time: selectedTime,
+      barangay: child.barangay,
+      status: isNutri ? "confirmed" : "pending",
+      nutritionist: "Dr. Maria Santos",
+      notes,
+    });
+    onClose();
+  };
+
+  return (
+    <View style={ss.modalOverlay}>
+      <View style={[ss.modalCard, { maxHeight: "85%" }]}>
+        <View
+          style={[
+            ss.listRow,
+            { marginBottom: 16, justifyContent: "space-between" },
+          ]}
+        >
+          <View>
+            <Text style={[ss.listName, { fontSize: 16 }]}>
+              Book Appointment
+            </Text>
+            <Text style={ss.listMeta}>Step {step} of 2</Text>
+          </View>
+          <TouchableOpacity onPress={onClose}>
+            <Icon name="x" size={22} color={C.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Step indicator */}
+        <View style={[ss.listRow, { marginBottom: 20, gap: 6 }]}>
+          <View style={[ss.stepDot, { backgroundColor: C.primary }]}>
+            <Text style={ss.stepDotText}>1</Text>
+          </View>
+          <View
+            style={[
+              ss.stepLine,
+              { backgroundColor: step >= 2 ? C.primary : C.border },
+            ]}
+          />
+          <View
+            style={[
+              ss.stepDot,
+              { backgroundColor: step >= 2 ? C.primary : C.border },
+            ]}
+          >
+            <Text
+              style={[
+                ss.stepDotText,
+                { color: step >= 2 ? "#fff" : C.textLight },
+              ]}
+            >
+              2
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {step === 1 && (
+            <>
+              <Text style={ss.fieldLabel}>SELECT CHILD *</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 16 }}
+              >
+                {children.map((c) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    onPress={() => setSelectedChild(c.id)}
+                    style={[
+                      ss.childChip,
+                      c.id === selectedChild && {
+                        backgroundColor: C.primary,
+                        borderColor: C.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        ss.childChipText,
+                        c.id === selectedChild && { color: "#fff" },
+                      ]}
+                    >
+                      {c.firstName}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={ss.fieldLabel}>APPOINTMENT TYPE *</Text>
+              {APPOINTMENT_TYPES.map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => setSelectedType(t)}
+                  style={[
+                    ss.typeOption,
+                    t === selectedType && {
+                      borderColor: C.primary,
+                      backgroundColor: C.primaryLight,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      ss.typeRadio,
+                      t === selectedType && { borderColor: C.primary },
+                    ]}
+                  >
+                    {t === selectedType && <View style={ss.typeRadioInner} />}
+                  </View>
+                  <Text
+                    style={[
+                      { fontSize: 13, color: C.text, flex: 1 },
+                      t === selectedType && {
+                        color: C.primary,
+                        fontWeight: "600",
+                      },
+                    ]}
+                  >
+                    {t}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <Text style={ss.fieldLabel}>SELECT DATE</Text>
+              <CalendarStrip
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+                appointments={[]}
+              />
+
+              <Text style={[ss.fieldLabel, { marginTop: 16 }]}>
+                AVAILABLE TIME SLOTS
+              </Text>
+              <View style={ss.timeGrid}>
+                {TIME_SLOTS.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    onPress={() => setSelectedTime(t)}
+                    style={[
+                      ss.timeSlot,
+                      t === selectedTime && {
+                        backgroundColor: C.primary,
+                        borderColor: C.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        ss.timeSlotText,
+                        t === selectedTime && {
+                          color: "#fff",
+                          fontWeight: "700",
+                        },
+                      ]}
+                    >
+                      {t}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[ss.fieldLabel, { marginTop: 16 }]}>
+                NOTES (OPTIONAL)
+              </Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Any special notes or concerns..."
+                placeholderTextColor={C.textLight}
+                style={[ss.input, { height: 80, textAlignVertical: "top" }]}
+                multiline
+              />
+            </>
+          )}
+        </ScrollView>
+
+        <View style={[ss.listRow, { marginTop: 16, gap: 10 }]}>
+          {step === 2 && (
+            <GhostBtn
+              label="Back"
+              onPress={() => setStep(1)}
+              style={{ flex: 1 }}
+            />
+          )}
+          {step === 1 ? (
+            <PrimaryBtn
+              label="Next: Choose Time"
+              onPress={() => canProceed1 && setStep(2)}
+              style={[{ flex: 1 }, !canProceed1 && { opacity: 0.5 }]}
+            />
+          ) : (
+            <PrimaryBtn
+              label="Book Now"
+              onPress={handleSave}
+              style={[{ flex: 1 }, !canProceed2 && { opacity: 0.5 }]}
+            />
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── APPOINTMENTS SCREEN ──────────────────────────────────────────────────────
+function AppointmentsScreen({
+  appointments,
+  setAppointments,
+  children,
+  isNutri,
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showBook, setShowBook] = useState(false);
+
+  const filteredByDate = appointments.filter((a) => a.date === selectedDate);
+  const filtered =
+    filterStatus === "all"
+      ? filteredByDate
+      : filteredByDate.filter((a) => a.status === filterStatus);
+
+  const upcoming = appointments
+    .filter((a) => a.date >= today && a.status !== "cancelled")
+    .slice(0, 3);
+
+  const handleStatusChange = (id, newStatus) => {
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
+    );
+  };
+
+  const handleBook = (appt) => {
+    setAppointments((prev) => [appt, ...prev]);
+  };
+
+  const confirmedCount = appointments.filter(
+    (a) => a.status === "confirmed" && a.date >= today,
+  ).length;
+  const pendingCount = appointments.filter(
+    (a) => a.status === "pending",
+  ).length;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={ss.screenPad}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Stats */}
+        <View style={ss.statsRow}>
+          <Card style={[ss.statCard, { backgroundColor: C.primary }]}>
+            <Text style={ss.statNumW}>{confirmedCount}</Text>
+            <Text style={ss.statLblW}>{"Confirmed\nAppointments"}</Text>
+          </Card>
+          <Card
+            style={[
+              ss.statCard,
+              { backgroundColor: C.warnLight, borderColor: C.warn + "30" },
+            ]}
+          >
+            <Text style={[ss.statNum, { color: C.warn }]}>{pendingCount}</Text>
+            <Text style={[ss.statLbl, { color: C.warn }]}>
+              {"Pending\nRequests"}
+            </Text>
+          </Card>
+          <Card
+            style={[
+              ss.statCard,
+              { backgroundColor: C.infoLight, borderColor: C.info + "30" },
+            ]}
+          >
+            <Text style={[ss.statNum, { color: C.info }]}>
+              {appointments.filter((a) => a.date === today).length}
+            </Text>
+            <Text style={[ss.statLbl, { color: C.info }]}>
+              {"Today's\nVisits"}
+            </Text>
+          </Card>
+        </View>
+
+        {/* Calendar Strip */}
+        <Card
+          style={[
+            ss.listCard,
+            { marginBottom: 14, paddingHorizontal: 0, paddingVertical: 14 },
+          ]}
+        >
+          <Text
+            style={[
+              ss.sectionTitle,
+              { paddingHorizontal: 14, marginBottom: 12 },
+            ]}
+          >
+            {new Date(selectedDate).toLocaleDateString("en-PH", {
+              month: "long",
+              year: "numeric",
+            })}
+          </Text>
+          <CalendarStrip
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            appointments={appointments}
+          />
+        </Card>
+
+        {/* Status Filters */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 14 }}
+        >
+          {["all", "confirmed", "pending", "cancelled"].map((s) => (
+            <TouchableOpacity
+              key={s}
+              onPress={() => setFilterStatus(s)}
+              style={[
+                ss.filterChip,
+                filterStatus === s && {
+                  backgroundColor: s === "all" ? C.primary : apptStatusBg(s),
+                  borderColor: s === "all" ? C.primary : apptStatusColor(s),
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  ss.filterChipText,
+                  filterStatus === s && {
+                    color: s === "all" ? "#fff" : apptStatusColor(s),
+                    fontWeight: "700",
+                  },
+                ]}
+              >
+                {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Appointments for selected date */}
+        <SectionHeader
+          title={`${fmtShortDate(selectedDate)} — ${filtered.length} appointment${filtered.length !== 1 ? "s" : ""}`}
+          sub={selectedDate === today ? "Today" : ""}
+        />
+
+        {filtered.length === 0 ? (
+          <Card style={ss.emptyCard}>
+            <Icon name="calendar" size={32} color={C.textLight} />
+            <Text style={[ss.emptyText, { marginTop: 10 }]}>
+              No appointments on this date
+            </Text>
+            <Text style={[ss.listMeta, { textAlign: "center", marginTop: 4 }]}>
+              Tap + to schedule one
+            </Text>
+          </Card>
+        ) : (
+          filtered.map((a) => (
+            <AppointmentCard
+              key={a.id}
+              appt={a}
+              isNutri={isNutri}
+              onStatusChange={handleStatusChange}
+            />
+          ))
+        )}
+
+        {/* Upcoming section if today has nothing */}
+        {filtered.length === 0 && upcoming.length > 0 && (
+          <>
+            <SectionHeader
+              title="Upcoming Appointments"
+              sub="Next scheduled visits"
+              style={{ marginTop: 8 }}
+            />
+            {upcoming.map((a) => (
+              <AppointmentCard
+                key={a.id}
+                appt={a}
+                isNutri={isNutri}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+          </>
+        )}
+
+        <View style={{ height: 80 }} />
+      </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity onPress={() => setShowBook(true)} style={ss.fab}>
+        <Icon name="plus" size={24} color="#fff" strokeWidth={2.5} />
+      </TouchableOpacity>
+
+      {showBook && (
+        <BookAppointmentModal
+          children={isNutri ? children : children}
+          onSave={handleBook}
+          onClose={() => setShowBook(false)}
+          isNutri={isNutri}
+        />
+      )}
+    </View>
+  );
+}
+
+// ─── AI CHAT SCREEN ───────────────────────────────────────────────────────────
+function AIChatScreen({ user, myChildren }) {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: "assistant",
+      text: `Kumusta! I'm your Child Health Assistant. I can help you with questions about your child's nutrition, growth, and health. You can ask me in English or Filipino!\n\nTry asking about:\n• Feeding and nutrition tips\n• What to do if your child is underweight\n• How to read your child's growth report\n• Booking an appointment`,
+      time: new Date().toLocaleTimeString("en-PH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef(null);
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const userMsg = {
+      id: Date.now(),
+      role: "user",
+      text: input.trim(),
+      time: new Date().toLocaleTimeString("en-PH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsTyping(true);
+
+    setTimeout(
+      () => {
+        const response = getAIResponse(userMsg.text);
+        const aiMsg = {
+          id: Date.now() + 1,
+          role: "assistant",
+          text: response,
+          time: new Date().toLocaleTimeString("en-PH", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsTyping(false);
+      },
+      1000 + Math.random() * 800,
+    );
+  };
+
+  const quickReplies = [
+    "Weight & height",
+    "Food for babies",
+    "My child is underweight",
+    "Book appointment",
+  ];
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      {/* Chat header */}
+      <View style={ss.chatHeader}>
+        <View style={ss.chatBotAvatar}>
+          <Icon name="bot" size={20} color="#fff" strokeWidth={2} />
+        </View>
+        <View style={{ marginLeft: 12 }}>
+          <Text style={[ss.listName, { color: "#fff" }]}>Health Assistant</Text>
+          <View style={ss.listRow}>
+            <View
+              style={[
+                ss.pillDot,
+                { backgroundColor: "#4ade80", width: 7, height: 7 },
+              ]}
+            />
+            <Text
+              style={[
+                ss.listMeta,
+                { color: "rgba(255,255,255,0.7)", marginLeft: 5 },
+              ]}
+            >
+              Online · WHO Standards
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Messages */}
+      <ScrollView
+        ref={scrollRef}
+        style={ss.chatMessages}
+        contentContainerStyle={{ padding: 14 }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() =>
+          scrollRef.current?.scrollToEnd({ animated: true })
+        }
+      >
+        {messages.map((m) => (
+          <View
+            key={m.id}
+            style={[ss.msgWrapper, m.role === "user" && ss.msgWrapperUser]}
+          >
+            {m.role === "assistant" && (
+              <View style={ss.msgBotIcon}>
+                <Icon name="bot" size={14} color={C.primary} strokeWidth={2} />
+              </View>
+            )}
+            <View
+              style={[
+                ss.msgBubble,
+                m.role === "user" ? ss.msgBubbleUser : ss.msgBubbleBot,
+              ]}
+            >
+              <Text
+                style={[ss.msgText, m.role === "user" && { color: "#fff" }]}
+              >
+                {m.text}
+              </Text>
+              <Text
+                style={[
+                  ss.msgTime,
+                  m.role === "user" && { color: "rgba(255,255,255,0.65)" },
+                ]}
+              >
+                {m.time}
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        {isTyping && (
+          <View style={ss.msgWrapper}>
+            <View style={ss.msgBotIcon}>
+              <Icon name="bot" size={14} color={C.primary} strokeWidth={2} />
+            </View>
+            <View style={ss.msgBubbleBot}>
+              <View style={ss.typingDots}>
+                <View style={[ss.typingDot, { opacity: 0.4 }]} />
+                <View style={[ss.typingDot, { opacity: 0.7 }]} />
+                <View style={ss.typingDot} />
+              </View>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Quick replies */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={ss.quickReplies}
+        contentContainerStyle={{ paddingHorizontal: 14, gap: 8 }}
+      >
+        {quickReplies.map((q, i) => (
+          <TouchableOpacity
+            key={i}
+            onPress={() => {
+              setInput(q);
+            }}
+            style={ss.quickReply}
+          >
+            <Text style={ss.quickReplyText}>{q}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Input */}
+      <View style={ss.chatInputRow}>
+        <TextInput
+          value={input}
+          onChangeText={setInput}
+          placeholder="Ask about your child's health..."
+          placeholderTextColor={C.textLight}
+          style={ss.chatInput}
+          multiline
+          returnKeyType="send"
+          onSubmitEditing={sendMessage}
+        />
+        <TouchableOpacity
+          onPress={sendMessage}
+          style={[ss.sendBtn, !input.trim() && { opacity: 0.4 }]}
+          disabled={!input.trim()}
+        >
+          <Icon name="send" size={18} color="#fff" strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -711,11 +1990,15 @@ function LoginScreen({ onLogin }) {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={{ opacity: fadeAnim }}>
-            {/* Brand */}
             <View style={ss.loginBrand}>
               <View style={ss.loginLogoRing}>
                 <View style={ss.loginLogoDot}>
-                  <Text style={{ fontSize: 28, color: "#fff" }}>✚</Text>
+                  <Icon
+                    name="activity"
+                    size={28}
+                    color="#fff"
+                    strokeWidth={2.5}
+                  />
                 </View>
               </View>
               <Text style={ss.loginAppName}>SukatKalusugan</Text>
@@ -727,11 +2010,9 @@ function LoginScreen({ onLogin }) {
               </Text>
             </View>
 
-            {/* Card */}
             <View style={ss.loginCard}>
               <Text style={ss.loginHeading}>Welcome back</Text>
               <Text style={ss.loginCaption}>Sign in to continue</Text>
-
               <FormInput
                 label="Email Address"
                 value={email}
@@ -748,7 +2029,6 @@ function LoginScreen({ onLogin }) {
                 secure
                 required
               />
-
               {err ? (
                 <View style={ss.loginErr}>
                   <Text
@@ -758,14 +2038,12 @@ function LoginScreen({ onLogin }) {
                   </Text>
                 </View>
               ) : null}
-
               <PrimaryBtn
                 label="Sign In"
                 onPress={handleLogin}
                 loading={loading}
                 style={{ marginTop: 4 }}
               />
-
               <View style={ss.loginDemo}>
                 <Text
                   style={{
@@ -829,7 +2107,6 @@ function NutriHome({ user, children, measurements }) {
       contentContainerStyle={ss.screenPad}
       showsVerticalScrollIndicator={false}
     >
-      {/* Greeting Banner */}
       <View style={ss.greetBanner}>
         <Text style={ss.greetDay}>{today}</Text>
         <Text style={ss.greetName}>
@@ -838,11 +2115,10 @@ function NutriHome({ user, children, measurements }) {
         <Text style={ss.greetRole}>{user.title} · SukatKalusugan</Text>
       </View>
 
-      {/* Quick Stats Row */}
       <View style={ss.statsRow}>
         <Card style={[ss.statCard, { backgroundColor: C.primary }]}>
           <Text style={ss.statNumW}>{children.length}</Text>
-          <Text style={ss.statLblW}>Registered{"\n"}Children</Text>
+          <Text style={ss.statLblW}>{"Registered\nChildren"}</Text>
         </Card>
         <Card
           style={[
@@ -852,7 +2128,7 @@ function NutriHome({ user, children, measurements }) {
         >
           <Text style={[ss.statNum, { color: C.danger }]}>{atRisk}</Text>
           <Text style={[ss.statLbl, { color: C.danger }]}>
-            At Risk{"\n"}Children
+            {"At Risk\nChildren"}
           </Text>
         </Card>
         <Card
@@ -863,12 +2139,11 @@ function NutriHome({ user, children, measurements }) {
         >
           <Text style={[ss.statNum, { color: C.primary }]}>{normal}</Text>
           <Text style={[ss.statLbl, { color: C.primary }]}>
-            Normal{"\n"}Status
+            {"Normal\nStatus"}
           </Text>
         </Card>
       </View>
 
-      {/* Attention Queue */}
       <SectionHeader
         title="Needs Attention"
         sub="Children requiring follow-up"
@@ -917,12 +2192,13 @@ function NutriHome({ user, children, measurements }) {
         ))}
       {children.filter((c) => c.status !== "Normal").length === 0 && (
         <Card style={ss.emptyCard}>
-          <Text style={{ fontSize: 28, marginBottom: 6 }}>🎉</Text>
-          <Text style={ss.emptyText}>All children are healthy!</Text>
+          <Icon name="check-circle" size={32} color={C.primary} />
+          <Text style={[ss.emptyText, { marginTop: 8 }]}>
+            All children are healthy!
+          </Text>
         </Card>
       )}
 
-      {/* Recent Activity */}
       <SectionHeader
         title="Recent Measurements"
         sub="Latest recorded entries"
@@ -941,7 +2217,7 @@ function NutriHome({ user, children, measurements }) {
           >
             <View style={ss.listRow}>
               <View style={ss.activityIcon}>
-                <Text style={{ fontSize: 18 }}>📋</Text>
+                <Icon name="clipboard" size={18} color={C.primaryMid} />
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={ss.listName}>{childName(child)}</Text>
@@ -954,7 +2230,6 @@ function NutriHome({ user, children, measurements }) {
           </Card>
         );
       })}
-
       <View style={{ height: 24 }} />
     </ScrollView>
   );
@@ -989,22 +2264,16 @@ function NutriChildren({ children, measurements, onAddMeasurement }) {
         title="Child Profiles"
         sub={`${children.length} registered children`}
       />
-
-      {/* Search */}
       <View style={ss.searchBox}>
-        <Text style={{ color: C.textLight, marginRight: 8, fontSize: 16 }}>
-          ⊕
-        </Text>
+        <Icon name="search" size={16} color={C.textLight} />
         <TextInput
           value={search}
           onChangeText={setSearch}
           placeholder="Search children..."
           placeholderTextColor={C.textLight}
-          style={{ flex: 1, fontSize: 13, color: C.text }}
+          style={{ flex: 1, fontSize: 13, color: C.text, marginLeft: 8 }}
         />
       </View>
-
-      {/* Filter Chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -1036,8 +2305,6 @@ function NutriChildren({ children, measurements, onAddMeasurement }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {/* List */}
       {filtered.map((c) => {
         const childMs = measurements.filter((m) => m.childId === c.id);
         const latest = childMs[0];
@@ -1083,9 +2350,12 @@ function NutriChildren({ children, measurements, onAddMeasurement }) {
             </View>
             <TouchableOpacity
               onPress={() => onAddMeasurement(c)}
-              style={[ss.addMsBtn]}
+              style={ss.addMsBtn}
             >
-              <Text style={ss.addMsBtnText}>+ Add Measurement</Text>
+              <Icon name="plus" size={13} color={C.primary} />
+              <Text style={[ss.addMsBtnText, { marginLeft: 5 }]}>
+                Add Measurement
+              </Text>
             </TouchableOpacity>
           </Card>
         );
@@ -1163,9 +2433,12 @@ function NutriRecords({ measurements, children, onSave }) {
           onPress={() => setShowForm((v) => !v)}
           style={ss.addFab}
         >
-          <Text style={{ color: "#fff", fontSize: 18, lineHeight: 20 }}>
-            {showForm ? "✕" : "+"}
-          </Text>
+          <Icon
+            name={showForm ? "x" : "plus"}
+            size={18}
+            color="#fff"
+            strokeWidth={2.5}
+          />
         </TouchableOpacity>
       </View>
 
@@ -1174,7 +2447,6 @@ function NutriRecords({ measurements, children, onSave }) {
           <Text style={[ss.listName, { marginBottom: 12 }]}>
             New Measurement
           </Text>
-
           <Text style={ss.fieldLabel}>Select Child *</Text>
           <ScrollView
             horizontal
@@ -1204,7 +2476,6 @@ function NutriRecords({ measurements, children, onSave }) {
               </TouchableOpacity>
             ))}
           </ScrollView>
-
           <Text style={ss.fieldLabel}>Source</Text>
           <View style={[ss.listMetrics, { marginBottom: 12 }]}>
             {["Manual", "Kiosk", "Mobile"].map((s) => (
@@ -1230,7 +2501,6 @@ function NutriRecords({ measurements, children, onSave }) {
               </TouchableOpacity>
             ))}
           </View>
-
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
               <FormInput
@@ -1253,7 +2523,6 @@ function NutriRecords({ measurements, children, onSave }) {
               />
             </View>
           </View>
-
           {preview && (
             <View
               style={[
@@ -1271,7 +2540,6 @@ function NutriRecords({ measurements, children, onSave }) {
               </Text>
             </View>
           )}
-
           <PrimaryBtn
             label="Save Measurement"
             onPress={handleSave}
@@ -1293,7 +2561,7 @@ function NutriRecords({ measurements, children, onSave }) {
           >
             <View style={ss.listRow}>
               <View style={ss.activityIcon}>
-                <Text style={{ fontSize: 18 }}>📐</Text>
+                <Icon name="ruler" size={18} color={C.primaryMid} />
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={ss.listName}>{childName(child)}</Text>
@@ -1328,164 +2596,6 @@ function NutriRecords({ measurements, children, onSave }) {
   );
 }
 
-function NutriReports({ children, measurements }) {
-  const counts = {};
-  measurements.forEach((m) => {
-    counts[m.status] = (counts[m.status] || 0) + 1;
-  });
-  const total = measurements.length || 1;
-  const statuses = [
-    "Normal",
-    "Underweight",
-    "Stunted",
-    "Wasted",
-    "Overweight",
-    "Severely Underweight",
-  ];
-  const atRisk = children.filter((c) => c.status !== "Normal").length;
-
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={ss.screenPad}
-      showsVerticalScrollIndicator={false}
-    >
-      <SectionHeader
-        title="Reports & Analytics"
-        sub="Health monitoring overview"
-      />
-
-      {/* Summary cards */}
-      <View style={ss.statsRow}>
-        <Card style={[ss.statCard, { backgroundColor: C.primary }]}>
-          <Text style={ss.statNumW}>{children.length}</Text>
-          <Text style={ss.statLblW}>Total{"\n"}Children</Text>
-        </Card>
-        <Card
-          style={[
-            ss.statCard,
-            { backgroundColor: C.infoLight, borderColor: C.info + "30" },
-          ]}
-        >
-          <Text style={[ss.statNum, { color: C.info }]}>
-            {measurements.length}
-          </Text>
-          <Text style={[ss.statLbl, { color: C.info }]}>
-            Records{"\n"}Taken
-          </Text>
-        </Card>
-        <Card
-          style={[
-            ss.statCard,
-            { backgroundColor: C.dangerLight, borderColor: C.danger + "30" },
-          ]}
-        >
-          <Text style={[ss.statNum, { color: C.danger }]}>{atRisk}</Text>
-          <Text style={[ss.statLbl, { color: C.danger }]}>
-            At Risk{"\n"}Children
-          </Text>
-        </Card>
-      </View>
-
-      {/* Bar chart */}
-      <Card style={[ss.listCard, { marginBottom: 14 }]}>
-        <Text style={[ss.listName, { marginBottom: 14 }]}>
-          Status Distribution
-        </Text>
-        {statuses.map((s) => {
-          const cnt = counts[s] || 0;
-          const pct = cnt / total;
-          return (
-            <View key={s} style={{ marginBottom: 10 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 4,
-                }}
-              >
-                <Text
-                  style={{ fontSize: 11, color: C.text, fontWeight: "600" }}
-                >
-                  {s}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: C.textMuted,
-                    fontWeight: "700",
-                  }}
-                >
-                  {cnt}
-                </Text>
-              </View>
-              <View style={ss.barTrack}>
-                <View
-                  style={[
-                    ss.barFill,
-                    { width: `${pct * 100}%`, backgroundColor: statusColor(s) },
-                  ]}
-                />
-              </View>
-            </View>
-          );
-        })}
-      </Card>
-
-      {/* Barangay Summary */}
-      <Card style={ss.listCard}>
-        <Text style={[ss.listName, { marginBottom: 12 }]}>By Barangay</Text>
-        {["Bagong Silang", "Poblacion", "San Jose", "Sta. Cruz"].map((b) => {
-          const bc = children.filter((c) => c.barangay === b);
-          const br = bc.filter((c) => c.status !== "Normal");
-          return (
-            <View
-              key={b}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{ fontSize: 13, fontWeight: "600", color: C.text }}
-                >
-                  {b}
-                </Text>
-                <Text style={ss.listMeta}>
-                  {bc.length} children · {br.length} at risk
-                </Text>
-              </View>
-              <View
-                style={[
-                  ss.pill,
-                  {
-                    backgroundColor:
-                      br.length > 0 ? C.dangerLight : C.primaryLight,
-                  },
-                ]}
-              >
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "700",
-                    color: br.length > 0 ? C.danger : C.primary,
-                  }}
-                >
-                  {br.length > 0 ? `${br.length} at risk` : "All clear"}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-      </Card>
-
-      <View style={{ height: 24 }} />
-    </ScrollView>
-  );
-}
-
 function NutriProfile({ user, onLogout }) {
   return (
     <ScrollView
@@ -1512,7 +2622,6 @@ function NutriProfile({ user, onLogout }) {
           </Text>
         </View>
       </Card>
-
       <Card style={ss.listCard}>
         {[
           ["Email", user.email],
@@ -1536,13 +2645,17 @@ function NutriProfile({ user, onLogout }) {
           </View>
         ))}
       </Card>
-
-      <GhostBtn
-        label="Sign Out"
+      <TouchableOpacity
         onPress={onLogout}
-        danger
-        style={{ marginTop: 14 }}
-      />
+        style={[ss.ghostBtn, { borderColor: C.danger + "60", marginTop: 14 }]}
+      >
+        <View style={ss.listRow}>
+          <Icon name="log-out" size={15} color={C.danger} />
+          <Text style={[ss.ghostBtnText, { color: C.danger, marginLeft: 8 }]}>
+            Sign Out
+          </Text>
+        </View>
+      </TouchableOpacity>
       <View style={{ height: 24 }} />
     </ScrollView>
   );
@@ -1564,7 +2677,6 @@ function ParentHome({ user, myChildren, measurements }) {
       contentContainerStyle={ss.screenPad}
       showsVerticalScrollIndicator={false}
     >
-      {/* Greeting */}
       <View style={ss.greetBanner}>
         <Text style={ss.greetDay}>
           {new Date().toLocaleDateString("en-PH", {
@@ -1579,7 +2691,6 @@ function ParentHome({ user, myChildren, measurements }) {
         <Text style={ss.greetRole}>Parent Portal · SukatKalusugan</Text>
       </View>
 
-      {/* Kids Overview */}
       <SectionHeader
         title="Your Children"
         sub={`${myChildren.length} registered`}
@@ -1624,16 +2735,10 @@ function ParentHome({ user, myChildren, measurements }) {
                 />
               </View>
             )}
-            {!latest && (
-              <Text style={[ss.listMeta, { marginTop: 8 }]}>
-                No measurements recorded yet
-              </Text>
-            )}
           </Card>
         );
       })}
 
-      {/* Alert if at risk */}
       {atRisk.length > 0 && (
         <>
           <SectionHeader
@@ -1643,7 +2748,11 @@ function ParentHome({ user, myChildren, measurements }) {
           {atRisk.map((c) => (
             <Card key={c.id} style={[ss.alertCard, { marginBottom: 8 }]}>
               <View style={ss.listRow}>
-                <Text style={{ fontSize: 24 }}>⚠️</Text>
+                <View
+                  style={[ss.activityIcon, { backgroundColor: C.dangerLight }]}
+                >
+                  <Icon name="alert-triangle" size={18} color={C.danger} />
+                </View>
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={[ss.listName, { color: C.danger }]}>
                     {childName(c)}
@@ -1668,7 +2777,6 @@ function ParentHome({ user, myChildren, measurements }) {
           ))}
         </>
       )}
-
       <View style={{ height: 24 }} />
     </ScrollView>
   );
@@ -1685,12 +2793,10 @@ function ParentChildren({ myChildren, measurements }) {
         title="Child Health Records"
         sub="Growth history and measurements"
       />
-
       {myChildren.map((c) => {
         const ms = measurements.filter((m) => m.childId === c.id);
         return (
           <Card key={c.id} style={[ss.listCard, { marginBottom: 14 }]}>
-            {/* Child header */}
             <View
               style={[
                 ss.listRow,
@@ -1715,8 +2821,6 @@ function ParentChildren({ myChildren, measurements }) {
               </View>
               <StatusPill status={c.status} small />
             </View>
-
-            {/* Profile details */}
             <View style={{ marginTop: 10 }}>
               {[
                 ["Sex", c.sex],
@@ -1728,18 +2832,14 @@ function ParentChildren({ myChildren, measurements }) {
                 </View>
               ))}
             </View>
-
-            {/* Z-score section */}
             {ms[0] && (
               <View
-                style={[
-                  {
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTopWidth: 1,
-                    borderTopColor: C.border,
-                  },
-                ]}
+                style={{
+                  marginTop: 10,
+                  paddingTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: C.border,
+                }}
               >
                 <Text style={[ss.fieldLabel, { marginBottom: 8 }]}>
                   Latest WHO Z-Scores
@@ -1763,8 +2863,6 @@ function ParentChildren({ myChildren, measurements }) {
                 </View>
               </View>
             )}
-
-            {/* History */}
             {ms.length > 0 && (
               <View
                 style={{
@@ -1806,147 +2904,9 @@ function ParentChildren({ myChildren, measurements }) {
                 ))}
               </View>
             )}
-
-            {ms.length === 0 && (
-              <Text
-                style={[ss.listMeta, { marginTop: 10, textAlign: "center" }]}
-              >
-                No measurements yet. Visit your barangay health center.
-              </Text>
-            )}
           </Card>
         );
       })}
-      <View style={{ height: 24 }} />
-    </ScrollView>
-  );
-}
-
-function ParentTips() {
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={ss.screenPad}
-      showsVerticalScrollIndicator={false}
-    >
-      <SectionHeader
-        title="Nutrition Tips"
-        sub="Helpful guidance for healthy children"
-      />
-
-      {NUTRITION_TIPS.map((tip, i) => (
-        <Card key={tip.id} style={[ss.listCard, { marginBottom: 10 }]}>
-          <View style={ss.listRow}>
-            <View style={ss.tipIcon}>
-              <Text style={{ fontSize: 22 }}>{tip.icon}</Text>
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={{ fontSize: 13, color: C.text, lineHeight: 20 }}>
-                {tip.tip}
-              </Text>
-            </View>
-          </View>
-        </Card>
-      ))}
-
-      {/* WHO Standards info */}
-      <Card
-        style={[
-          ss.listCard,
-          {
-            marginTop: 4,
-            backgroundColor: C.primaryLight,
-            borderColor: C.primary + "30",
-          },
-        ]}
-      >
-        <View style={ss.listRow}>
-          <Text style={{ fontSize: 22 }}>📘</Text>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={[ss.listName, { color: C.primary }]}>
-              WHO Growth Standards
-            </Text>
-            <Text style={[ss.listMeta, { color: C.primaryMid }]}>
-              This app uses WHO 2006 Child Growth Standards to assess your
-              child's nutritional status.
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      <View style={{ height: 24 }} />
-    </ScrollView>
-  );
-}
-
-function ParentReminders() {
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={ss.screenPad}
-      showsVerticalScrollIndicator={false}
-    >
-      <SectionHeader
-        title="Upcoming Schedule"
-        sub="Health activities in your area"
-      />
-
-      {REMINDERS.map((r, i) => (
-        <Card key={r.id} style={[ss.listCard, { marginBottom: 10 }]}>
-          <View style={ss.listRow}>
-            <View style={ss.reminderIcon}>
-              <Text style={{ fontSize: 22 }}>{r.icon}</Text>
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={ss.listName}>{r.title}</Text>
-              <Text style={ss.listMeta}>{r.barangay}</Text>
-            </View>
-            <View style={[ss.pill, { backgroundColor: C.primaryLight }]}>
-              <Text
-                style={{ fontSize: 11, fontWeight: "700", color: C.primary }}
-              >
-                {r.date}
-              </Text>
-            </View>
-          </View>
-        </Card>
-      ))}
-
-      {/* What to bring */}
-      <Card style={[ss.listCard, { marginTop: 4 }]}>
-        <Text style={[ss.listName, { marginBottom: 10 }]}>What to Bring</Text>
-        {[
-          "Child's health card (Road to Good Health card)",
-          "Immunization records",
-          "The child (clean, fed, and rested)",
-        ].map((item, i) => (
-          <View
-            key={i}
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: C.primary,
-                fontWeight: "700",
-                marginRight: 8,
-                fontSize: 14,
-              }}
-            >
-              ✓
-            </Text>
-            <Text
-              style={{ fontSize: 13, color: C.text, flex: 1, lineHeight: 19 }}
-            >
-              {item}
-            </Text>
-          </View>
-        ))}
-      </Card>
-
       <View style={{ height: 24 }} />
     </ScrollView>
   );
@@ -1978,7 +2938,6 @@ function ParentProfile({ user, onLogout }) {
           </Text>
         </View>
       </Card>
-
       <Card style={ss.listCard}>
         {[
           ["App Version", "1.0.0"],
@@ -2001,7 +2960,6 @@ function ParentProfile({ user, onLogout }) {
           </View>
         ))}
       </Card>
-
       <Card
         style={[
           ss.listCard,
@@ -2013,7 +2971,9 @@ function ParentProfile({ user, onLogout }) {
         ]}
       >
         <View style={ss.listRow}>
-          <Text style={{ fontSize: 20 }}>📞</Text>
+          <View style={[ss.activityIcon, { backgroundColor: C.info + "20" }]}>
+            <Icon name="phone" size={18} color={C.info} />
+          </View>
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={[ss.listName, { color: C.info }]}>
               Contact Health Worker
@@ -2025,19 +2985,23 @@ function ParentProfile({ user, onLogout }) {
           </View>
         </View>
       </Card>
-
-      <GhostBtn
-        label="Sign Out"
+      <TouchableOpacity
         onPress={onLogout}
-        danger
-        style={{ marginTop: 14 }}
-      />
+        style={[ss.ghostBtn, { borderColor: C.danger + "60", marginTop: 14 }]}
+      >
+        <View style={ss.listRow}>
+          <Icon name="log-out" size={15} color={C.danger} />
+          <Text style={[ss.ghostBtnText, { color: C.danger, marginLeft: 8 }]}>
+            Sign Out
+          </Text>
+        </View>
+      </TouchableOpacity>
       <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
 
-// ─── Add Measurement modal from children screen ───────────────────────────────
+// ─── Add Measurement modal ────────────────────────────────────────────────────
 function AddMeasurementModal({ child, onSave, onClose }) {
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
@@ -2091,10 +3055,9 @@ function AddMeasurementModal({ child, onSave, onClose }) {
             <Text style={ss.listMeta}>{child.ageMonths} months old</Text>
           </View>
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ fontSize: 20, color: C.textMuted }}>✕</Text>
+            <Icon name="x" size={20} color={C.textMuted} />
           </TouchableOpacity>
         </View>
-
         <View style={[ss.listMetrics, { marginVertical: 12 }]}>
           {["Manual", "Kiosk", "Mobile"].map((s) => (
             <TouchableOpacity
@@ -2119,7 +3082,6 @@ function AddMeasurementModal({ child, onSave, onClose }) {
             </TouchableOpacity>
           ))}
         </View>
-
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
             <FormInput
@@ -2142,7 +3104,6 @@ function AddMeasurementModal({ child, onSave, onClose }) {
             />
           </View>
         </View>
-
         {preview && (
           <View
             style={[
@@ -2160,7 +3121,6 @@ function AddMeasurementModal({ child, onSave, onClose }) {
             </Text>
           </View>
         )}
-
         <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
           <GhostBtn label="Cancel" onPress={onClose} style={{ flex: 1 }} />
           <PrimaryBtn label="Save" onPress={handleSave} style={{ flex: 1 }} />
@@ -2176,7 +3136,8 @@ export default function App() {
   const [tab, setTab] = useState("home");
   const [children, setChildren] = useState(INITIAL_CHILDREN);
   const [measurements, setMeasurements] = useState(INITIAL_MEASUREMENTS);
-  const [msModal, setMsModal] = useState(null); // child to add measurement for
+  const [appointments, setAppointments] = useState(APPOINTMENTS_DATA);
+  const [msModal, setMsModal] = useState(null);
 
   const handleLogin = (u) => {
     setUser(u);
@@ -2211,8 +3172,12 @@ export default function App() {
   const myChildren = isNutri
     ? children
     : children.filter((c) => user.childIds?.includes(c.id));
-  const headerTitle = isNutri ? "SukatKalusugan" : "SukatKalusugan";
-  const headerSub = isNutri ? "Health Worker Portal" : "Parent Portal";
+  const myAppointments = isNutri
+    ? appointments
+    : appointments.filter((a) => {
+        const child = myChildren.find((c) => childName(c) === a.childName);
+        return !!child;
+      });
 
   const renderScreen = () => {
     if (isNutri) {
@@ -2241,9 +3206,14 @@ export default function App() {
               onSave={saveMeasurement}
             />
           );
-        case "reports":
+        case "appointments":
           return (
-            <NutriReports children={children} measurements={measurements} />
+            <AppointmentsScreen
+              appointments={appointments}
+              setAppointments={setAppointments}
+              children={children}
+              isNutri={true}
+            />
           );
         case "profile":
           return <NutriProfile user={user} onLogout={handleLogout} />;
@@ -2267,10 +3237,17 @@ export default function App() {
               measurements={measurements}
             />
           );
-        case "tips":
-          return <ParentTips />;
-        case "reminders":
-          return <ParentReminders />;
+        case "appointments":
+          return (
+            <AppointmentsScreen
+              appointments={myAppointments}
+              setAppointments={setAppointments}
+              children={myChildren}
+              isNutri={false}
+            />
+          );
+        case "chat":
+          return <AIChatScreen user={user} myChildren={myChildren} />;
         case "profile":
           return <ParentProfile user={user} onLogout={handleLogout} />;
         default:
@@ -2283,8 +3260,8 @@ export default function App() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
       <AppHeader
-        title={headerTitle}
-        sub={headerSub}
+        title="SukatKalusugan"
+        sub={isNutri ? "Health Worker Portal" : "Parent Portal"}
         user={user}
         onAvatarPress={() => setTab("profile")}
       />
@@ -2306,7 +3283,6 @@ export default function App() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -2340,7 +3316,6 @@ const ss = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Tab Bar
   tabBar: {
     flexDirection: "row",
     backgroundColor: C.primaryDark,
@@ -2359,18 +3334,14 @@ const ss = StyleSheet.create({
     backgroundColor: C.primaryMid,
     borderRadius: 2,
   },
-  tabSym: { fontSize: 17, color: "rgba(255,255,255,0.4)", lineHeight: 22 },
   tabLabel: {
     fontSize: 9,
     color: "rgba(255,255,255,0.45)",
     fontWeight: "500",
-    marginTop: 2,
+    marginTop: 3,
   },
 
-  // Screen
   screenPad: { padding: 14, paddingBottom: 28 },
-
-  // Card
   card: {
     backgroundColor: C.card,
     borderRadius: 14,
@@ -2378,8 +3349,6 @@ const ss = StyleSheet.create({
     borderColor: C.border,
     padding: 14,
   },
-
-  // Section Header
   sectionHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -2389,7 +3358,6 @@ const ss = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: "800", color: C.text },
   sectionSub: { fontSize: 11, color: C.textMuted, marginTop: 2 },
 
-  // Greeting Banner
   greetBanner: {
     backgroundColor: C.primary,
     borderRadius: 16,
@@ -2410,7 +3378,6 @@ const ss = StyleSheet.create({
   },
   greetRole: { fontSize: 11, color: "rgba(255,255,255,0.7)" },
 
-  // Stats Row
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
   statCard: {
     flex: 1,
@@ -2425,7 +3392,6 @@ const ss = StyleSheet.create({
   statNum: { fontSize: 26, fontWeight: "900", marginBottom: 2 },
   statLbl: { fontSize: 10, lineHeight: 14 },
 
-  // List
   listCard: {
     backgroundColor: C.card,
     borderRadius: 14,
@@ -2439,7 +3405,13 @@ const ss = StyleSheet.create({
   listMeta: { fontSize: 11, color: C.textMuted, lineHeight: 16 },
   listMetrics: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
 
-  // Activity Icon
+  activityCard: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 14,
+  },
   activityIcon: {
     width: 40,
     height: 40,
@@ -2448,24 +3420,7 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  tipIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: C.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  reminderIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: C.accentLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 
-  // Alert Card
   alertCard: {
     backgroundColor: C.dangerLight,
     borderRadius: 14,
@@ -2474,7 +3429,6 @@ const ss = StyleSheet.create({
     padding: 14,
   },
 
-  // Metric Chip
   metricChip: {
     borderRadius: 8,
     borderWidth: 1,
@@ -2486,7 +3440,6 @@ const ss = StyleSheet.create({
   metricValue: { fontSize: 14, fontWeight: "800" },
   metricLabel: { fontSize: 9, color: C.textMuted, marginTop: 1 },
 
-  // Status Pill
   pill: {
     flexDirection: "row",
     alignItems: "center",
@@ -2499,7 +3452,6 @@ const ss = StyleSheet.create({
   pillDot: { width: 5, height: 5, borderRadius: 3 },
   pillText: { fontSize: 11, fontWeight: "700" },
 
-  // Search
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -2511,8 +3463,6 @@ const ss = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
   },
-
-  // Filter Chips
   filterChip: {
     borderWidth: 1,
     borderColor: C.border,
@@ -2524,7 +3474,6 @@ const ss = StyleSheet.create({
   },
   filterChipText: { fontSize: 12, fontWeight: "500", color: C.textMuted },
 
-  // Child Chip
   childChip: {
     borderWidth: 1,
     borderColor: C.border,
@@ -2536,7 +3485,6 @@ const ss = StyleSheet.create({
   },
   childChipText: { fontSize: 12, fontWeight: "600", color: C.text },
 
-  // Add Measurement Button
   addMsBtn: {
     marginTop: 10,
     paddingVertical: 8,
@@ -2545,10 +3493,11 @@ const ss = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.primary + "50",
     backgroundColor: C.primaryLight,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   addMsBtnText: { fontSize: 12, fontWeight: "700", color: C.primary },
 
-  // FAB
   addFab: {
     width: 36,
     height: 36,
@@ -2558,7 +3507,6 @@ const ss = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Empty Card
   emptyCard: {
     backgroundColor: C.card,
     borderRadius: 14,
@@ -2569,10 +3517,8 @@ const ss = StyleSheet.create({
   },
   emptyText: { fontSize: 13, color: C.textMuted, textAlign: "center" },
 
-  // Preview Box
   previewBox: { borderRadius: 10, borderWidth: 1, padding: 12, marginTop: 8 },
 
-  // Settings
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2587,19 +3533,12 @@ const ss = StyleSheet.create({
     textAlign: "right",
   },
 
-  // Bar Chart
-  barTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: C.bgAlt,
-    overflow: "hidden",
-  },
-  barFill: { height: "100%", borderRadius: 4 },
-
-  // Modal
   modalOverlay: {
     position: "absolute",
-    inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "flex-end",
   },
@@ -2611,7 +3550,6 @@ const ss = StyleSheet.create({
     paddingBottom: Platform.OS === "ios" ? 40 : 24,
   },
 
-  // Forms
   fieldLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -2630,7 +3568,6 @@ const ss = StyleSheet.create({
     color: C.text,
   },
 
-  // Buttons
   primaryBtn: {
     backgroundColor: C.primary,
     borderRadius: 12,
@@ -2647,7 +3584,6 @@ const ss = StyleSheet.create({
   },
   ghostBtnText: { fontSize: 14, fontWeight: "700", color: C.textMuted },
 
-  // Login
   loginScroll: { flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 36 },
   loginBrand: { alignItems: "center", marginBottom: 32 },
   loginLogoRing: {
@@ -2726,4 +3662,220 @@ const ss = StyleSheet.create({
     paddingVertical: 5,
   },
   loginTagText: { fontSize: 11, color: "rgba(255,255,255,0.6)" },
+
+  // Calendar strip
+  calStrip: { paddingHorizontal: 10 },
+  calDay: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 52,
+    height: 68,
+    borderRadius: 12,
+    marginHorizontal: 3,
+  },
+  calDayName: {
+    fontSize: 10,
+    color: C.textMuted,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  calDayNum: { fontSize: 18, fontWeight: "800", color: C.text },
+  calDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: C.primary,
+    marginTop: 4,
+  },
+
+  // Appointment
+  apptTypeIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  miniBtnText: { fontSize: 11, fontWeight: "700" },
+  fab: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  // Booking modal step
+  stepDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepDotText: { fontSize: 12, fontWeight: "800", color: "#fff" },
+  stepLine: { flex: 1, height: 2, borderRadius: 1 },
+
+  // Type option
+  typeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  typeRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: C.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  typeRadioInner: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: C.primary,
+  },
+
+  // Time grid
+  timeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  timeSlot: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+  },
+  timeSlotText: { fontSize: 12, fontWeight: "600", color: C.text },
+
+  // Chat
+  chatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.primaryDark,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.07)",
+  },
+  chatBotAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.primaryMid,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatMessages: { flex: 1, backgroundColor: C.bg },
+  msgWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginBottom: 12,
+  },
+  msgWrapperUser: { flexDirection: "row-reverse" },
+  msgBotIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+    marginBottom: 2,
+  },
+  msgBubble: { maxWidth: "78%", borderRadius: 16, padding: 12 },
+  msgBubbleBot: {
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderBottomLeftRadius: 4,
+  },
+  msgBubbleUser: { backgroundColor: C.primary, borderBottomRightRadius: 4 },
+  msgText: { fontSize: 13, color: C.text, lineHeight: 19 },
+  msgTime: {
+    fontSize: 10,
+    color: C.textLight,
+    marginTop: 5,
+    textAlign: "right",
+  },
+  typingDots: {
+    flexDirection: "row",
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+  },
+  typingDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: C.textLight,
+  },
+  quickReplies: {
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    paddingVertical: 10,
+    flexGrow: 0,
+  },
+  quickReply: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.primary + "50",
+    backgroundColor: C.primaryLight,
+  },
+  quickReplyText: { fontSize: 12, color: C.primary, fontWeight: "600" },
+  chatInputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    padding: 12,
+    gap: 10,
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  chatInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: C.text,
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
