@@ -606,49 +606,78 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
 // ─── Child Avatar SVG ────────────────────────────────────────────────────────
 const ChildAvatar = ({ sex, size = 32 }) => {
   const isFemale = sex === "Female";
-  const bg = isFemale ? "#FCE4EC" : "#E3F2FD";
-  const hairColor = isFemale ? "#5D4037" : "#3E2723";
-  const skinColor = "#FFCC99";
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 48 48"
       fill="none"
-      style={{ borderRadius: "50%", background: bg, flexShrink: 0 }}
+      style={{ flexShrink: 0, display: "block" }}
     >
-      {/* Body */}
-      <ellipse
-        cx="20"
-        cy="34"
-        rx="9"
-        ry="6"
-        fill={isFemale ? "#E91E63" : "#1565C0"}
-        opacity="0.7"
+      {/* Background circle */}
+      <circle cx="24" cy="24" r="24" fill={isFemale ? "#FDE8F0" : "#E0EFFF"} />
+
+      {/* Body / torso */}
+      <rect
+        x={isFemale ? "13" : "14"}
+        y="32"
+        width={isFemale ? "22" : "20"}
+        height="12"
+        rx="6"
+        fill={isFemale ? "#F48BAB" : "#5B9BF0"}
       />
+
+      {/* Neck */}
+      <rect x="21" y="27" width="6" height="6" rx="3" fill="#FBBF8C" />
+
       {/* Head */}
-      <circle cx="20" cy="18" r="9" fill={skinColor} />
-      {/* Hair */}
+      <circle cx="24" cy="20" r="9" fill="#FBBF8C" />
+
+      {/* Hair — boy: short cap / girl: full with side strands */}
       {isFemale ? (
         <>
-          <ellipse cx="20" cy="11" rx="9" ry="5" fill={hairColor} />
-          <rect x="11" y="11" width="3" height="8" rx="1.5" fill={hairColor} />
-          <rect x="26" y="11" width="3" height="8" rx="1.5" fill={hairColor} />
+          {/* Full hair top */}
+          <ellipse cx="24" cy="13" rx="9" ry="5.5" fill="#4A3728" />
+          {/* Side strands */}
+          <rect x="14" y="13" width="3" height="9" rx="1.5" fill="#4A3728" />
+          <rect x="31" y="13" width="3" height="9" rx="1.5" fill="#4A3728" />
+          {/* Small parted highlight */}
+          <ellipse cx="24" cy="12" rx="3" ry="1.5" fill="#6B5344" opacity="0.5" />
         </>
       ) : (
-        <ellipse cx="20" cy="11" rx="9" ry="4" fill={hairColor} />
+        <>
+          {/* Short cropped hair */}
+          <ellipse cx="24" cy="13" rx="9" ry="4.5" fill="#3B2C1E" />
+          {/* Slight side taper */}
+          <rect x="15" y="14" width="3" height="5" rx="1.5" fill="#3B2C1E" />
+          <rect x="30" y="14" width="3" height="5" rx="1.5" fill="#3B2C1E" />
+        </>
       )}
+
       {/* Eyes */}
-      <circle cx="16.5" cy="18" r="1.2" fill="#333" />
-      <circle cx="23.5" cy="18" r="1.2" fill="#333" />
+      <circle cx="20.5" cy="20" r="1.4" fill="#2D1F14" />
+      <circle cx="27.5" cy="20" r="1.4" fill="#2D1F14" />
+      {/* Eye shine */}
+      <circle cx="21.2" cy="19.3" r="0.5" fill="#fff" />
+      <circle cx="28.2" cy="19.3" r="0.5" fill="#fff" />
+
       {/* Smile */}
       <path
-        d="M17 22 Q20 24.5 23 22"
-        stroke="#A0522D"
+        d="M20.5 23.5 Q24 26 27.5 23.5"
+        stroke="#C8825A"
         strokeWidth="1.2"
         strokeLinecap="round"
         fill="none"
       />
+
+      {/* Girl: small bow / Boy: nothing extra */}
+      {isFemale && (
+        <g transform="translate(24, 10)">
+          <path d="M-4 0 Q-2 -2 0 0 Q-2 2 -4 0Z" fill="#F48BAB" />
+          <path d="M4 0 Q2 -2 0 0 Q2 2 4 0Z" fill="#F48BAB" />
+          <circle cx="0" cy="0" r="1.2" fill="#E91E8C" />
+        </g>
+      )}
     </svg>
   );
 };
@@ -1261,7 +1290,7 @@ function LoginPage({ onLogin, onKiosk }) {
             overflow: "hidden",
           }}
         >
-          <div>
+          <div style={{ minHeight: 0, flex: 1 }}>
             <div
               style={{
                 display: "flex",
@@ -1391,6 +1420,7 @@ function LoginPage({ onLogin, onKiosk }) {
               justifyContent: "center",
               gap: 10,
               marginTop: "auto",
+              alignSelf: "stretch",
               boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
             }}
           >
@@ -1496,13 +1526,15 @@ function LoginPage({ onLogin, onKiosk }) {
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
               boxShadow: "0 14px 24px rgba(11,110,79,0.18)",
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {loading ? "Signing in..." : "Sign In"}
-              {!loading && <Icon name="arrowRight" size={14} color="#fff" />}
-            </span>
+            {loading ? "Signing in..." : "Sign In"}
+            {!loading && <Icon name="arrowRight" size={14} color="#fff" />}
           </button>
           <div
             style={{
@@ -4437,7 +4469,7 @@ function AdminSystemSettings({ showToast }) {
   );
 }
 
-function NutritionistDashboard({ children, parents, appointments,}) {
+function NutritionistDashboard({ children, parents, appointments }) {
   const [tableFilter, setTableFilter] = useState("Today");
   const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 4, 1)); // May 2026
   const [hoveredCol, setHoveredCol] = useState(null);
@@ -4446,12 +4478,16 @@ function NutritionistDashboard({ children, parents, appointments,}) {
   const [selectAll, setSelectAll] = useState(false);
 
   // ── Derived stats ──────────────────────────────────────────────────────────
-  const atRisk = children.filter((c) => !["Normal", "Overweight"].includes(c.status));
+  const atRisk = children.filter(
+    (c) => !["Normal", "Overweight"].includes(c.status),
+  );
   const statusCounts = children.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] || 0) + 1;
     return acc;
   }, {});
-  const todayAppts = appointments.filter((a) => a.status === "Scheduled").length;
+  const todayAppts = appointments.filter(
+    (a) => a.status === "Scheduled",
+  ).length;
   const activeParents = parents.filter((p) => p.status === "Active").length;
 
   // ── Stat cards ──────────────────────────────────────────────────────────────
@@ -4516,19 +4552,28 @@ function NutritionistDashboard({ children, parents, appointments,}) {
   ];
 
   // ── Chart data (multi-line: Normal, Severe, Underweight, Stunted) ──────────
-  const MONTHS_LABELS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
+  const MONTHS_LABELS = [
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+  ];
   const CHART_XS = [56, 110, 164, 218, 272, 326, 380, 420];
   const CHART_DATA = {
-    Normal:      [59, 65, 61, 72, 68, 71, 64, 66],
-    Severe:      [10, 12, 11, 14, 13, 15, 12, 13],
+    Normal: [59, 65, 61, 72, 68, 71, 64, 66],
+    Severe: [10, 12, 11, 14, 13, 15, 12, 13],
     Underweight: [18, 22, 20, 26, 24, 28, 22, 24],
-    Stunted:     [14, 18, 16, 20, 18, 22, 18, 20],
+    Stunted: [14, 18, 16, 20, 18, 22, 18, 20],
   };
   const CHART_COLORS = {
-    Normal:      "#1A8F68",
-    Severe:      "#E03131",
+    Normal: "#1A8F68",
+    Severe: "#E03131",
     Underweight: "#E67E22",
-    Stunted:     "#7048E8",
+    Stunted: "#7048E8",
   };
   // Convert data values → SVG y (range 10–152, domain 0–100)
   const toY = (v) => 152 - (v / 100) * 136;
@@ -4537,8 +4582,18 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
   // ── Calendar ────────────────────────────────────────────────────────────────
   const MONTH_NAMES = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   // Build event map for calendar — appointments + Oplan Timbang
@@ -4621,12 +4676,12 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
   // ── Nutritional Status bars ──────────────────────────────────────────────────
   const STATUS_BARS = [
-    { status: "Normal",               color: T.primary },
-    { status: "Underweight",          color: T.warn },
+    { status: "Normal", color: T.primary },
+    { status: "Underweight", color: T.warn },
     { status: "Severely Underweight", color: T.danger },
-    { status: "Stunted",              color: T.purple },
-    { status: "Wasted",               color: T.info },
-    { status: "Overweight",           color: T.accent },
+    { status: "Stunted", color: T.purple },
+    { status: "Wasted", color: T.info },
+    { status: "Overweight", color: T.accent },
   ];
 
   // ── Patient table rows ────────────────────────────────────────────────────
@@ -4642,9 +4697,14 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
       {/* ── Stat Cards Row ───────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4,1fr)",
+          gap: 10,
+        }}
+      >
         {STAT_CARDS.map((s) => (
           <div
             key={s.label}
@@ -4658,7 +4718,14 @@ function NutritionistDashboard({ children, parents, appointments,}) {
               cursor: "pointer",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                marginBottom: 10,
+              }}
+            >
               <div
                 style={{
                   width: 26,
@@ -4671,55 +4738,144 @@ function NutritionistDashboard({ children, parents, appointments,}) {
                   flexShrink: 0,
                 }}
               >
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
-                  stroke={s.iconColor} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width={13}
+                  height={13}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={s.iconColor}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d={s.icon} />
                 </svg>
               </div>
-              <span style={{ fontSize: 11, color: s.featured ? "rgba(255,255,255,.75)" : T.textMuted }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: s.featured ? "rgba(255,255,255,.75)" : T.textMuted,
+                }}
+              >
                 {s.label}
               </span>
               {/* dots */}
-              <svg style={{ marginLeft: "auto" }} width={14} height={14} viewBox="0 0 24 24"
-                fill="none" stroke={s.featured ? "rgba(255,255,255,.5)" : T.textMuted} strokeWidth={1.8} strokeLinecap="round">
-                <circle cx={12} cy={12} r={1} /><circle cx={19} cy={12} r={1} /><circle cx={5} cy={12} r={1} />
+              <svg
+                style={{ marginLeft: "auto" }}
+                width={14}
+                height={14}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={s.featured ? "rgba(255,255,255,.5)" : T.textMuted}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              >
+                <circle cx={12} cy={12} r={1} />
+                <circle cx={19} cy={12} r={1} />
+                <circle cx={5} cy={12} r={1} />
               </svg>
             </div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: s.numColor, lineHeight: 1 }}>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 700,
+                color: s.numColor,
+                lineHeight: 1,
+              }}
+            >
               {s.value}
             </div>
-            <div style={{ fontSize: 10, color: s.deltaColor, fontWeight: 600, marginTop: 2 }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: s.deltaColor,
+                fontWeight: 600,
+                marginTop: 2,
+              }}
+            >
               {s.delta}
             </div>
-            <div style={{ fontSize: 10, color: s.featured ? "rgba(255,255,255,.55)" : T.textMuted, marginTop: 1 }}>
+            <div
+              style={{
+                fontSize: 10,
+                color: s.featured ? "rgba(255,255,255,.55)" : T.textMuted,
+                marginTop: 1,
+              }}
+            >
               {s.desc}
             </div>
             <svg
-              style={{ position: "absolute", bottom: 0, right: 0, opacity: s.featured ? 0.18 : 0.07 }}
-              width={80} height={40} viewBox="0 0 80 40"
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                opacity: s.featured ? 0.18 : 0.07,
+              }}
+              width={80}
+              height={40}
+              viewBox="0 0 80 40"
             >
-              <polyline points={s.miniPoints} fill="none" stroke={s.miniStroke} strokeWidth={2} />
+              <polyline
+                points={s.miniPoints}
+                fill="none"
+                stroke={s.miniStroke}
+                strokeWidth={2}
+              />
             </svg>
           </div>
         ))}
       </div>
 
       {/* ── Mid Row: Chart + Calendar ─────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12 }}>
-
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12 }}
+      >
         {/* Multi-line Malnutrition Chart */}
         <div style={card}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Patient Overview</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                Patient Overview
+              </div>
               <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
                 Malnutrition trends over time by classification
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
               {Object.entries(CHART_COLORS).map(([label, color]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: T.textMuted }}>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontSize: 11,
+                    color: T.textMuted,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: color,
+                      flexShrink: 0,
+                    }}
+                  />
                   {label}
                 </div>
               ))}
@@ -4729,27 +4885,54 @@ function NutritionistDashboard({ children, parents, appointments,}) {
           {/* SVG Chart with hover tooltip */}
           <div style={{ position: "relative" }}>
             {hoveredCol !== null && (
-              <div style={{
-                position: "absolute",
-                left: tooltipPos.x,
-                top: tooltipPos.y,
-                background: T.card,
-                border: `1px solid ${T.border}`,
-                borderRadius: 8,
-                padding: "7px 11px",
-                fontSize: 11,
-                zIndex: 20,
-                whiteSpace: "nowrap",
-                boxShadow: "0 4px 12px rgba(0,0,0,.1)",
-                pointerEvents: "none",
-              }}>
-                <div style={{ fontWeight: 600, color: T.text, marginBottom: 4 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: tooltipPos.x,
+                  top: tooltipPos.y,
+                  background: T.card,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 8,
+                  padding: "7px 11px",
+                  fontSize: 11,
+                  zIndex: 20,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 4px 12px rgba(0,0,0,.1)",
+                  pointerEvents: "none",
+                }}
+              >
+                <div
+                  style={{ fontWeight: 600, color: T.text, marginBottom: 4 }}
+                >
                   {MONTHS_LABELS[hoveredCol]}
                 </div>
                 {Object.entries(CHART_DATA).map(([label, arr]) => (
-                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, fontSize: 10, color: T.textMuted }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: CHART_COLORS[label], flexShrink: 0 }} />
-                    {label}: <span style={{ fontWeight: 600, color: T.text, marginLeft: 2 }}>{arr[hoveredCol]}</span>
+                  <div
+                    key={label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      marginTop: 2,
+                      fontSize: 10,
+                      color: T.textMuted,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: CHART_COLORS[label],
+                        flexShrink: 0,
+                      }}
+                    />
+                    {label}:{" "}
+                    <span
+                      style={{ fontWeight: 600, color: T.text, marginLeft: 2 }}
+                    >
+                      {arr[hoveredCol]}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -4762,9 +4945,19 @@ function NutritionistDashboard({ children, parents, appointments,}) {
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (460 / rect.width);
-                let ci = 0, md = 9999;
-                CHART_XS.forEach((x, i) => { const d = Math.abs(x - mx); if (d < md) { md = d; ci = i; } });
-                if (md > 35) { setHoveredCol(null); return; }
+                let ci = 0,
+                  md = 9999;
+                CHART_XS.forEach((x, i) => {
+                  const d = Math.abs(x - mx);
+                  if (d < md) {
+                    md = d;
+                    ci = i;
+                  }
+                });
+                if (md > 35) {
+                  setHoveredCol(null);
+                  return;
+                }
                 setHoveredCol(ci);
                 const px = e.clientX - rect.left;
                 const py = e.clientY - rect.top;
@@ -4774,11 +4967,34 @@ function NutritionistDashboard({ children, parents, appointments,}) {
             >
               {/* Grid lines */}
               {[16, 50, 84, 118, 152].map((y) => (
-                <line key={y} x1={44} y1={y} x2={430} y2={y} stroke={T.border} strokeWidth={0.5} />
+                <line
+                  key={y}
+                  x1={44}
+                  y1={y}
+                  x2={430}
+                  y2={y}
+                  stroke={T.border}
+                  strokeWidth={0.5}
+                />
               ))}
               {/* Y labels */}
-              {[["100", 19], ["80", 53], ["60", 87], ["40", 121], ["20", 155]].map(([lbl, y]) => (
-                <text key={y} x={38} y={y} fontSize={9} fill={T.textMuted} textAnchor="end">{lbl}</text>
+              {[
+                ["100", 19],
+                ["80", 53],
+                ["60", 87],
+                ["40", 121],
+                ["20", 155],
+              ].map(([lbl, y]) => (
+                <text
+                  key={y}
+                  x={38}
+                  y={y}
+                  fontSize={9}
+                  fill={T.textMuted}
+                  textAnchor="end"
+                >
+                  {lbl}
+                </text>
               ))}
               {/* Active hover band */}
               {hoveredCol !== null && (
@@ -4818,7 +5034,16 @@ function NutritionistDashboard({ children, parents, appointments,}) {
               ))}
               {/* X labels */}
               {MONTHS_LABELS.map((m, i) => (
-                <text key={m} x={CHART_XS[i]} y={178} fontSize={9} fill={T.textMuted} textAnchor="middle">{m}</text>
+                <text
+                  key={m}
+                  x={CHART_XS[i]}
+                  y={178}
+                  fontSize={9}
+                  fill={T.textMuted}
+                  textAnchor="middle"
+                >
+                  {m}
+                </text>
               ))}
             </svg>
           </div>
@@ -4826,38 +5051,136 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
         {/* Calendar with Oplan Timbang */}
         <div style={card}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Calendar</div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+              Calendar
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
-                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
-                style={{ background: "none", border: `1px solid ${T.border}`, borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.textMuted }}
+                onClick={() =>
+                  setCalendarMonth(
+                    new Date(
+                      calendarMonth.getFullYear(),
+                      calendarMonth.getMonth() - 1,
+                      1,
+                    ),
+                  )
+                }
+                style={{
+                  background: "none",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: "50%",
+                  width: 24,
+                  height: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: T.textMuted,
+                }}
               >
-                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
+                <svg
+                  width={10}
+                  height={10}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
               </button>
-              <span style={{ fontSize: 12, fontWeight: 500, color: T.text, minWidth: 110, textAlign: "center" }}>
-                {MONTH_NAMES[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: T.text,
+                  minWidth: 110,
+                  textAlign: "center",
+                }}
+              >
+                {MONTH_NAMES[calendarMonth.getMonth()]}{" "}
+                {calendarMonth.getFullYear()}
               </span>
               <button
-                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
-                style={{ background: "none", border: `1px solid ${T.border}`, borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.textMuted }}
+                onClick={() =>
+                  setCalendarMonth(
+                    new Date(
+                      calendarMonth.getFullYear(),
+                      calendarMonth.getMonth() + 1,
+                      1,
+                    ),
+                  )
+                }
+                style={{
+                  background: "none",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: "50%",
+                  width: 24,
+                  height: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: T.textMuted,
+                }}
               >
-                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
+                <svg
+                  width={10}
+                  height={10}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </button>
             </div>
           </div>
 
           {/* Day headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 }}>
-            {["S","M","T","W","T","F","S"].map((d, i) => (
-              <div key={`${d}-${i}`} style={{ textAlign: "center", fontSize: 10, color: T.textMuted, padding: "3px 0", fontWeight: 500 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 2,
+              marginBottom: 4,
+            }}
+          >
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <div
+                key={`${d}-${i}`}
+                style={{
+                  textAlign: "center",
+                  fontSize: 10,
+                  color: T.textMuted,
+                  padding: "3px 0",
+                  fontWeight: 500,
+                }}
+              >
                 {d}
               </div>
             ))}
           </div>
 
           {/* Calendar grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 3,
+            }}
+          >
             {calCells.map((day, i) => {
               if (!day) return <div key={`blank-${i}`} />;
               const isToday = isCurrentMonth && day === today.getDate();
@@ -4881,28 +5204,44 @@ function NutritionistDashboard({ children, parents, appointments,}) {
                     background: isToday ? T.primary : "transparent",
                   }}
                 >
-                  <div style={{
-                    lineHeight: 1,
-                    fontSize: 11,
-                    color: isToday ? "#fff" : hasEvents ? T.primary : T.text,
-                    fontWeight: isToday || hasEvents ? 600 : 400,
-                    width: isToday ? 22 : "auto",
-                    height: isToday ? 22 : "auto",
-                    borderRadius: isToday ? "50%" : 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: isToday ? T.primary : "transparent",
-                  }}>
+                  <div
+                    style={{
+                      lineHeight: 1,
+                      fontSize: 11,
+                      color: isToday ? "#fff" : hasEvents ? T.primary : T.text,
+                      fontWeight: isToday || hasEvents ? 600 : 400,
+                      width: isToday ? 22 : "auto",
+                      height: isToday ? 22 : "auto",
+                      borderRadius: isToday ? "50%" : 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: isToday ? T.primary : "transparent",
+                    }}
+                  >
                     {day}
                   </div>
                   {hasEvents && (
-                    <div style={{ display: "flex", gap: 2, marginTop: 2, justifyContent: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 2,
+                        marginTop: 2,
+                        justifyContent: "center",
+                      }}
+                    >
                       {events.slice(0, 3).map((ev, ei) => (
-                        <div key={ei} style={{
-                          width: 4, height: 4, borderRadius: "50%",
-                          background: isToday ? "rgba(255,255,255,.8)" : ev.color,
-                        }} />
+                        <div
+                          key={ei}
+                          style={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: "50%",
+                            background: isToday
+                              ? "rgba(255,255,255,.8)"
+                              : ev.color,
+                          }}
+                        />
                       ))}
                     </div>
                   )}
@@ -4912,14 +5251,39 @@ function NutritionistDashboard({ children, parents, appointments,}) {
           </div>
 
           {/* Calendar legend */}
-          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 12,
+              flexWrap: "wrap",
+              paddingTop: 10,
+              borderTop: `1px solid ${T.border}`,
+            }}
+          >
             {[
-              { color: "#E03131",  label: "Appointment" },
-              { color: T.info,     label: "Meeting" },
-              { color: T.primary,  label: "Oplan Timbang" },
+              { color: "#E03131", label: "Appointment" },
+              { color: T.info, label: "Meeting" },
+              { color: T.primary, label: "Oplan Timbang" },
             ].map((l) => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: T.textMuted }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />
+              <div
+                key={l.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 10,
+                  color: T.textMuted,
+                }}
+              >
+                <div
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: l.color,
+                  }}
+                />
                 {l.label}
               </div>
             ))}
@@ -4929,10 +5293,16 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
       {/* ── Alerts + Nutritional Status Row ──────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-
         {/* Priority Alerts */}
         <div style={card}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: T.text,
+              marginBottom: 12,
+            }}
+          >
             Priority Alerts
           </div>
           {ALERTS.map((a) => (
@@ -4949,22 +5319,48 @@ function NutritionistDashboard({ children, parents, appointments,}) {
                 border: `1px solid ${a.color}20`,
               }}
             >
-              <div style={{
-                width: 28, height: 28, borderRadius: 7,
-                background: a.bg,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
-                  stroke={a.color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: a.bg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg
+                  width={13}
+                  height={13}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={a.color}
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d={a.iconPath} />
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.child}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+                  {a.child}
+                </div>
                 <div style={{ marginTop: 3 }}>
                   <StatusBadge status={a.status} />
                 </div>
-                <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, lineHeight: 1.4 }}>{a.msg}</div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: T.textMuted,
+                    marginTop: 4,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {a.msg}
+                </div>
               </div>
             </div>
           ))}
@@ -4972,25 +5368,53 @@ function NutritionistDashboard({ children, parents, appointments,}) {
 
         {/* Nutritional Status bars */}
         <div style={card}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: T.text,
+              marginBottom: 12,
+            }}
+          >
             Nutritional Status
           </div>
           {STATUS_BARS.map((s) => {
             const count = statusCounts[s.status] || 0;
-            const pct = children.length > 0 ? Math.round((count / children.length) * 100) : 0;
+            const pct =
+              children.length > 0
+                ? Math.round((count / children.length) * 100)
+                : 0;
             return (
               <div key={s.status} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 4,
+                    alignItems: "center",
+                  }}
+                >
                   <StatusBadge status={s.status} />
-                  <span style={{ fontSize: 11, color: T.textMuted }}>{count} ({pct}%)</span>
+                  <span style={{ fontSize: 11, color: T.textMuted }}>
+                    {count} ({pct}%)
+                  </span>
                 </div>
-                <div style={{ height: 7, borderRadius: 999, background: T.bg, overflow: "hidden" }}>
-                  <div style={{
-                    width: `${Math.max(pct > 0 ? pct : 0, pct > 0 ? 3 : 0)}%`,
-                    height: "100%",
+                <div
+                  style={{
+                    height: 7,
                     borderRadius: 999,
-                    background: s.color,
-                  }} />
+                    background: T.bg,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.max(pct > 0 ? pct : 0, pct > 0 ? 3 : 0)}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: s.color,
+                    }}
+                  />
                 </div>
               </div>
             );
@@ -5001,9 +5425,20 @@ function NutritionistDashboard({ children, parents, appointments,}) {
       {/* ── Patient Overview Table ────────────────────────────────────────── */}
       <div style={card}>
         {/* Table header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Patient Overview</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+              Patient Overview
+            </div>
             <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
               Registered children and their current growth status
             </div>
@@ -5036,25 +5471,49 @@ function NutritionistDashboard({ children, parents, appointments,}) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: T.bg }}>
-                <th style={{ padding: "8px 10px", borderBottom: `1px solid ${T.border}` }}>
+                <th
+                  style={{
+                    padding: "8px 10px",
+                    borderBottom: `1px solid ${T.border}`,
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={(e) => {
                       setSelectAll(e.target.checked);
                       const next = {};
-                      if (e.target.checked) children.forEach((c) => { next[c.id] = true; });
+                      if (e.target.checked)
+                        children.forEach((c) => {
+                          next[c.id] = true;
+                        });
                       setSelectedRows(next);
                     }}
                     style={{ cursor: "pointer" }}
                   />
                 </th>
-                {["No", "Name", "Age", "Date of Birth", "Status", "Barangay", "Parent", "Action"].map((h) => (
-                  <th key={h} style={{
-                    textAlign: "left", padding: "8px 10px",
-                    fontSize: 10, color: T.textMuted, fontWeight: 500,
-                    borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap",
-                  }}>
+                {[
+                  "No",
+                  "Name",
+                  "Age",
+                  "Date of Birth",
+                  "Status",
+                  "Barangay",
+                  "Parent",
+                  "Action",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      padding: "8px 10px",
+                      fontSize: 10,
+                      color: T.textMuted,
+                      fontWeight: 500,
+                      borderBottom: `1px solid ${T.border}`,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {h}
                   </th>
                 ))}
@@ -5064,14 +5523,21 @@ function NutritionistDashboard({ children, parents, appointments,}) {
               {children.map((c, idx) => {
                 const initials = `${c.first_name[0]}${c.last_name[0]}`;
                 const dob = new Date(c.birthdate).toLocaleDateString("en-PH", {
-                  day: "2-digit", month: "short", year: "numeric",
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
                 });
                 return (
                   <tr
                     key={c.id}
                     style={{
-                      borderBottom: idx < children.length - 1 ? `1px solid ${T.border}` : "none",
-                      background: selectedRows[c.id] ? T.primaryLight + "80" : "transparent",
+                      borderBottom:
+                        idx < children.length - 1
+                          ? `1px solid ${T.border}`
+                          : "none",
+                      background: selectedRows[c.id]
+                        ? T.primaryLight + "80"
+                        : "transparent",
                       transition: "background .1s",
                     }}
                   >
@@ -5079,72 +5545,162 @@ function NutritionistDashboard({ children, parents, appointments,}) {
                       <input
                         type="checkbox"
                         checked={!!selectedRows[c.id]}
-                        onChange={(e) => setSelectedRows((p) => ({ ...p, [c.id]: e.target.checked }))}
+                        onChange={(e) =>
+                          setSelectedRows((p) => ({
+                            ...p,
+                            [c.id]: e.target.checked,
+                          }))
+                        }
                         style={{ cursor: "pointer" }}
                       />
                     </td>
-                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 11 }}>
+                    <td
+                      style={{
+                        padding: "10px 10px",
+                        color: T.textMuted,
+                        fontSize: 11,
+                      }}
+                    >
                       {String(idx + 1).padStart(2, "0")}
                     </td>
                     <td style={{ padding: "10px 10px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{
-                          width: 28, height: 28, borderRadius: "50%",
-                          background: sBg(c.status), color: sColor(c.status),
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          flexShrink: 0, fontSize: 10, fontWeight: 600,
-                        }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: sBg(c.status),
+                            color: sColor(c.status),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            fontSize: 10,
+                            fontWeight: 600,
+                          }}
+                        >
                           {initials}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: 12, color: T.text }}>
+                          <div
+                            style={{
+                              fontWeight: 500,
+                              fontSize: 12,
+                              color: T.text,
+                            }}
+                          >
                             {c.first_name} {c.last_name}
                           </div>
-                          <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: T.textMuted,
+                              marginTop: 1,
+                            }}
+                          >
                             {c.sex}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                    <td
+                      style={{
+                        padding: "10px 10px",
+                        color: T.textMuted,
+                        fontSize: 12,
+                      }}
+                    >
                       {c.age_months} mo
                     </td>
-                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12, whiteSpace: "nowrap" }}>
+                    <td
+                      style={{
+                        padding: "10px 10px",
+                        color: T.textMuted,
+                        fontSize: 12,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {dob}
                     </td>
                     <td style={{ padding: "10px 10px" }}>
                       <StatusBadge status={c.status} />
                     </td>
-                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                    <td
+                      style={{
+                        padding: "10px 10px",
+                        color: T.textMuted,
+                        fontSize: 12,
+                      }}
+                    >
                       {c.barangay}
                     </td>
-                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                    <td
+                      style={{
+                        padding: "10px 10px",
+                        color: T.textMuted,
+                        fontSize: 12,
+                      }}
+                    >
                       {c.parent}
                     </td>
                     <td style={{ padding: "10px 10px" }}>
                       <button
                         title="Edit"
                         style={{
-                          background: "none", border: `1px solid ${T.border}`,
-                          borderRadius: 6, padding: "3px 7px", cursor: "pointer",
-                          color: T.textMuted, marginRight: 3,
-                          display: "inline-flex", alignItems: "center",
+                          background: "none",
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 6,
+                          padding: "3px 7px",
+                          cursor: "pointer",
+                          color: T.textMuted,
+                          marginRight: 3,
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width={12}
+                          height={12}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.8}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d={PATHS.edit} />
                         </svg>
                       </button>
                       <button
                         title="Delete"
                         style={{
-                          background: "none", border: `1px solid ${T.danger}30`,
-                          borderRadius: 6, padding: "3px 7px", cursor: "pointer",
+                          background: "none",
+                          border: `1px solid ${T.danger}30`,
+                          borderRadius: 6,
+                          padding: "3px 7px",
+                          cursor: "pointer",
                           color: T.danger,
-                          display: "inline-flex", alignItems: "center",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width={12}
+                          height={12}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke={T.danger}
+                          strokeWidth={1.8}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d={PATHS.trash} />
                         </svg>
                       </button>
@@ -5156,7 +5712,6 @@ function NutritionistDashboard({ children, parents, appointments,}) {
           </table>
         </div>
       </div>
-
     </div>
   );
 }
@@ -7552,55 +8107,185 @@ function NutritionistSettings({ user, showToast }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function KioskView({ children, onBack }) {
   const [showWelcome, setShowWelcome] = useState(true);
+  // steps: 0=select child, 1=height scan, 2=weight scan, 3=processing, 4=results
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedChild, setSelectedChild] = useState(null);
-  const [form, setForm] = useState({ height_cm: "", weight_kg: "" });
-  const [progress, setProgress] = useState(0);
-  const [sensorStage, setSensorStage] = useState(0);
-  const [result, setResult] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const timerRef = useRef();
+
+  // Live sensor readings
+  const [heightReading, setHeightReading] = useState(null);
+  const [heightFinal, setHeightFinal] = useState(null);
+  const [heightScanState, setHeightScanState] = useState("idle"); // idle|scanning|locking|done
+
+  const [weightReading, setWeightReading] = useState(null);
+  const [weightFinal, setWeightFinal] = useState(null);
+  const [weightScanState, setWeightScanState] = useState("idle"); // idle|stabilizing|locking|done
+
+  // Pre-generate random values for weight bar visualization
+  const [weightBarRandoms] = useState(() =>
+    Array.from({ length: 12 }, () => ({
+      height: 8 + Math.floor(Math.random() * 16),
+      duration: 0.2 + Math.random() * 0.3,
+    })),
+  );
+
+  // Processing
+  const [processStage, setProcessStage] = useState(0);
+  const [processProgress, setProcessProgress] = useState(0);
+  const [result, setResult] = useState(null);
+
+  const timerRef = useRef(null);
+  const heightIntervalRef = useRef(null);
+  const weightIntervalRef = useRef(null);
 
   useEffect(() => {
     const iv = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(iv);
   }, []);
-  useEffect(() => () => clearInterval(timerRef.current), []);
 
-  const STAGES = [
-    "Initializing sensors...",
-    "Connecting TF-Luna LiDAR...",
-    "Measuring height...",
-    "Reading load cell...",
-    "Processing data...",
-    "Computing WHO Z-Scores...",
-    "Saving to database...",
-    "Complete!",
-  ];
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearInterval(heightIntervalRef.current);
+      clearInterval(weightIntervalRef.current);
+      clearInterval(timerRef.current);
+    };
+  }, []);
 
-  const startMeasurement = () => {
+  // ── HEIGHT SCAN ──────────────────────────────────────────────────────────────
+  const startHeightScan = () => {
+    if (!selectedChild) return;
+    setHeightScanState("scanning");
+    setHeightFinal(null);
+
+    // Base height derived from child age (realistic range)
+    const baseHeight =
+      55 + selectedChild.age_months * 0.9 + (Math.random() * 6 - 3);
+
+    let ticks = 0;
+    heightIntervalRef.current = setInterval(() => {
+      ticks++;
+      // Fluctuate ±3cm while scanning, narrowing as it stabilizes
+      const noise =
+        ticks < 30
+          ? Math.random() * 6 - 3
+          : ticks < 50
+            ? Math.random() * 2 - 1
+            : Math.random() * 0.4 - 0.2;
+      const reading = baseHeight + noise;
+      setHeightReading(parseFloat(reading.toFixed(1)));
+
+      if (ticks === 50) {
+        setHeightScanState("locking");
+      }
+      if (ticks >= 65) {
+        clearInterval(heightIntervalRef.current);
+        const locked = parseFloat(baseHeight.toFixed(1));
+        setHeightReading(locked);
+        setHeightFinal(locked);
+        setHeightScanState("done");
+      }
+    }, 60);
+  };
+
+  const proceedToWeight = () => {
     setStep(2);
-    setProgress(0);
-    setSensorStage(0);
-    let p = 0,
-      s = 0;
+    setWeightScanState("idle");
+    setWeightReading(null);
+    setWeightFinal(null);
+  };
+
+  // ── WEIGHT SCAN ──────────────────────────────────────────────────────────────
+  const startWeightScan = () => {
+    if (!selectedChild) return;
+    setWeightScanState("stabilizing");
+    setWeightFinal(null);
+
+    // Realistic weight from age
+    const baseWeight =
+      3.5 + selectedChild.age_months * 0.25 + (Math.random() * 1.4 - 0.7);
+
+    let ticks = 0;
+    weightIntervalRef.current = setInterval(() => {
+      ticks++;
+      const noise =
+        ticks < 20
+          ? Math.random() * 2 - 1
+          : ticks < 45
+            ? Math.random() * 0.6 - 0.3
+            : Math.random() * 0.08 - 0.04;
+      const reading = baseWeight + noise;
+      setWeightReading(parseFloat(reading.toFixed(2)));
+
+      if (ticks === 45) {
+        setWeightScanState("locking");
+      }
+      if (ticks >= 58) {
+        clearInterval(weightIntervalRef.current);
+        const locked = parseFloat(baseWeight.toFixed(2));
+        setWeightReading(locked);
+        setWeightFinal(locked);
+        setWeightScanState("done");
+      }
+    }, 70);
+  };
+
+  const proceedToProcessing = () => {
+    setStep(3);
+    setProcessStage(0);
+    setProcessProgress(0);
+
+    const STAGES = [
+      "Validating sensor data...",
+      "Applying WHO 2006 standards...",
+      "Computing WAZ (Weight-for-Age)...",
+      "Computing HAZ (Height-for-Age)...",
+      "Computing WHZ (Weight-for-Height)...",
+      "Classifying nutritional status...",
+      "Syncing to eOPT+ database...",
+      "Complete!",
+    ];
+
+    let p = 0;
     timerRef.current = setInterval(() => {
-      p += 100 / 35;
-      s = Math.floor((p / 100) * STAGES.length);
-      setProgress(Math.min(p, 100));
-      setSensorStage(Math.min(s, STAGES.length - 1));
+      p += 100 / 55;
+      const stageIdx = Math.min(
+        Math.floor((p / 100) * STAGES.length),
+        STAGES.length - 1,
+      );
+      setProcessProgress(Math.min(p, 100));
+      setProcessStage(stageIdx);
+
       if (p >= 100) {
         clearInterval(timerRef.current);
         const r = computeWHO({
-          weight_kg: parseFloat(form.weight_kg),
-          height_cm: parseFloat(form.height_cm),
+          weight_kg: weightFinal,
+          height_cm: heightFinal,
           age_months: selectedChild.age_months,
         });
         setResult(r);
-        setTimeout(() => setStep(3), 400);
+        setTimeout(() => setStep(4), 500);
       }
-    }, 100);
+    }, 90);
+  };
+
+  const resetKiosk = () => {
+    clearInterval(heightIntervalRef.current);
+    clearInterval(weightIntervalRef.current);
+    clearInterval(timerRef.current);
+    setStep(0);
+    setSelectedChild(null);
+    setSearch("");
+    setHeightReading(null);
+    setHeightFinal(null);
+    setHeightScanState("idle");
+    setWeightReading(null);
+    setWeightFinal(null);
+    setWeightScanState("idle");
+    setProcessProgress(0);
+    setProcessStage(0);
+    setResult(null);
   };
 
   const K = {
@@ -7611,8 +8296,282 @@ function KioskView({ children, onBack }) {
     panel: "rgba(255,255,255,0.05)",
     border: "rgba(255,255,255,0.1)",
     accent: "#2BC88A",
+    accentDim: "rgba(43,200,138,0.2)",
+    danger: "#E03131",
+    warn: "#E67E22",
   };
 
+  const STEP_LABELS = [
+    "Select Child",
+    "Height Scan",
+    "Weight Scan",
+    "Processing",
+    "Results",
+  ];
+
+  // ── Processing STAGES list (for display) ────────────────────────────────────
+  const PROC_STAGES = [
+    "Validating sensor data...",
+    "Applying WHO 2006 standards...",
+    "Computing WAZ (Weight-for-Age)...",
+    "Computing HAZ (Height-for-Age)...",
+    "Computing WHZ (Weight-for-Height)...",
+    "Classifying nutritional status...",
+    "Syncing to eOPT+ database...",
+    "Complete!",
+  ];
+
+  // ── Step indicator ───────────────────────────────────────────────────────────
+  const StepBar = () => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 0,
+        padding: "18px 0 4px",
+      }}
+    >
+      {STEP_LABELS.map((label, i) => (
+        <div key={label} style={{ display: "flex", alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background:
+                  step > i ? K.accent : step === i ? K.accentDim : K.panel,
+                border: `2px solid ${step >= i ? K.accent : K.border}`,
+                color: step >= i ? K.text : K.faint,
+                fontWeight: 700,
+                fontSize: 11,
+              }}
+            >
+              {step > i ? <Icon name="check" size={12} color="#fff" /> : i + 1}
+            </div>
+            <div
+              style={{
+                color: step === i ? K.accent : K.faint,
+                fontSize: 9,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {label}
+            </div>
+          </div>
+          {i < STEP_LABELS.length - 1 && (
+            <div
+              style={{
+                width: 48,
+                height: 2,
+                background: step > i ? K.accent : K.border,
+                margin: "0 4px 16px",
+              }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Result icon ──────────────────────────────────────────────────────────────
+  const ResultIcon = ({ isNormal }) => (
+    <svg width={52} height={52} viewBox="0 0 56 56" fill="none">
+      {isNormal ? (
+        <>
+          <circle
+            cx="28"
+            cy="28"
+            r="26"
+            fill="rgba(43,200,138,0.15)"
+            stroke="#2BC88A"
+            strokeWidth="2"
+          />
+          <path
+            d="M18 28 L24 34 L38 20"
+            stroke="#2BC88A"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      ) : (
+        <>
+          <path
+            d="M28 6 L52 48 H4 Z"
+            fill="rgba(230,126,34,0.15)"
+            stroke="#E67E22"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M28 22 L28 34"
+            stroke="#E67E22"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle cx="28" cy="41" r="2" fill="#E67E22" />
+        </>
+      )}
+    </svg>
+  );
+
+  // ── Shared header ────────────────────────────────────────────────────────────
+  const Header = () => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "14px 24px",
+        borderBottom: `1px solid ${K.border}`,
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        background: "rgba(13,43,32,0.95)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 8,
+            background: K.accent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon name="heart" size={17} color="#fff" />
+        </div>
+        <div>
+          <div style={{ color: K.text, fontWeight: 700, fontSize: 14 }}>
+            SukatKalusugan
+          </div>
+          <div style={{ color: K.muted, fontSize: 9, letterSpacing: 1.5 }}>
+            ANTHROPOMETRIC KIOSK v1.0
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {[
+          [
+            "signal",
+            "TF-Luna",
+            heightScanState === "done"
+              ? K.accent
+              : heightScanState === "scanning" || heightScanState === "locking"
+                ? K.warn
+                : K.muted,
+          ],
+          [
+            "scale",
+            "HX711",
+            weightScanState === "done"
+              ? K.accent
+              : weightScanState === "stabilizing" ||
+                  weightScanState === "locking"
+                ? K.warn
+                : K.muted,
+          ],
+          ["wifi", "WiFi", K.accent],
+        ].map(([icon, label, color]) => (
+          <span
+            key={label}
+            style={{
+              fontSize: 10,
+              color,
+              background:
+                color === K.accent
+                  ? "rgba(43,200,138,0.12)"
+                  : "rgba(255,255,255,0.06)",
+              padding: "3px 8px",
+              borderRadius: 5,
+              border: `1px solid ${color === K.accent ? "rgba(43,200,138,0.25)" : "rgba(255,255,255,0.1)"}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Icon name={icon} size={10} color={color} />
+            {label}
+          </span>
+        ))}
+        <button
+          onClick={onBack}
+          style={{
+            background: K.panel,
+            color: K.muted,
+            border: `1px solid ${K.border}`,
+            borderRadius: 7,
+            padding: "6px 14px",
+            fontSize: 12,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <Icon name="arrowLeft" size={11} color={K.muted} /> Exit
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── KioskLogo SVG ────────────────────────────────────────────────────────────
+  const KioskLogo = () => (
+    <svg width={96} height={96} viewBox="0 0 100 100" fill="none">
+      <circle
+        cx="50"
+        cy="50"
+        r="48"
+        fill="rgba(43,200,138,0.1)"
+        stroke="rgba(43,200,138,0.25)"
+        strokeWidth="1"
+      />
+      <path
+        d="M50 68 L22 44 A18 18 0 0 1 50 30 A18 18 0 0 1 78 44 Z"
+        fill="none"
+        stroke="#2BC88A"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <rect
+        x="46"
+        y="38"
+        width="8"
+        height="22"
+        rx="2"
+        fill="#2BC88A"
+        opacity="0.8"
+      />
+      <rect
+        x="39"
+        y="45"
+        width="22"
+        height="8"
+        rx="2"
+        fill="#2BC88A"
+        opacity="0.8"
+      />
+    </svg>
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════════════════════
   return (
     <div
       style={{
@@ -7620,171 +8579,23 @@ function KioskView({ children, onBack }) {
         background: K.bg,
         display: "flex",
         flexDirection: "column",
-        fontFamily: APP_FONT,
+        fontFamily: "'Inter',ui-sans-serif,system-ui,sans-serif",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 24px",
-          borderBottom: `1px solid ${K.border}`,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              background: K.accent,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon name="heart" size={18} color="#fff" />
-          </div>
-          <div>
-            <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
-              SukatKalusugan
-            </div>
-            <div style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}>
-              ANTHROPOMETRIC KIOSK v1.0
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* Sensor status indicators */}
-          {[
-            ["signal", "TF-Luna LiDAR"],
-            ["scale", "HX711 Load Cell"],
-            ["wifi", "WiFi"],
-          ].map(([icon, label]) => (
-            <span
-              key={label}
-              style={{
-                fontSize: 10,
-                color: K.accent,
-                background: "rgba(43,200,138,0.15)",
-                padding: "3px 10px",
-                borderRadius: 6,
-                border: "1px solid rgba(43,200,138,0.3)",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <Icon name={icon} size={10} color={K.accent} />
-              {label}
-            </span>
-          ))}
-          <button
-            onClick={onBack}
-            style={{
-              background: K.panel,
-              color: K.muted,
-              border: `1px solid ${K.border}`,
-              borderRadius: 8,
-              padding: "8px 16px",
-              fontSize: 12,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <Icon name="arrowLeft" size={12} color={K.muted} /> Exit
-          </button>
-        </div>
-      </div>
+      <Header />
 
-      {/* Steps indicator */}
-      {!showWelcome && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: 0,
-            padding: "20px 0 0",
-          }}
-        >
-          {["Select Child", "Enter Data", "Processing", "Results"].map(
-            (s, i) => (
-              <div key={s} style={{ display: "flex", alignItems: "center" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background:
-                        step > i
-                          ? K.accent
-                          : step === i
-                            ? "rgba(43,200,138,0.2)"
-                            : K.panel,
-                      border: `2px solid ${step >= i ? K.accent : K.border}`,
-                      color: step >= i ? K.text : K.faint,
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    {step > i ? (
-                      <Icon name="check" size={14} color="#fff" />
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      color: step === i ? K.accent : K.faint,
-                      fontSize: 10,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {s}
-                  </div>
-                </div>
-                {i < 3 && (
-                  <div
-                    style={{
-                      width: 60,
-                      height: 2,
-                      background: step > i ? K.accent : K.border,
-                      margin: "0 4px 16px",
-                    }}
-                  />
-                )}
-              </div>
-            ),
-          )}
-        </div>
-      )}
+      {!showWelcome && <StepBar />}
 
-      {/* Content */}
       <div
         style={{
           flex: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 24,
+          padding: "20px 24px 32px",
         }}
       >
-        {/* ── Welcome Screen ── */}
+        {/* ══ WELCOME ══════════════════════════════════════════════════════════ */}
         {showWelcome && (
           <div
             style={{
@@ -7792,31 +8603,38 @@ function KioskView({ children, onBack }) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              maxWidth: 500,
+              maxWidth: 480,
             }}
           >
-            <div style={{ marginBottom: 28 }}>
+            <div style={{ marginBottom: 24 }}>
               <KioskLogo />
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 42, fontWeight: 600, color: K.muted }}>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ fontSize: 38, fontWeight: 300, color: K.muted }}>
                 Sukat
               </span>
-              <span style={{ fontSize: 42, fontWeight: 700, color: K.accent }}>
+              <span style={{ fontSize: 38, fontWeight: 700, color: K.accent }}>
                 {" "}
                 Kalusugan
               </span>
             </div>
-            <div style={{ fontSize: 16, color: K.muted, marginBottom: 28 }}>
+            <div
+              style={{
+                fontSize: 14,
+                color: K.muted,
+                marginBottom: 24,
+                letterSpacing: 0.5,
+              }}
+            >
               Anthropometric Measurement Kiosk
             </div>
             <div
               style={{
-                fontSize: 52,
+                fontSize: 48,
                 fontWeight: 700,
                 color: K.text,
                 letterSpacing: -1,
-                marginBottom: 8,
+                marginBottom: 6,
                 fontVariantNumeric: "tabular-nums",
               }}
             >
@@ -7827,7 +8645,7 @@ function KioskView({ children, onBack }) {
                 hour12: true,
               })}
             </div>
-            <div style={{ fontSize: 13, color: K.muted, marginBottom: 40 }}>
+            <div style={{ fontSize: 12, color: K.muted, marginBottom: 36 }}>
               {currentTime.toLocaleDateString("en-PH", {
                 weekday: "long",
                 year: "numeric",
@@ -7835,8 +8653,7 @@ function KioskView({ children, onBack }) {
                 day: "numeric",
               })}
             </div>
-            {/* Sensor status row */}
-            <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 10, marginBottom: 36 }}>
               {[
                 ["signal", "LiDAR Active"],
                 ["scale", "Load Cell OK"],
@@ -7848,7 +8665,7 @@ function KioskView({ children, onBack }) {
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    background: "rgba(43,200,138,0.1)",
+                    background: K.accentDim,
                     border: "1px solid rgba(43,200,138,0.2)",
                     borderRadius: 8,
                     padding: "6px 12px",
@@ -7862,7 +8679,7 @@ function KioskView({ children, onBack }) {
             <button
               onClick={() => setShowWelcome(false)}
               style={{
-                background: T.danger,
+                background: K.danger,
                 color: "#fff",
                 border: "none",
                 borderRadius: 14,
@@ -7878,15 +8695,16 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* ── Step 0: Select Child ── */}
+        {/* ══ STEP 0: SELECT CHILD ═════════════════════════════════════════════ */}
         {!showWelcome && step === 0 && (
-          <div style={{ width: "100%", maxWidth: 700 }}>
+          <div style={{ width: "100%", maxWidth: 720 }}>
             <h2
               style={{
                 color: K.text,
                 textAlign: "center",
-                fontSize: 20,
-                marginBottom: 6,
+                fontSize: 18,
+                fontWeight: 600,
+                margin: "0 0 6px",
               }}
             >
               Select Child Profile
@@ -7896,10 +8714,10 @@ function KioskView({ children, onBack }) {
                 color: K.muted,
                 textAlign: "center",
                 fontSize: 13,
-                marginBottom: 24,
+                margin: "0 0 20px",
               }}
             >
-              Search or select from registered children below
+              Search or tap a child to begin measurement
             </p>
             <input
               type="text"
@@ -7910,20 +8728,20 @@ function KioskView({ children, onBack }) {
                 width: "100%",
                 background: K.panel,
                 border: `1px solid ${K.border}`,
-                borderRadius: 12,
-                padding: "12px 16px",
+                borderRadius: 10,
+                padding: "11px 16px",
                 color: K.text,
                 fontSize: 14,
                 outline: "none",
                 boxSizing: "border-box",
-                marginBottom: 20,
+                marginBottom: 16,
               }}
             />
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
-                gap: 12,
+                gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))",
+                gap: 10,
               }}
             >
               {children
@@ -7941,22 +8759,30 @@ function KioskView({ children, onBack }) {
                     onClick={() => {
                       setSelectedChild(c);
                       setStep(1);
+                      setHeightScanState("idle");
                     }}
                     style={{
                       background: K.panel,
                       border: `1px solid ${K.border}`,
-                      borderRadius: 14,
-                      padding: 16,
+                      borderRadius: 12,
+                      padding: "14px 12px",
                       cursor: "pointer",
-                      transition: "border-color 0.15s",
+                      transition: "border-color 0.15s, background 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = K.accent;
+                      e.currentTarget.style.background = K.accentDim;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = K.border;
+                      e.currentTarget.style.background = K.panel;
                     }}
                   >
-                    {/* SVG child avatar */}
-                    <div style={{ marginBottom: 10 }}>
-                      <ChildAvatar sex={c.sex} size={44} />
+                    <div style={{ marginBottom: 8 }}>
+                      <ChildAvatar sex={c.sex} size={40} />
                     </div>
                     <div
-                      style={{ color: K.text, fontWeight: 700, fontSize: 13 }}
+                      style={{ color: K.text, fontWeight: 600, fontSize: 13 }}
                     >
                       {c.first_name} {c.last_name}
                     </div>
@@ -7972,123 +8798,660 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* ── Step 1: Enter Measurements ── */}
+        {/* ══ STEP 1: HEIGHT SCAN ══════════════════════════════════════════════ */}
         {!showWelcome && step === 1 && selectedChild && (
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 480,
-              background: K.panel,
-              borderRadius: 20,
-              border: `1px solid ${K.border}`,
-              padding: 32,
-            }}
-          >
+          <div style={{ width: "100%", maxWidth: 520 }}>
+            {/* Child info strip */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
-                marginBottom: 28,
+                gap: 12,
+                marginBottom: 24,
+                background: K.panel,
+                borderRadius: 12,
+                padding: "12px 16px",
+                border: `1px solid ${K.border}`,
               }}
             >
-              <ChildAvatar sex={selectedChild.sex} size={52} />
+              <ChildAvatar sex={selectedChild.sex} size={44} />
               <div>
-                <div style={{ color: K.text, fontWeight: 700, fontSize: 18 }}>
+                <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
                   {selectedChild.first_name} {selectedChild.last_name}
                 </div>
-                <div style={{ color: K.muted, fontSize: 13 }}>
+                <div style={{ color: K.muted, fontSize: 12 }}>
                   {selectedChild.child_code} · {selectedChild.age_months} months
+                  old
                 </div>
               </div>
             </div>
+
+            {/* Sensor panel */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginBottom: 24,
+                background: K.panel,
+                borderRadius: 18,
+                border: `1px solid ${
+                  heightScanState === "done"
+                    ? "rgba(43,200,138,0.5)"
+                    : heightScanState === "scanning" ||
+                        heightScanState === "locking"
+                      ? "rgba(230,126,34,0.4)"
+                      : K.border
+                }`,
+                padding: 28,
+                textAlign: "center",
+                marginBottom: 20,
+                transition: "border-color 0.4s",
               }}
             >
-              {[
-                ["Height (cm)", "height_cm", "e.g. 82.5"],
-                ["Weight (kg)", "weight_kg", "e.g. 10.8"],
-              ].map(([label, key, ph]) => (
-                <div key={key}>
-                  <label
+              {/* TF-Luna icon + animation */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <div style={{ position: "relative", width: 80, height: 80 }}>
+                  {/* Pulse rings when scanning */}
+                  {(heightScanState === "scanning" ||
+                    heightScanState === "locking") && (
+                    <>
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            inset: `${-i * 10}px`,
+                            borderRadius: "50%",
+                            border: `1px solid rgba(230,126,34,${0.5 - i * 0.15})`,
+                            animation: `pulseRing 1.2s ease-out ${i * 0.3}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {heightScanState === "done" && (
+                    <>
+                      {[0, 1].map((i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            inset: `${-i * 12}px`,
+                            borderRadius: "50%",
+                            border: `1px solid rgba(43,200,138,${0.4 - i * 0.15})`,
+                            animation: `pulseRing 1.5s ease-out ${i * 0.4}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {/* Sensor icon circle */}
+                  <div
                     style={{
-                      display: "block",
-                      color: K.muted,
-                      fontSize: 11,
-                      marginBottom: 6,
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "50%",
+                      background:
+                        heightScanState === "done"
+                          ? "rgba(43,200,138,0.2)"
+                          : heightScanState !== "idle"
+                            ? "rgba(230,126,34,0.2)"
+                            : K.accentDim,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `2px solid ${
+                        heightScanState === "done"
+                          ? K.accent
+                          : heightScanState !== "idle"
+                            ? K.warn
+                            : "rgba(43,200,138,0.3)"
+                      }`,
+                      transition: "all 0.4s",
                     }}
                   >
-                    {label}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder={ph}
-                    value={form[key]}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, [key]: e.target.value }))
-                    }
-                    style={{
-                      width: "100%",
-                      background: "rgba(255,255,255,0.07)",
-                      border: `1px solid ${K.border}`,
-                      borderRadius: 12,
-                      padding: "12px 14px",
-                      color: K.text,
-                      fontSize: 20,
-                      fontWeight: 600,
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
-                  />
+                    <Icon
+                      name="scan"
+                      size={30}
+                      color={
+                        heightScanState === "done"
+                          ? K.accent
+                          : heightScanState !== "idle"
+                            ? K.warn
+                            : K.muted
+                      }
+                    />
+                  </div>
                 </div>
-              ))}
-            </div>
-            <button
-              onClick={startMeasurement}
-              disabled={!form.height_cm || !form.weight_kg}
-              style={{
-                width: "100%",
-                background:
-                  form.height_cm && form.weight_kg ? K.accent : K.panel,
-                color: K.text,
-                border: "none",
-                borderRadius: 12,
-                padding: "14px 0",
-                fontSize: 16,
-                fontWeight: 700,
-                cursor:
-                  form.height_cm && form.weight_kg ? "pointer" : "not-allowed",
-              }}
-            >
-              <span
+              </div>
+
+              {/* Sensor label */}
+              <div
                 style={{
+                  fontSize: 11,
+                  color: K.muted,
+                  letterSpacing: 1.5,
+                  marginBottom: 8,
+                }}
+              >
+                TF-LUNA LiDAR SENSOR
+              </div>
+
+              {/* Reading display */}
+              <div
+                style={{
+                  fontSize: 52,
+                  fontWeight: 800,
+                  color:
+                    heightScanState === "done"
+                      ? K.accent
+                      : heightScanState !== "idle"
+                        ? K.warn
+                        : K.faint,
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: -2,
+                  marginBottom: 4,
+                  minHeight: 64,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  transition: "color 0.3s",
+                }}
+              >
+                {heightReading !== null ? heightReading.toFixed(1) : "—"}
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 400,
+                    color: K.muted,
+                    letterSpacing: 0,
+                  }}
+                >
+                  cm
+                </span>
+              </div>
+
+              {/* Status text */}
+              <div
+                style={{
+                  fontSize: 13,
+                  color:
+                    heightScanState === "done"
+                      ? K.accent
+                      : heightScanState === "locking"
+                        ? K.warn
+                        : heightScanState === "scanning"
+                          ? "rgba(230,126,34,0.9)"
+                          : K.faint,
+                  fontWeight: 600,
+                  minHeight: 20,
+                }}
+              >
+                {heightScanState === "idle" && "Ready to measure height"}
+                {heightScanState === "scanning" && "Scanning… stand still"}
+                {heightScanState === "locking" && "Stabilizing reading…"}
+                {heightScanState === "done" &&
+                  `✓ Height locked — ${heightFinal} cm`}
+              </div>
+
+              {/* Beam animation when scanning */}
+              {(heightScanState === "scanning" ||
+                heightScanState === "locking") && (
+                <div style={{ marginTop: 16 }}>
+                  <div
+                    style={{
+                      height: 3,
+                      borderRadius: 999,
+                      background: K.border,
+                      overflow: "hidden",
+                      width: "60%",
+                      margin: "0 auto",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        borderRadius: 999,
+                        background: K.warn,
+                        animation:
+                          "scanBeam 0.8s ease-in-out infinite alternate",
+                        width: "40%",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action button */}
+            {heightScanState === "idle" && (
+              <button
+                onClick={startHeightScan}
+                style={{
+                  width: "100%",
+                  background: K.accent,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "15px 0",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
                 }}
               >
-                <Icon name="sensor" size={18} color="#fff" /> START MEASUREMENT
-              </span>
-            </button>
+                <Icon name="scan" size={17} color="#fff" />
+                START HEIGHT MEASUREMENT
+              </button>
+            )}
+
+            {(heightScanState === "scanning" ||
+              heightScanState === "locking") && (
+              <div
+                style={{
+                  width: "100%",
+                  background: "rgba(230,126,34,0.15)",
+                  border: "1px solid rgba(230,126,34,0.3)",
+                  borderRadius: 12,
+                  padding: "14px 0",
+                  fontSize: 14,
+                  color: K.warn,
+                  fontWeight: 600,
+                  textAlign: "center",
+                }}
+              >
+                Measuring… please wait
+              </div>
+            )}
+
+            {heightScanState === "done" && (
+              <button
+                onClick={proceedToWeight}
+                style={{
+                  width: "100%",
+                  background: K.accent,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "15px 0",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                Continue to Weight Measurement
+                <Icon name="arrowRight" size={16} color="#fff" />
+              </button>
+            )}
+
+            <style>{`
+              @keyframes pulseRing {
+                0% { opacity: 1; transform: scale(1); }
+                100% { opacity: 0; transform: scale(1.5); }
+              }
+              @keyframes scanBeam {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(250%); }
+              }
+              @keyframes weightFlicker {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+              }
+            `}</style>
           </div>
         )}
 
-        {/* ── Step 2: Processing ── */}
-        {!showWelcome && step === 2 && (
+        {/* ══ STEP 2: WEIGHT SCAN ══════════════════════════════════════════════ */}
+        {!showWelcome && step === 2 && selectedChild && (
+          <div style={{ width: "100%", maxWidth: 520 }}>
+            {/* Child info strip */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 24,
+                background: K.panel,
+                borderRadius: 12,
+                padding: "12px 16px",
+                border: `1px solid ${K.border}`,
+              }}
+            >
+              <ChildAvatar sex={selectedChild.sex} size={44} />
+              <div style={{ flex: 1 }}>
+                <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
+                  {selectedChild.first_name} {selectedChild.last_name}
+                </div>
+                <div style={{ color: K.muted, fontSize: 12 }}>
+                  {selectedChild.child_code} · {selectedChild.age_months} months
+                  old
+                </div>
+              </div>
+              {/* Height already locked */}
+              <div
+                style={{
+                  background: "rgba(43,200,138,0.12)",
+                  border: "1px solid rgba(43,200,138,0.3)",
+                  borderRadius: 8,
+                  padding: "6px 12px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 9, color: K.muted, letterSpacing: 1 }}>
+                  HEIGHT
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: K.accent }}>
+                  {heightFinal} cm
+                </div>
+              </div>
+            </div>
+
+            {/* Scale sensor panel */}
+            <div
+              style={{
+                background: K.panel,
+                borderRadius: 18,
+                border: `1px solid ${
+                  weightScanState === "done"
+                    ? "rgba(43,200,138,0.5)"
+                    : weightScanState === "stabilizing" ||
+                        weightScanState === "locking"
+                      ? "rgba(100,149,237,0.4)"
+                      : K.border
+                }`,
+                padding: 28,
+                textAlign: "center",
+                marginBottom: 20,
+                transition: "border-color 0.4s",
+              }}
+            >
+              {/* HX711 icon */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <div style={{ position: "relative", width: 80, height: 80 }}>
+                  {(weightScanState === "stabilizing" ||
+                    weightScanState === "locking") && (
+                    <>
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            inset: `${-i * 10}px`,
+                            borderRadius: "50%",
+                            border: `1px solid rgba(100,149,237,${0.5 - i * 0.15})`,
+                            animation: `pulseRing 1.4s ease-out ${i * 0.35}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {weightScanState === "done" && (
+                    <>
+                      {[0, 1].map((i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: "absolute",
+                            inset: `${-i * 12}px`,
+                            borderRadius: "50%",
+                            border: `1px solid rgba(43,200,138,${0.4 - i * 0.15})`,
+                            animation: `pulseRing 1.5s ease-out ${i * 0.4}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "50%",
+                      background:
+                        weightScanState === "done"
+                          ? "rgba(43,200,138,0.2)"
+                          : weightScanState !== "idle"
+                            ? "rgba(100,149,237,0.2)"
+                            : K.accentDim,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `2px solid ${
+                        weightScanState === "done"
+                          ? K.accent
+                          : weightScanState !== "idle"
+                            ? "cornflowerblue"
+                            : "rgba(43,200,138,0.3)"
+                      }`,
+                      transition: "all 0.4s",
+                    }}
+                  >
+                    <Icon
+                      name="scale"
+                      size={30}
+                      color={
+                        weightScanState === "done"
+                          ? K.accent
+                          : weightScanState !== "idle"
+                            ? "cornflowerblue"
+                            : K.muted
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: K.muted,
+                  letterSpacing: 1.5,
+                  marginBottom: 8,
+                }}
+              >
+                HX711 LOAD CELL AMPLIFIER
+              </div>
+
+              {/* Weight reading */}
+              <div
+                style={{
+                  fontSize: 52,
+                  fontWeight: 800,
+                  color:
+                    weightScanState === "done"
+                      ? K.accent
+                      : weightScanState !== "idle"
+                        ? "cornflowerblue"
+                        : K.faint,
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: -2,
+                  marginBottom: 4,
+                  minHeight: 64,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  transition: "color 0.3s",
+                  animation:
+                    weightScanState === "stabilizing"
+                      ? "weightFlicker 0.3s ease-in-out infinite"
+                      : "none",
+                }}
+              >
+                {weightReading !== null ? weightReading.toFixed(2) : "—"}
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 400,
+                    color: K.muted,
+                    letterSpacing: 0,
+                  }}
+                >
+                  kg
+                </span>
+              </div>
+
+              <div
+                style={{
+                  fontSize: 13,
+                  color:
+                    weightScanState === "done"
+                      ? K.accent
+                      : weightScanState === "locking"
+                        ? "cornflowerblue"
+                        : weightScanState === "stabilizing"
+                          ? "rgba(100,149,237,0.9)"
+                          : K.faint,
+                  fontWeight: 600,
+                  minHeight: 20,
+                }}
+              >
+                {weightScanState === "idle" && "Ready to measure weight"}
+                {weightScanState === "stabilizing" &&
+                  "Reading load cell… hold still"}
+                {weightScanState === "locking" && "Stabilizing value…"}
+                {weightScanState === "done" &&
+                  `✓ Weight locked — ${weightFinal} kg`}
+              </div>
+
+              {/* Load cell bar graph when active */}
+              {(weightScanState === "stabilizing" ||
+                weightScanState === "locking") && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: "flex",
+                    gap: 3,
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    height: 24,
+                  }}
+                >
+                  {weightBarRandoms.map((rand, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 4,
+                        borderRadius: 2,
+                        background: "cornflowerblue",
+                        height: `${rand.height}px`,
+                        animation: `weightFlicker ${rand.duration}s ease-in-out infinite alternate`,
+                        animationDelay: `${i * 0.05}s`,
+                        opacity: 0.7,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            {weightScanState === "idle" && (
+              <button
+                onClick={startWeightScan}
+                style={{
+                  width: "100%",
+                  background: "cornflowerblue",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "15px 0",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Icon name="scale" size={17} color="#fff" />
+                START WEIGHT MEASUREMENT
+              </button>
+            )}
+
+            {(weightScanState === "stabilizing" ||
+              weightScanState === "locking") && (
+              <div
+                style={{
+                  width: "100%",
+                  background: "rgba(100,149,237,0.12)",
+                  border: "1px solid rgba(100,149,237,0.25)",
+                  borderRadius: 12,
+                  padding: "14px 0",
+                  fontSize: 14,
+                  color: "cornflowerblue",
+                  fontWeight: 600,
+                  textAlign: "center",
+                }}
+              >
+                Measuring… please wait
+              </div>
+            )}
+
+            {weightScanState === "done" && (
+              <button
+                onClick={proceedToProcessing}
+                style={{
+                  width: "100%",
+                  background: K.accent,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "15px 0",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                Generate WHO Analysis
+                <Icon name="arrowRight" size={16} color="#fff" />
+              </button>
+            )}
+
+            <style>{`
+              @keyframes pulseRing {
+                0% { opacity: 1; transform: scale(1); }
+                100% { opacity: 0; transform: scale(1.5); }
+              }
+              @keyframes weightFlicker {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.6; }
+              }
+            `}</style>
+          </div>
+        )}
+
+        {/* ══ STEP 3: PROCESSING ═══════════════════════════════════════════════ */}
+        {!showWelcome && step === 3 && (
           <div style={{ textAlign: "center", maxWidth: 400 }}>
+            {/* Circular progress */}
             <div
               style={{
                 position: "relative",
                 width: 140,
                 height: 140,
-                margin: "0 auto 28px",
+                margin: "0 auto 24px",
               }}
             >
               <svg
@@ -8113,9 +9476,9 @@ function KioskView({ children, onBack }) {
                   strokeWidth={6}
                   strokeLinecap="round"
                   strokeDasharray={`${2 * Math.PI * 60}`}
-                  strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
+                  strokeDashoffset={`${2 * Math.PI * 60 * (1 - processProgress / 100)}`}
                   transform="rotate(-90 70 70)"
-                  style={{ transition: "stroke-dashoffset 0.1s linear" }}
+                  style={{ transition: "stroke-dashoffset 0.09s linear" }}
                 />
               </svg>
               <div
@@ -8128,7 +9491,7 @@ function KioskView({ children, onBack }) {
                   justifyContent: "center",
                 }}
               >
-                <Icon name="sensor" size={24} color={K.accent} />
+                <Icon name="activity" size={22} color={K.accent} />
                 <div
                   style={{
                     color: K.text,
@@ -8137,21 +9500,23 @@ function KioskView({ children, onBack }) {
                     marginTop: 4,
                   }}
                 >
-                  {Math.round(progress)}%
+                  {Math.round(processProgress)}%
                 </div>
               </div>
             </div>
+
             <div
               style={{
                 color: K.accent,
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 600,
                 marginBottom: 20,
               }}
             >
-              {STAGES[sensorStage]}
+              {PROC_STAGES[processStage]}
             </div>
-            {STAGES.map((s, i) => (
+
+            {PROC_STAGES.map((s, i) => (
               <div
                 key={i}
                 style={{
@@ -8159,22 +9524,17 @@ function KioskView({ children, onBack }) {
                   alignItems: "center",
                   gap: 8,
                   fontSize: 11,
-                  color: i <= sensorStage ? K.muted : K.faint,
-                  marginBottom: 6,
+                  color: i <= processStage ? K.muted : K.faint,
+                  marginBottom: 5,
+                  justifyContent: "center",
                 }}
               >
-                {i < sensorStage ? (
+                {i < processStage ? (
                   <Icon name="check" size={11} color={K.accent} />
-                ) : i === sensorStage ? (
+                ) : i === processStage ? (
                   <Icon name="arrowRight" size={11} color={K.accent} />
                 ) : (
-                  <svg
-                    width={11}
-                    height={11}
-                    viewBox="0 0 11 11"
-                    fill="none"
-                    style={{ display: "inline-block" }}
-                  >
+                  <svg width={11} height={11} viewBox="0 0 11 11" fill="none">
                     <circle
                       cx={5.5}
                       cy={5.5}
@@ -8190,67 +9550,100 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* ── Step 3: Results ── */}
-        {!showWelcome && step === 3 && result && selectedChild && (
-          <div style={{ width: "100%", maxWidth: 540 }}>
-            <div style={{ textAlign: "center", marginBottom: 24 }}>
+        {/* ══ STEP 4: RESULTS ══════════════════════════════════════════════════ */}
+        {!showWelcome && step === 4 && result && selectedChild && (
+          <div style={{ width: "100%", maxWidth: 560 }}>
+            <div style={{ textAlign: "center", marginBottom: 22 }}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "center",
-                  marginBottom: 12,
+                  marginBottom: 10,
                 }}
               >
                 <ResultIcon isNormal={result.status === "Normal"} />
               </div>
-              <h2 style={{ color: K.text, fontSize: 22, margin: 0 }}>
+              <h2
+                style={{
+                  color: K.text,
+                  fontSize: 20,
+                  margin: "0 0 4px",
+                  fontWeight: 700,
+                }}
+              >
                 Measurement Complete
               </h2>
-              <p style={{ color: K.muted, fontSize: 13 }}>
+              <p style={{ color: K.muted, fontSize: 13, margin: 0 }}>
                 {selectedChild.first_name} {selectedChild.last_name} ·{" "}
-                {selectedChild.age_months} months
+                {selectedChild.age_months} months old
               </p>
             </div>
+
+            {/* Height + Weight cards */}
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: 12,
-                marginBottom: 16,
+                gap: 10,
+                marginBottom: 12,
               }}
             >
               {[
-                ["HEIGHT", form.height_cm, "cm"],
-                ["WEIGHT", form.weight_kg, "kg"],
-              ].map(([l, v, u]) => (
+                ["HEIGHT", heightFinal, "cm", K.accent, "scan"],
+                ["WEIGHT", weightFinal, "kg", "cornflowerblue", "scale"],
+              ].map(([label, val, unit, color, icon]) => (
                 <div
-                  key={l}
+                  key={label}
                   style={{
                     background: K.panel,
-                    borderRadius: 14,
-                    padding: 18,
+                    borderRadius: 12,
+                    padding: "16px 14px",
                     border: `1px solid ${K.border}`,
                   }}
                 >
                   <div
-                    style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginBottom: 6,
+                    }}
                   >
-                    {l}
+                    <Icon name={icon} size={13} color={color} />
+                    <span
+                      style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}
+                    >
+                      {label}
+                    </span>
                   </div>
-                  <div style={{ color: K.text, fontSize: 30, fontWeight: 700 }}>
-                    {v}
-                    <span style={{ fontSize: 14 }}> {u}</span>
+                  <div
+                    style={{
+                      color,
+                      fontSize: 30,
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {val}
+                    <span
+                      style={{ fontSize: 14, fontWeight: 400, color: K.muted }}
+                    >
+                      {" "}
+                      {unit}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Z-score results */}
             <div
               style={{
                 background: K.panel,
-                borderRadius: 16,
-                padding: 20,
-                border: `1px solid ${sColor(result.status)}40`,
-                marginBottom: 16,
+                borderRadius: 14,
+                padding: 18,
+                border: `1px solid rgba(43,200,138,0.25)`,
+                marginBottom: 12,
               }}
             >
               <div
@@ -8258,10 +9651,10 @@ function KioskView({ children, onBack }) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 16,
+                  marginBottom: 14,
                 }}
               >
-                <div style={{ color: K.muted, fontSize: 12 }}>
+                <div style={{ color: K.muted, fontSize: 11, letterSpacing: 1 }}>
                   NUTRITIONAL STATUS
                 </div>
                 <StatusBadge status={result.status} />
@@ -8270,63 +9663,70 @@ function KioskView({ children, onBack }) {
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(3,1fr)",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
                 {[
-                  ["WAZ", result.waz, T.accent],
-                  ["HAZ", result.haz, T.info],
-                  ["WHZ", result.whz, T.primaryMid],
+                  ["WAZ", result.waz, "#F5A623"],
+                  ["HAZ", result.haz, "#6EA8DC"],
+                  ["WHZ", result.whz, K.accent],
                 ].map(([l, v, c]) => (
-                  <div key={l} style={{ textAlign: "center" }}>
-                    <div style={{ color: c, fontSize: 22, fontWeight: 700 }}>
+                  <div
+                    key={l}
+                    style={{
+                      textAlign: "center",
+                      background: "rgba(255,255,255,0.04)",
+                      borderRadius: 10,
+                      padding: "12px 6px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: c,
+                        fontSize: 24,
+                        fontWeight: 700,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
                       {v > 0 ? "+" : ""}
                       {v}
                     </div>
-                    <div style={{ color: K.muted, fontSize: 9, marginTop: 2 }}>
-                      {l}
+                    <div
+                      style={{
+                        color: K.muted,
+                        fontSize: 9,
+                        marginTop: 4,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {l} Z-SCORE
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button
-                onClick={() => {
-                  setStep(0);
-                  setSelectedChild(null);
-                  setForm({ height_cm: "", weight_kg: "" });
-                  setResult(null);
-                }}
+                onClick={resetKiosk}
                 style={{
-                  flex: 1,
+                  width: "100%",
                   background: K.accent,
                   color: "#fff",
                   border: "none",
-                  borderRadius: 12,
-                  padding: "14px 0",
+                  borderRadius: 10,
+                  padding: "13px 0",
                   fontSize: 14,
                   cursor: "pointer",
                   fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
+                <Icon name="plus" size={15} color="#fff" />
                 New Measurement
-              </button>
-              <button
-                onClick={onBack}
-                style={{
-                  flex: 1,
-                  background: K.panel,
-                  color: K.text,
-                  border: `1px solid ${K.border}`,
-                  borderRadius: 12,
-                  padding: "14px 0",
-                  fontSize: 14,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                Return to Login
               </button>
             </div>
           </div>
