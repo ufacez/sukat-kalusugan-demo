@@ -8102,41 +8102,30 @@ function NutritionistSettings({ user, showToast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// KIOSK VIEW — standalone, accessible from login screen only
-// ═══════════════════════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════════════════════
-// KIOSK VIEW — Oplan Timbang Plus redesign
-// Drop-in replacement for KioskView in App.jsx
-// ═══════════════════════════════════════════════════════════════════════════════
-//
-// USAGE: Replace the entire `function KioskView(...)` block in App.jsx with
-//        this function (copy everything below, starting from "function KioskView").
-//        Keep all other code in App.jsx unchanged.
-//
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// KIOSK VIEW — Oplan Timbang Plus redesign
-// Drop-in replacement for KioskView in App.jsx
+// KIOSK VIEW — Updated with Idle Splash Screen
+// Replace the entire `function KioskView(...)` block in App.jsx with this.
 // ═══════════════════════════════════════════════════════════════════════════════
-//
-// USAGE: Replace the entire `function KioskView(...)` block in App.jsx with
-//        this function (copy everything below, starting from "function KioskView").
-//        Keep all other code in App.jsx unchanged.
-//
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KIOSK VIEW — Updated with Idle Splash Screen
+// Replace the entire `function KioskView(...)` block in App.jsx with this.
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function KioskView({ children, onBack }) {
-  // ── steps: 0=language, 1=select child, 2=confirm, 3=measurement, 4=results, 5=done
+  // ── steps: 0=idle/splash, 1=language, 2=select child, 3=confirm, 4=measurement, 5=results, 6=done
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
   const [brgyFilter, setBrgyFilter] = useState("");
   const [selectedChild, setSelectedChild] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Measurement state — both sensors run simultaneously like the HTML kiosk
+  // Measurement state — both sensors run simultaneously
   const [heightVal, setHeightVal] = useState(null);
   const [heightLocked, setHeightLocked] = useState(false);
-  const [heightChip, setHeightChip] = useState("idle"); // idle|measuring|locked
+  const [heightChip, setHeightChip] = useState("idle");
   const [weightVal, setWeightVal] = useState(null);
   const [weightLocked, setWeightLocked] = useState(false);
   const [weightChip, setWeightChip] = useState("idle");
@@ -8144,12 +8133,9 @@ function KioskView({ children, onBack }) {
   const [measWeight, setMeasWeight] = useState(null);
   const [measStarted, setMeasStarted] = useState(false);
   const [bothLocked, setBothLocked] = useState(false);
-
-  // Weight bars random values
   const [wBars, setWBars] = useState(() =>
     Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14))
   );
-
   const [result, setResult] = useState(null);
 
   const heightIntRef = useRef(null);
@@ -8169,10 +8155,8 @@ function KioskView({ children, onBack }) {
     };
   }, []);
 
-  // Unique barangays
   const barangays = [...new Set(children.map((c) => c.barangay))].sort();
 
-  // Filtered children list
   const filteredChildren = children.filter((c) => {
     const matchSearch =
       search === "" ||
@@ -8181,7 +8165,6 @@ function KioskView({ children, onBack }) {
     return matchSearch && matchBrgy;
   });
 
-  // ── WHO compute (same as existing helper)
   const computeWHO = ({ weight_kg, height_cm, age_months }) => {
     const wazRef = { median: 9.5 + age_months * 0.15, sd: 1.2 };
     const hazRef = { median: 65 + age_months * 0.9, sd: 3.2 };
@@ -8195,12 +8178,7 @@ function KioskView({ children, onBack }) {
     else if (parseFloat(haz) < -2) status = "Stunted";
     else if (parseFloat(whz) < -2) status = "Wasted";
     else if (parseFloat(whz) > 2) status = "Overweight";
-    return {
-      waz: parseFloat(waz),
-      haz: parseFloat(haz),
-      whz: parseFloat(whz),
-      status,
-    };
+    return { waz: parseFloat(waz), haz: parseFloat(haz), whz: parseFloat(whz), status };
   };
 
   const zColor = (v) => (v < -2 ? "#e03131" : v < -1 ? "#f5a623" : "#2bc88a");
@@ -8211,7 +8189,6 @@ function KioskView({ children, onBack }) {
     return v < -3 ? "Severely Wasted" : v < -2 ? "Wasted" : v > 2 ? "Overweight" : "Normal";
   };
 
-  // ── Initiate measurement (both sensors simultaneously)
   const startMeasurement = () => {
     if (!selectedChild || measStarted) return;
     setMeasStarted(true);
@@ -8221,10 +8198,7 @@ function KioskView({ children, onBack }) {
     const baseH = 55 + selectedChild.age_months * 0.9 + (Math.random() * 4 - 2);
     const baseW = 3.5 + selectedChild.age_months * 0.25 + (Math.random() * 1.2 - 0.6);
 
-    let hTicks = 0;
-    let hDone = false;
-    let wTicks = 0;
-    let wDone = false;
+    let hTicks = 0, hDone = false, wTicks = 0, wDone = false;
 
     heightIntRef.current = setInterval(() => {
       hTicks++;
@@ -8259,7 +8233,6 @@ function KioskView({ children, onBack }) {
       }
     }, 70);
 
-    // Animate weight bars
     wBarsIntRef.current = setInterval(() => {
       setWBars(Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14)));
     }, 120);
@@ -8269,7 +8242,7 @@ function KioskView({ children, onBack }) {
     if (!measHeight || !measWeight) return;
     const r = computeWHO({ weight_kg: measWeight, height_cm: measHeight, age_months: selectedChild.age_months });
     setResult(r);
-    setStep(4);
+    setStep(5);
   };
 
   const resetKiosk = () => {
@@ -8294,7 +8267,7 @@ function KioskView({ children, onBack }) {
     setWBars(Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14)));
   };
 
-  // ── Design tokens (dark green kiosk theme from HTML)
+  // ── Design tokens (dark green kiosk theme)
   const K = {
     bg: "#0b2e1e",
     bgGrad: "radial-gradient(ellipse at 20% 0%,rgba(43,200,138,0.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(43,200,138,0.07) 0%,transparent 40%),#0b2e1e",
@@ -8313,29 +8286,31 @@ function KioskView({ children, onBack }) {
     faint: "rgba(255,255,255,0.18)",
   };
 
-  const STEP_LABELS = ["Language", "Select Child", "Confirm", "Measure", "Results", "Done"];
-
-  // Step indicator
+  // Step bar only shows steps 1-6 (language through done)
+  const STEP_LABELS = ["Language", "Select", "Confirm", "Measure", "Results", "Done"];
   const StepBar = ({ current }) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, padding: "10px 0 8px", flexShrink: 0 }}>
-      {STEP_LABELS.map((_, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center" }}>
-          <div style={{
-            width: i === current ? 24 : 8,
-            height: 8,
-            borderRadius: i === current ? 4 : "50%",
-            background: i < current ? "#1a6b43" : i === current ? K.green : K.faint,
-            transition: "all 0.3s",
-          }} />
-          {i < STEP_LABELS.length - 1 && (
-            <div style={{ width: 20, height: 1, background: K.border, margin: "0 3px" }} />
-          )}
-        </div>
-      ))}
+      {STEP_LABELS.map((_, i) => {
+        const stepIndex = i + 1; // steps 1-6
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center" }}>
+            <div style={{
+              width: stepIndex === current ? 24 : 8,
+              height: 8,
+              borderRadius: stepIndex === current ? 4 : "50%",
+              background: stepIndex < current ? "#1a6b43" : stepIndex === current ? K.green : K.faint,
+              transition: "all 0.3s",
+            }} />
+            {i < STEP_LABELS.length - 1 && (
+              <div style={{ width: 20, height: 1, background: K.border, margin: "0 3px" }} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 
-  // Top bar (shared)
+  // Shared top bar
   const Topbar = ({ right }) => (
     <div style={{
       background: K.topbar,
@@ -8347,22 +8322,19 @@ function KioskView({ children, onBack }) {
       flexShrink: 0,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Brand badge */}
+        {/* Brand badge — logo only */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 7,
+          display: "flex", alignItems: "center", justifyContent: "center",
           background: K.greenDim, border: `1px solid ${K.greenBorder}`,
           borderRadius: 8, padding: "5px 10px",
         }}>
-          <svg width={18} height={18} viewBox="0 0 18 18" fill="none">
-            <path d="M9 15.5S2.5 11 2.5 6.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 15.5 6.5C15.5 11 9 15.5 9 15.5Z" fill="#2BC88A" opacity="0.25" />
-            <path d="M9 15.5S2.5 11 2.5 6.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 15.5 6.5C15.5 11 9 15.5 9 15.5Z" stroke="#2BC88A" strokeWidth="1.4" strokeLinejoin="round" />
-            <line x1="9" y1="7" x2="9" y2="11" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="7" y1="9" x2="11" y2="9" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+          <svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+            <path d="M11 19.5S3 14 3 8a4 4 0 0 1 8 0 4 4 0 0 1 8 0c0 6-8 11.5-8 11.5Z" fill="#2BC88A" opacity="0.22" />
+            <path d="M11 19.5S3 14 3 8a4 4 0 0 1 8 0 4 4 0 0 1 8 0c0 6-8 11.5-8 11.5Z" stroke="#2BC88A" strokeWidth="1.5" strokeLinejoin="round" />
+            <line x1="11" y1="8" x2="11" y2="13" stroke="#2BC88A" strokeWidth="1.6" strokeLinecap="round" />
+            <line x1="8.5" y1="10.5" x2="13.5" y2="10.5" stroke="#2BC88A" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: K.green, letterSpacing: 0.4 }}>Oplan Timbang Plus</span>
         </div>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#0052a3", color: "#fff", padding: "3px 7px", borderRadius: 5 }}>DOH</span>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#cc5500", color: "#fff", padding: "3px 7px", borderRadius: 5 }}>NNC</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {right}
@@ -8379,7 +8351,6 @@ function KioskView({ children, onBack }) {
     </div>
   );
 
-  // Chip component
   const Chip = ({ type, label }) => {
     const styles = {
       idle: { bg: K.panel, color: K.muted },
@@ -8397,34 +8368,179 @@ function KioskView({ children, onBack }) {
     );
   };
 
-  // ── SCREEN 0: LANGUAGE SELECT ─────────────────────────────────────────────
+  // ── SCREEN 0: IDLE / TOUCH TO START ──────────────────────────────────────
   if (step === 0) return (
+    <div
+      onClick={() => setStep(1)}
+      style={{
+        minHeight: "100vh",
+        background: K.bgGrad,
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "'Inter',ui-sans-serif,sans-serif",
+        cursor: "pointer",
+        userSelect: "none",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Subtle corner badge */}
+      <div style={{ position: "absolute", top: 14, right: 16, display: "flex", gap: 6, zIndex: 10 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#0052a3", color: "#fff", padding: "3px 8px", borderRadius: 5 }}>DOH</span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#cc5500", color: "#fff", padding: "3px 8px", borderRadius: 5 }}>NNC</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onBack(); }}
+          style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 7, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontWeight: 600 }}
+        >
+          Exit
+        </button>
+      </div>
+
+      {/* Background pulse rings */}
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+        {[320, 440, 560].map((r, i) => (
+          <div key={r} style={{
+            position: "absolute",
+            width: r, height: r,
+            borderRadius: "50%",
+            border: `1px solid rgba(43,200,138,${0.06 - i * 0.015})`,
+          }} />
+        ))}
+      </div>
+
+      {/* Main centered content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", gap: 0 }}>
+
+        {/* Mascot / illustration */}
+        <div style={{ marginBottom: 28 }}>
+          <svg width={130} height={160} viewBox="0 0 130 160" fill="none">
+            {/* Glow behind figure */}
+            <ellipse cx="65" cy="130" rx="38" ry="10" fill="rgba(43,200,138,0.15)" />
+
+            {/* Child body */}
+            <rect x="46" y="90" width="38" height="52" rx="10" fill="#2BC88A" opacity="0.9" />
+
+            {/* Arms holding heart */}
+            <path d="M46 105 Q28 100 26 115 Q24 128 46 125" fill="#FBBF8C" />
+            <path d="M84 105 Q102 100 104 115 Q106 128 84 125" fill="#FBBF8C" />
+
+            {/* Neck */}
+            <rect x="59" y="78" width="12" height="14" rx="5" fill="#FBBF8C" />
+
+            {/* Head */}
+            <circle cx="65" cy="62" r="20" fill="#FBBF8C" />
+
+            {/* Hair */}
+            <path d="M45 56 Q47 38 65 36 Q83 38 85 56 Q80 48 65 47 Q50 48 45 56Z" fill="#3B2C1E" />
+
+            {/* Eyes */}
+            <circle cx="57.5" cy="61" r="3" fill="#2D1F14" />
+            <circle cx="72.5" cy="61" r="3" fill="#2D1F14" />
+            <circle cx="58.5" cy="60" r="1" fill="#fff" />
+            <circle cx="73.5" cy="60" r="1" fill="#fff" />
+
+            {/* Smile */}
+            <path d="M58 68 Q65 74 72 68" stroke="#C8825A" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+
+            {/* Heart with ECG line (held by child) */}
+            <g transform="translate(44, 108)">
+              <path d="M18 6 C18 2 14 0 11 3 C8 0 4 2 4 6 C4 9 11 16 11 16 C11 16 18 9 18 6Z" fill="#E03131" opacity="0.9" />
+              <path d="M3 8 L7 8 L9 5 L11 11 L13 7 L15 9 L19 9" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </g>
+
+            {/* Legs */}
+            <rect x="52" y="138" width="10" height="16" rx="5" fill="#1a6b43" />
+            <rect x="68" y="138" width="10" height="16" rx="5" fill="#1a6b43" />
+
+            {/* Shoes */}
+            <ellipse cx="57" cy="154" rx="8" ry="4" fill="#3B2C1E" />
+            <ellipse cx="73" cy="154" rx="8" ry="4" fill="#3B2C1E" />
+          </svg>
+        </div>
+
+        {/* System name */}
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: K.text, letterSpacing: -0.8, lineHeight: 1.1 }}>
+            Oplan{" "}
+            <span style={{ color: K.green }}>Timbang</span>{" "}
+            Plus
+          </div>
+          <div style={{ fontSize: 13, color: K.muted, marginTop: 6, letterSpacing: 0.3 }}>
+            Barangay Child Growth Monitoring Station
+          </div>
+        </div>
+
+        {/* Time display */}
+        <div style={{
+          background: "rgba(0,0,0,0.25)",
+          border: `1px solid ${K.border}`,
+          borderRadius: 16,
+          padding: "16px 36px",
+          textAlign: "center",
+          marginBottom: 28,
+        }}>
+          <div style={{
+            fontFamily: "monospace",
+            fontSize: 44,
+            fontWeight: 700,
+            color: K.text,
+            letterSpacing: 2,
+            lineHeight: 1,
+            fontVariantNumeric: "tabular-nums",
+          }}>
+            {currentTime.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", hour12: true })}
+          </div>
+          <div style={{ fontSize: 12, color: K.muted, marginTop: 6, letterSpacing: 0.5 }}>
+            {currentTime.toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          </div>
+        </div>
+
+        {/* Touch to Start button */}
+        <div style={{
+          background: "#e03131",
+          color: "#fff",
+          borderRadius: 999,
+          padding: "16px 52px",
+          fontSize: 18,
+          fontWeight: 800,
+          letterSpacing: 0.4,
+          boxShadow: "0 8px 32px rgba(224,49,49,0.35), 0 0 0 6px rgba(224,49,49,0.12)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10z" />
+            <path d="M10 8l6 4-6 4V8z" fill="currentColor" />
+          </svg>
+          Touch to Start
+        </div>
+
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 14, letterSpacing: 0.5 }}>
+          Tap anywhere to begin
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes kPulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
+      `}</style>
+    </div>
+  );
+
+  // ── SCREEN 1: LANGUAGE SELECT ─────────────────────────────────────────────
+  if (step === 1) return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 24px", gap: 22 }}>
 
-        {/* Family illustration */}
-        <svg width={120} height={88} viewBox="0 0 120 88" fill="none">
-          <circle cx="32" cy="20" r="10" fill="rgba(255,255,255,0.15)" />
-          <path d="M22 42c0-5.5 4.5-10 10-10s10 4.5 10 10v26" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <circle cx="88" cy="20" r="10" fill="rgba(255,255,255,0.15)" />
-          <path d="M78 42c0-5.5 4.5-10 10-10s10 4.5 10 10v26" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <circle cx="60" cy="28" r="12" fill="rgba(43,200,138,0.22)" />
-          <circle cx="60" cy="28" r="12" stroke="#2BC88A" strokeWidth="1.5" />
-          <path d="M48 52c0-6.6 5.4-12 12-12s12 5.4 12 12v24" stroke="#2BC88A" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" />
-          <line x1="14" y1="80" x2="106" y2="80" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeLinecap="round" />
-          <rect x="50" y="76" width="20" height="4" rx="2" fill="rgba(43,200,138,0.35)" />
-          <line x1="8" y1="10" x2="8" y2="80" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-          <line x1="5" y1="10" x2="11" y2="10" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-          <line x1="6" y1="28" x2="10" y2="28" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-          <line x1="5" y1="46" x2="11" y2="46" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-          <line x1="5" y1="80" x2="11" y2="80" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        {/* Logo only — no text title */}
+        <svg width={72} height={72} viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="34" fill="rgba(43,200,138,0.08)" stroke="rgba(43,200,138,0.25)" strokeWidth="1.5" />
+          <path d="M36 62S12 48 12 30a12 12 0 0 1 24 0 12 12 0 0 1 24 0c0 18-24 32-24 32Z" fill="#2BC88A" opacity="0.18" />
+          <path d="M36 62S12 48 12 30a12 12 0 0 1 24 0 12 12 0 0 1 24 0c0 18-24 32-24 32Z" stroke="#2BC88A" strokeWidth="2" strokeLinejoin="round" />
+          <line x1="36" y1="29" x2="36" y2="42" stroke="#2BC88A" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="29.5" y1="35.5" x2="42.5" y2="35.5" stroke="#2BC88A" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
-
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: K.text, letterSpacing: -0.5, lineHeight: 1.1 }}>Oplan Timbang Plus</div>
-          <div style={{ fontSize: 12, color: K.muted, marginTop: 5, letterSpacing: 0.3 }}>Barangay Child Growth Monitoring Station</div>
-        </div>
 
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontStyle: "italic", textAlign: "center", padding: "9px 18px", background: "rgba(255,255,255,0.04)", border: `1px solid ${K.border}`, borderRadius: 10, maxWidth: 340, lineHeight: 1.6 }}>
           "Mabuhay! Piliin ang wika / Please select your language."
@@ -8437,7 +8553,7 @@ function KioskView({ children, onBack }) {
           ].map(({ lang, sub, icon }) => (
             <button
               key={lang}
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               style={{ background: "transparent", border: `1px solid ${K.border}`, borderRadius: 16, padding: "20px 28px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 180, transition: "border-color 0.2s,background 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.green; e.currentTarget.style.background = "rgba(43,200,138,0.08)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.border; e.currentTarget.style.background = "transparent"; }}
@@ -8465,16 +8581,24 @@ function KioskView({ children, onBack }) {
             </button>
           ))}
         </div>
+
+        <button
+          onClick={() => setStep(0)}
+          style={{ background: "none", border: "none", color: K.muted, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}
+        >
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+          Bumalik sa simula / Back to start
+        </button>
       </div>
-      <StepBar current={0} />
+      <StepBar current={1} />
     </div>
   );
 
-  // ── SCREEN 1: SELECT CHILD ────────────────────────────────────────────────
-  if (step === 1) return (
+  // ── SCREEN 2: SELECT CHILD ────────────────────────────────────────────────
+  if (step === 2) return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar right={
-        <button onClick={() => setStep(0)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+        <button onClick={() => setStep(1)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
           <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
           Bumalik
         </button>
@@ -8483,7 +8607,6 @@ function KioskView({ children, onBack }) {
         <div style={{ fontSize: 22, fontWeight: 800, color: K.text, textAlign: "center", lineHeight: 1.2 }}>Sino ang titimbangin ngayon?</div>
         <div style={{ fontSize: 12, color: K.muted, textAlign: "center", marginTop: 4 }}>Who are we measuring today?</div>
 
-        {/* Live time display */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "12px 0 4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 10, padding: "8px 18px" }}>
             <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={K.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -8504,7 +8627,6 @@ function KioskView({ children, onBack }) {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "16px 0" }}>
-          {/* Option A: Barangay filter */}
           <div style={{ background: K.panelDark, border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>OPTION A — FILTER BY BARANGAY</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -8528,7 +8650,6 @@ function KioskView({ children, onBack }) {
             </div>
           </div>
 
-          {/* Option B: Manual search */}
           <div style={{ background: K.panelDark, border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>OPTION B — MANUAL SEARCH</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -8551,7 +8672,7 @@ function KioskView({ children, onBack }) {
           {filteredChildren.map((c) => (
             <div
               key={c.id}
-              onClick={() => { setSelectedChild(c); setStep(2); }}
+              onClick={() => { setSelectedChild(c); setStep(3); }}
               style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${K.border}`, borderRadius: 14, padding: "14px 10px", cursor: "pointer", textAlign: "center", transition: "border-color 0.2s,background 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.green; e.currentTarget.style.background = "rgba(43,200,138,0.1)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.border; e.currentTarget.style.background = "rgba(0,0,0,0.2)"; }}
@@ -8564,15 +8685,15 @@ function KioskView({ children, onBack }) {
           ))}
         </div>
       </div>
-      <StepBar current={1} />
+      <StepBar current={2} />
     </div>
   );
 
-  // ── SCREEN 2: CONFIRM CHILD ───────────────────────────────────────────────
-  if (step === 2 && selectedChild) return (
+  // ── SCREEN 3: CONFIRM CHILD ───────────────────────────────────────────────
+  if (step === 3 && selectedChild) return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar right={
-        <button onClick={() => setStep(1)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+        <button onClick={() => setStep(2)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
           <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
           Bumalik
         </button>
@@ -8582,7 +8703,6 @@ function KioskView({ children, onBack }) {
         <div style={{ fontSize: 12, color: K.muted, textAlign: "center", marginBottom: 20 }}>Please confirm the child's profile</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 540 }}>
-          {/* Profile card */}
           <div style={{ background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 2 }}>
               <ChildAvatar sex={selectedChild.sex} size={58} />
@@ -8605,10 +8725,9 @@ function KioskView({ children, onBack }) {
             </div>
           </div>
 
-          {/* Action buttons */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, justifyContent: "center" }}>
             <button
-              onClick={() => { setMeasStarted(false); setBothLocked(false); setHeightLocked(false); setWeightLocked(false); setHeightChip("idle"); setWeightChip("idle"); setHeightVal(null); setWeightVal(null); setMeasHeight(null); setMeasWeight(null); setStep(3); }}
+              onClick={() => { setMeasStarted(false); setBothLocked(false); setHeightLocked(false); setWeightLocked(false); setHeightChip("idle"); setWeightChip("idle"); setHeightVal(null); setWeightVal(null); setMeasHeight(null); setMeasWeight(null); setStep(4); }}
               style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 12, padding: "20px", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
             >
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
@@ -8618,7 +8737,7 @@ function KioskView({ children, onBack }) {
               </div>
             </button>
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               style={{ background: K.red, color: K.text, border: "none", borderRadius: 12, padding: "16px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
             >
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
@@ -8630,17 +8749,16 @@ function KioskView({ children, onBack }) {
           </div>
         </div>
       </div>
-      <StepBar current={2} />
+      <StepBar current={3} />
     </div>
   );
 
-  // ── SCREEN 3: LIVE MEASUREMENT ────────────────────────────────────────────
-  if (step === 3 && selectedChild) return (
+  // ── SCREEN 4: LIVE MEASUREMENT ────────────────────────────────────────────
+  if (step === 4 && selectedChild) return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar right={<span style={{ fontSize: 12, color: K.muted }}>{selectedChild.first_name} {selectedChild.last_name}</span>} />
 
       <div style={{ padding: "14px 18px", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-        {/* Instruction banner */}
         <div style={{ background: "rgba(43,200,138,0.07)", border: "1px solid rgba(43,200,138,0.18)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
           <svg width={28} height={28} viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
             <circle cx="14" cy="6" r="3.5" stroke="#2BC88A" strokeWidth="1.4" />
@@ -8655,7 +8773,6 @@ function KioskView({ children, onBack }) {
           </div>
         </div>
 
-        {/* Dual gauge row */}
         <div style={{ display: "flex", gap: 12 }}>
           {/* Height gauge */}
           <div style={{
@@ -8679,10 +8796,9 @@ function KioskView({ children, onBack }) {
               <span style={{ fontSize: 17, fontWeight: 400, color: K.muted, marginLeft: 4 }}>cm</span>
             </div>
             <Chip type={heightChip} label={heightLocked ? `Locked — ${measHeight} cm` : heightChip === "measuring" ? "Measuring..." : "Standby"} />
-            {/* Scan beam */}
             {heightChip === "measuring" && !heightLocked && (
               <div style={{ marginTop: 10 }}>
-                <div style={{ height: 2, width: "80%", margin: "0 auto", background: "linear-gradient(90deg,transparent,#f5a623,transparent)", borderRadius: 999, animation: "kScanBeam 1.2s ease-in-out infinite" }} />
+                <div style={{ height: 2, width: "80%", margin: "0 auto", background: "linear-gradient(90deg,transparent,#f5a623,transparent)", borderRadius: 999 }} />
               </div>
             )}
           </div>
@@ -8709,7 +8825,6 @@ function KioskView({ children, onBack }) {
               <span style={{ fontSize: 17, fontWeight: 400, color: K.muted, marginLeft: 4 }}>kg</span>
             </div>
             <Chip type={weightChip} label={weightLocked ? `Locked — ${measWeight} kg` : weightChip === "measuring" ? "Stabilizing..." : "Standby"} />
-            {/* Weight bars */}
             {weightChip === "measuring" && !weightLocked && (
               <div style={{ display: "flex", gap: 3, alignItems: "flex-end", justifyContent: "center", height: 22, marginTop: 8 }}>
                 {wBars.map((h, i) => (
@@ -8720,7 +8835,6 @@ function KioskView({ children, onBack }) {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={startMeasurement}
@@ -8749,23 +8863,16 @@ function KioskView({ children, onBack }) {
           </button>
         </div>
       </div>
-
-      {/* CSS animations via inline style tag approach — inject into head */}
-      <style>{`
-        @keyframes kScanBeam { 0%{opacity:1;transform:scaleX(1)} 50%{opacity:0.5;transform:scaleX(0.4)} 100%{opacity:1;transform:scaleX(1)} }
-      `}</style>
-
-      <StepBar current={3} />
+      <StepBar current={4} />
     </div>
   );
 
-  // ── SCREEN 4: WHO RESULTS ─────────────────────────────────────────────────
-  if (step === 4 && result && selectedChild) return (
+  // ── SCREEN 5: WHO RESULTS ─────────────────────────────────────────────────
+  if (step === 5 && result && selectedChild) return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar right={<span style={{ fontSize: 10, color: K.muted, letterSpacing: 0.3 }}>WHO Growth Standards 2006</span>} />
 
       <div style={{ flex: 1, padding: "14px 18px", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
-        {/* Result header */}
         <div style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${K.border}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ flexShrink: 0 }}><ChildAvatar sex={selectedChild.sex} size={40} /></div>
           <div>
@@ -8778,7 +8885,6 @@ function KioskView({ children, onBack }) {
           </div>
         </div>
 
-        {/* Z-score cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
           {[
             { label: "Weight-for-Age", sub: "Timbang para sa Edad", abbr: "WAZ", z: result.waz, type: "waz" },
@@ -8800,7 +8906,6 @@ function KioskView({ children, onBack }) {
           })}
         </div>
 
-        {/* Z-score scale bars */}
         <div style={{ background: "rgba(0,0,0,0.18)", border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 10 }}>WHO Z-SCORE SCALE</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -8828,20 +8933,19 @@ function KioskView({ children, onBack }) {
           </div>
         </div>
 
-        {/* Continue button */}
         <button
-          onClick={() => setStep(5)}
+          onClick={() => setStep(6)}
           style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
         >
           Magpatuloy / Continue
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
         </button>
       </div>
-      <StepBar current={4} />
+      <StepBar current={5} />
     </div>
   );
 
-  // ── SCREEN 5: DONE ────────────────────────────────────────────────────────
+  // ── SCREEN 6: DONE ────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
       <Topbar right={
@@ -8852,7 +8956,6 @@ function KioskView({ children, onBack }) {
       } />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, gap: 20 }}>
-        {/* Success mark */}
         <div style={{ width: 70, height: 70, borderRadius: "50%", background: "rgba(43,200,138,0.15)", border: "2px solid rgba(43,200,138,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={K.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
@@ -8862,7 +8965,6 @@ function KioskView({ children, onBack }) {
           <div style={{ fontSize: 13, color: K.muted, marginTop: 4 }}>Data has been recorded successfully</div>
         </div>
 
-        {/* Summary card */}
         {result && selectedChild && (
           <div style={{ background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 16, padding: "16px 20px", width: "100%", maxWidth: 460 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -8895,7 +8997,6 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* Reset button */}
         <button
           onClick={resetKiosk}
           style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 14, padding: "18px 40px", fontSize: 16, fontWeight: 700, cursor: "pointer", width: "100%", maxWidth: 460, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
@@ -8904,7 +9005,7 @@ function KioskView({ children, onBack }) {
           Tapusin at I-reset / Done — Reset Kiosk
         </button>
       </div>
-      <StepBar current={5} />
+      <StepBar current={6} />
     </div>
   );
 }
