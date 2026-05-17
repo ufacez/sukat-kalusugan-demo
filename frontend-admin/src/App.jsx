@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -25,6 +25,9 @@ const T = {
   sidebarHover: "#163D2E",
   sidebarActive: "#1A8F68",
 };
+
+const APP_FONT =
+  "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const INIT_CHILDREN = [
@@ -267,10 +270,13 @@ const INIT_PARENTS = [
 const INIT_USERS = [
   {
     id: 1,
-    name: "Super Admin",
+    name: "John Doe",
     email: "admin@sukat.ph",
+    username: "johndoe12",
+    phone: "0813-2222-8899",
     role: "admin",
     status: "Active",
+    date_created: "27 Mar 2024 18:45",
     last_login: "2024-05-10 08:30",
     barangay: "All",
   },
@@ -278,8 +284,11 @@ const INIT_USERS = [
     id: 2,
     name: "Dr. Maria Santos",
     email: "nutritionist@sukat.ph",
+    username: "mariasantos",
+    phone: "0813-4729-1056",
     role: "nutritionist",
     status: "Active",
+    date_created: "26 Mar 2024 14:22",
     last_login: "2024-05-10 09:15",
     barangay: "Bagong Silang",
   },
@@ -287,8 +296,11 @@ const INIT_USERS = [
     id: 3,
     name: "Nurse Cynthia Reyes",
     email: "cynthia@sukat.ph",
+    username: "cynthiareyes",
+    phone: "0871-0394-7682",
     role: "nutritionist",
     status: "Active",
+    date_created: "25 Mar 2024 09:57",
     last_login: "2024-05-09 14:22",
     barangay: "Poblacion",
   },
@@ -296,10 +308,37 @@ const INIT_USERS = [
     id: 4,
     name: "Dr. Jose Garcia",
     email: "jose@sukat.ph",
+    username: "josegarcia",
+    phone: "0812-5583-9217",
     role: "nutritionist",
     status: "Inactive",
+    date_created: "24 Mar 2024 20:10",
     last_login: "2024-04-28 11:00",
     barangay: "San Jose",
+  },
+  {
+    id: 5,
+    name: "Abizar Alghifary",
+    email: "abizar@sukat.ph",
+    username: "abizar33",
+    phone: "0813-4729-1056",
+    role: "nutritionist",
+    status: "Inactive",
+    date_created: "26 Mar 2024 14:22",
+    last_login: "2024-05-10 09:15",
+    barangay: "Bagong Silang",
+  },
+  {
+    id: 6,
+    name: "Putri Amaliah",
+    email: "putri@sukat.ph",
+    username: "putri211099",
+    phone: "0812-5583-9217",
+    role: "nutritionist",
+    status: "Active",
+    date_created: "24 Mar 2024 20:10",
+    last_login: "2024-05-09 14:22",
+    barangay: "Poblacion",
   },
 ];
 
@@ -474,7 +513,8 @@ const StatusBadge = ({ status }) => (
   </span>
 );
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+// ─── Inline SVG Icons ───────────────────────────────────────────────────────
+// Generic icon set via path data
 const PATHS = {
   dashboard: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z",
   children:
@@ -510,6 +550,7 @@ const PATHS = {
   wifi: "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
   cpu: "M12 12H4V4h8v8zM20 4h-4v4h4V4zM20 12h-4v4h4v-4zM4 16H2M4 12H2M4 8H2M12 20v2M8 20v2M16 20v2M20 20v2",
   zap: "M13 2 3 14h9l-1 8 10-12h-9l1-8z",
+  arrowLeft: "M19 12H5M12 5l-7 7 7 7",
   arrowRight: "M5 12h14M12 5l7 7-7 7",
   mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6",
   phone:
@@ -517,17 +558,29 @@ const PATHS = {
   scan: "M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10",
   ruler: "M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3zM13 13l6 6",
   scale: "M12 3v2M3 12h2M19 12h2M12 17l-5 2V12a5 5 0 0 1 10 0v7l-5-2z",
-  playCircle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM10 8l6 4-6 4V8z",
   save: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8",
   trendUp: "M23 6l-9.5 9.5-5-5L1 18M17 6h6v6",
-  trendDown: "M23 18l-9.5-9.5-5 5L1 6M17 18h6v-6",
   alertTriangle:
     "M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01",
   info: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 16v-4M12 8h.01",
   rolesIcon:
     "M12 2a3 3 0 0 0 0 6 3 3 0 0 0 0-6zM5 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 8v4M5 15l5.5 3M18.5 15 13 18",
-  child:
-    "M12 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 11c-4.42 0-8 2.69-8 6v1h16v-1c0-3.31-3.58-6-8-6z",
+  stethoscope:
+    "M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3M14 9a6 6 0 0 0 6 6h0a2.5 2.5 0 0 1 0 5h0",
+  childFace:
+    "M12 2a7 7 0 0 1 7 7c0 3-1.5 5.5-4 6.7V18a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2.3C6.5 14.5 5 12 5 9a7 7 0 0 1 7-7zM9 10h.01M15 10h.01M9.5 14s1 1.5 2.5 1.5 2.5-1.5 2.5-1.5",
+  girlFace:
+    "M12 2a7 7 0 0 1 7 7c0 3-1.5 5.5-4 6.7V18a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2.3C6.5 14.5 5 12 5 9a7 7 0 0 1 7-7zM9 10h.01M15 10h.01M9.5 14s1 1.5 2.5 1.5 2.5-1.5 2.5-1.5M8 4.5c0 0 1.5-2 4-2s4 2 4 2",
+  wave: "M2 12c1-4 2-4 3 0s2 4 3 0 2-4 3 0 2 4 3 0",
+  checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
+  signal: "M2 20h.01M7 20v-4M12 20V8M17 20V4M22 20v-8",
+  lock: "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zM17 11V7a5 5 0 0 0-10 0v4",
+  hospital:
+    "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10M12 6v6M9 9h6",
+  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
+  layers: "M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  compass:
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z",
 };
 
 const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
@@ -545,14 +598,160 @@ const Icon = ({ name, size = 16, color = "currentColor", style = {} }) => {
       strokeLinejoin="round"
       style={style}
     >
-      {d
-        .split("M")
-        .filter(Boolean)
-        .map((seg, i) => (i === 0 ? null : null))}
       <path d={d} />
     </svg>
   );
 };
+
+// ─── Child Avatar SVG ────────────────────────────────────────────────────────
+const ChildAvatar = ({ sex, size = 32 }) => {
+  const isFemale = sex === "Female";
+  const bg = isFemale ? "#FCE4EC" : "#E3F2FD";
+  const hairColor = isFemale ? "#5D4037" : "#3E2723";
+  const skinColor = "#FFCC99";
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      fill="none"
+      style={{ borderRadius: "50%", background: bg, flexShrink: 0 }}
+    >
+      {/* Body */}
+      <ellipse
+        cx="20"
+        cy="34"
+        rx="9"
+        ry="6"
+        fill={isFemale ? "#E91E63" : "#1565C0"}
+        opacity="0.7"
+      />
+      {/* Head */}
+      <circle cx="20" cy="18" r="9" fill={skinColor} />
+      {/* Hair */}
+      {isFemale ? (
+        <>
+          <ellipse cx="20" cy="11" rx="9" ry="5" fill={hairColor} />
+          <rect x="11" y="11" width="3" height="8" rx="1.5" fill={hairColor} />
+          <rect x="26" y="11" width="3" height="8" rx="1.5" fill={hairColor} />
+        </>
+      ) : (
+        <ellipse cx="20" cy="11" rx="9" ry="4" fill={hairColor} />
+      )}
+      {/* Eyes */}
+      <circle cx="16.5" cy="18" r="1.2" fill="#333" />
+      <circle cx="23.5" cy="18" r="1.2" fill="#333" />
+      {/* Smile */}
+      <path
+        d="M17 22 Q20 24.5 23 22"
+        stroke="#A0522D"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+};
+
+const SectionHead = ({ title, desc, icon, color }) => (
+  <div
+    style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}
+  >
+    <div
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        background: color + "18",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon name={icon} size={20} color={color} />
+    </div>
+    <div>
+      <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
+        {title}
+      </div>
+      <div style={{ fontSize: 12, color: T.textMuted }}>{desc}</div>
+    </div>
+  </div>
+);
+
+const KioskLogo = () => (
+  <svg width={100} height={100} viewBox="0 0 100 100" fill="none">
+    <circle
+      cx="50"
+      cy="50"
+      r="48"
+      fill="rgba(43,200,138,0.12)"
+      stroke="rgba(43,200,138,0.3)"
+      strokeWidth="1"
+    />
+    <path
+      d="M50 68 L22 44 A18 18 0 0 1 50 30 A18 18 0 0 1 78 44 Z"
+      fill="none"
+      stroke="#2BC88A"
+      strokeWidth="2.5"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M50 30 Q50 42 50 52"
+      stroke="#2BC88A"
+      strokeWidth="2"
+      strokeLinecap="round"
+      opacity="0.5"
+    />
+    <rect
+      x="46"
+      y="38"
+      width="8"
+      height="22"
+      rx="2"
+      fill="#2BC88A"
+      opacity="0.8"
+    />
+    <rect
+      x="39"
+      y="45"
+      width="22"
+      height="8"
+      rx="2"
+      fill="#2BC88A"
+      opacity="0.8"
+    />
+  </svg>
+);
+
+const ResultIcon = ({ isNormal }) => (
+  <svg width={56} height={56} viewBox="0 0 56 56" fill="none">
+    <circle
+      cx="28"
+      cy="28"
+      r="26"
+      fill={isNormal ? "rgba(43,200,138,0.15)" : "rgba(224,49,49,0.15)"}
+      stroke={isNormal ? "#2BC88A" : T.danger}
+      strokeWidth="2"
+    />
+    {isNormal ? (
+      <path
+        d="M18 28 L24 34 L38 20"
+        stroke="#2BC88A"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ) : (
+      <path
+        d="M20 20 L36 36 M36 20 L20 36"
+        stroke={T.danger}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    )}
+  </svg>
+);
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ msg, type, onClose }) {
@@ -997,15 +1196,41 @@ function LoginPage({ onLogin, onKiosk }) {
     }, 1000);
   };
 
+  // Role icons as inline SVGs
+  const RoleIcon = ({ type }) => {
+    const icons = {
+      admin: { path: PATHS.settings, color: "#A78BFA" },
+      nutritionist: { path: PATHS.hospital, color: "#6EE7B7" },
+      kiosk: { path: PATHS.kiosk, color: "#93C5FD" },
+    };
+    const ic = icons[type];
+    return (
+      <svg
+        width={18}
+        height={18}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={ic.color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={ic.path} />
+      </svg>
+    );
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg,#0D2B20 0%,#0B4A34 100%)",
+        background:
+          "radial-gradient(circle at top left, rgba(43,200,138,0.16), transparent 28%), radial-gradient(circle at top right, rgba(245,166,35,0.12), transparent 24%), linear-gradient(135deg,#0D2B20 0%,#0B4A34 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'Segoe UI',sans-serif",
+        fontFamily: APP_FONT,
+        padding: 24,
       }}
     >
       <div
@@ -1014,20 +1239,26 @@ function LoginPage({ onLogin, onKiosk }) {
           width: "100%",
           maxWidth: 940,
           minHeight: 540,
-          borderRadius: 24,
+          borderRadius: 28,
           overflow: "hidden",
-          boxShadow: "0 40px 80px rgba(0,0,0,0.4)",
+          boxShadow: "0 36px 90px rgba(0,0,0,0.34)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(18px)",
+          background: "rgba(255,255,255,0.06)",
         }}
       >
         {/* Left panel */}
         <div
           style={{
             flex: 1,
-            background: "linear-gradient(160deg,#0B6E4F 0%,#0D4A32 100%)",
+            background:
+              "radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 32%), linear-gradient(160deg,#0B6E4F 0%,#0D4A32 100%)",
             padding: 48,
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           <div>
@@ -1048,10 +1279,9 @@ function LoginPage({ onLogin, onKiosk }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 22,
                 }}
               >
-                ⚕
+                <Icon name="heart" size={22} color="#fff" />
               </div>
               <div>
                 <div
@@ -1078,10 +1308,11 @@ function LoginPage({ onLogin, onKiosk }) {
             <h2
               style={{
                 color: "#fff",
-                fontSize: 26,
+                fontSize: 28,
                 fontWeight: 800,
                 lineHeight: 1.3,
                 margin: "0 0 12px",
+                letterSpacing: -0.4,
               }}
             >
               Monitoring Child Growth with WHO Standards
@@ -1101,19 +1332,19 @@ function LoginPage({ onLogin, onKiosk }) {
                 [
                   "Admin Panel",
                   "System management, sensor calibration, audit logs",
-                  "⚙️",
+                  "admin",
                 ],
                 [
                   "Nutritionist Panel",
                   "WHO monitoring, growth analysis, appointments",
-                  "🏥",
+                  "nutritionist",
                 ],
                 [
                   "Kiosk Interface",
                   "IoT measurement station for direct child assessment",
-                  "📡",
+                  "kiosk",
                 ],
-              ].map(([t, d, e]) => (
+              ].map(([t, d, type]) => (
                 <div
                   key={t}
                   style={{
@@ -1125,7 +1356,9 @@ function LoginPage({ onLogin, onKiosk }) {
                     padding: "10px 14px",
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>{e}</span>
+                  <div style={{ marginTop: 1, flexShrink: 0 }}>
+                    <RoleIcon type={type} />
+                  </div>
                   <div>
                     <div
                       style={{ color: "#fff", fontWeight: 700, fontSize: 12 }}
@@ -1145,21 +1378,23 @@ function LoginPage({ onLogin, onKiosk }) {
           <button
             onClick={onKiosk}
             style={{
-              background: "rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.14)",
               color: "#fff",
               border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 10,
-              padding: "12px 0",
+              borderRadius: 999,
+              padding: "13px 24px",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 10,
+              marginTop: "auto",
+              boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
             }}
           >
-            <Icon name="kiosk" size={16} color="#fff" /> Open Kiosk Interface
+            <Icon name="kiosk" size={16} color="#fff" /> Open Kiosk Mode
           </button>
         </div>
 
@@ -1167,19 +1402,22 @@ function LoginPage({ onLogin, onKiosk }) {
         <div
           style={{
             width: 400,
-            background: "#fff",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,249,0.98) 100%)",
             padding: 48,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            position: "relative",
           }}
         >
           <h2
             style={{
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: 800,
               color: T.text,
               margin: "0 0 4px",
+              letterSpacing: -0.3,
             }}
           >
             Welcome back
@@ -1248,17 +1486,23 @@ function LoginPage({ onLogin, onKiosk }) {
             onClick={handleLogin}
             style={{
               width: "100%",
-              background: loading ? T.primaryLight : T.primary,
+              background: loading
+                ? T.primaryLight
+                : "linear-gradient(135deg, #0B6E4F 0%, #1A8F68 100%)",
               color: loading ? T.primary : "#fff",
               border: "none",
-              borderRadius: 10,
-              padding: "13px 0",
+              borderRadius: 14,
+              padding: "14px 0",
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
+              boxShadow: "0 14px 24px rgba(11,110,79,0.18)",
             }}
           >
-            {loading ? "Signing in..." : "Sign In →"}
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {loading ? "Signing in..." : "Sign In"}
+              {!loading && <Icon name="arrowRight" size={14} color="#fff" />}
+            </span>
           </button>
           <div
             style={{
@@ -1273,9 +1517,14 @@ function LoginPage({ onLogin, onKiosk }) {
           >
             <strong>Demo credentials</strong>
             <br />
-            🔐 Admin: admin@sukat.ph / admin123
-            <br />
-            🏥 Nutritionist: nutritionist@sukat.ph / health123
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <Icon name="lock" size={11} color={T.purple} /> Admin:
+              admin@sukat.ph / admin123
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <Icon name="hospital" size={11} color={T.primaryMid} />{" "}
+              Nutritionist: nutritionist@sukat.ph / health123
+            </span>
           </div>
         </div>
       </div>
@@ -1284,7 +1533,7 @@ function LoginPage({ onLogin, onKiosk }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SHARED SIDEBAR SHELL
+// APP SHELL (Sidebar + Top Bar)
 // ═══════════════════════════════════════════════════════════════════════════════
 function AppShell({
   user,
@@ -1300,21 +1549,24 @@ function AppShell({
       style={{
         display: "flex",
         minHeight: "100vh",
-        fontFamily: "'Segoe UI',system-ui,sans-serif",
-        background: T.bg,
+        fontFamily: APP_FONT,
+        background:
+          "linear-gradient(180deg, #F7FAF8 0%, #EEF4F1 40%, #F5F7F6 100%)",
       }}
     >
       {/* Sidebar */}
       <div
         style={{
           width: 224,
-          background: T.sidebar,
+          background:
+            "linear-gradient(180deg, #0D2B20 0%, #102F24 52%, #0B241B 100%)",
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
           position: "sticky",
           top: 0,
           height: "100vh",
+          boxShadow: "8px 0 30px rgba(13,43,32,0.12)",
         }}
       >
         <div
@@ -1393,7 +1645,9 @@ function AppShell({
                     marginBottom: 2,
                     textAlign: "left",
                     background:
-                      page === n.id ? "rgba(26,143,104,0.22)" : "transparent",
+                      page === n.id
+                        ? "linear-gradient(135deg, rgba(26,143,104,0.28) 0%, rgba(43,200,138,0.16) 100%)"
+                        : "transparent",
                     color: page === n.id ? "#2BC88A" : "rgba(255,255,255,0.55)",
                     borderLeft:
                       page === n.id
@@ -1610,7 +1864,6 @@ function AppShell({
 // ADMIN PAGES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ── Admin Dashboard ───────────────────────────────────────────────────────────
 function AdminDashboard({ users, auditLogs }) {
   const adminCount = users.filter((u) => u.role === "admin").length;
   const nutritionistCount = users.filter(
@@ -1701,7 +1954,6 @@ function AdminDashboard({ users, auditLogs }) {
           <StatCard key={c.label} {...c} featured={i === 0} />
         ))}
       </div>
-
       <div
         style={{
           display: "grid",
@@ -1778,7 +2030,6 @@ function AdminDashboard({ users, auditLogs }) {
             </div>
           ))}
         </div>
-
         {/* Recent Audit */}
         <div
           style={{
@@ -1850,7 +2101,6 @@ function AdminDashboard({ users, auditLogs }) {
           ))}
         </div>
       </div>
-
       {/* System Health */}
       <div
         style={{
@@ -1945,25 +2195,52 @@ function AdminDashboard({ users, auditLogs }) {
   );
 }
 
-// ── User Management ───────────────────────────────────────────────────────────
 function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
   const [modal, setModal] = useState(null);
+  const [viewUser, setViewUser] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [form, setForm] = useState({
     name: "",
     email: "",
+    username: "",
+    phone: "",
     role: "nutritionist",
     barangay: "",
     status: "Active",
+    date_created: new Date().toISOString().split("T")[0],
   });
   const [confirm, setConfirm] = useState(null);
+
+  const filteredUsers = users.filter((u) => {
+    const matchSearch =
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.username && u.username.toLowerCase().includes(search.toLowerCase()));
+    const matchStatus =
+      statusFilter === "All Status" || u.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   const openAdd = () => {
     setForm({
       name: "",
       email: "",
+      username: "",
+      phone: "",
       role: "nutritionist",
       barangay: "",
       status: "Active",
+      date_created: new Date().toISOString().split("T")[0],
     });
     setModal("add");
   };
@@ -1971,12 +2248,12 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
     setForm({ ...u });
     setModal("edit");
   };
-
   const handleSave = () => {
-    if (!form.name || !form.email) return;
+    if (!form.name || !form.email || !form.username) return;
     if (modal === "add") onAdd(form);
     else onEdit(form);
     setModal(null);
+    showToast(modal === "add" ? "User added" : "User updated");
   };
 
   const roleColor = { admin: T.purple, nutritionist: T.info };
@@ -1986,7 +2263,7 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
     <div>
       <PageHeader
         title="User Management"
-        subtitle={`${users.length} system accounts`}
+        subtitle={`${filteredUsers.length} of ${users.length} system accounts`}
         action={
           <button onClick={openAdd} style={btnPrimary}>
             <Icon name="plus" size={14} color="#fff" />
@@ -1995,11 +2272,99 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
         }
       />
 
+      {/* Search and Filters */}
+      <div
+        style={{
+          background: T.card,
+          borderRadius: 12,
+          border: `1px solid ${T.border}`,
+          padding: 16,
+          marginBottom: 20,
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Search Username"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+          style={{
+            flex: 1,
+            background: T.bg,
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 13,
+            outline: "none",
+          }}
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          style={{
+            background: T.bg,
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 13,
+            outline: "none",
+            cursor: "pointer",
+            minWidth: 120,
+          }}
+        >
+          <option>All Status</option>
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+        <button
+          onClick={() => {
+            const csv = [
+              "Role,Full Name,Username,Email,Phone Number,Date Created,Status",
+            ];
+            filteredUsers.forEach((u) => {
+              csv.push(
+                `${u.role},${u.name},${u.username || ""},${u.email},${u.phone || ""},${u.date_created || ""},${u.status}`,
+              );
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(
+              new Blob([csv.join("\n")], { type: "text/csv" }),
+            );
+            link.download = "users.csv";
+            link.click();
+            showToast("Users exported");
+          }}
+          style={{
+            background: T.bg,
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            padding: "8px 16px",
+            fontSize: 13,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            color: T.text,
+            fontWeight: 600,
+          }}
+        >
+          <Icon name="download" size={14} color={T.text} />
+          Export
+        </button>
+      </div>
       {modal && (
         <Modal
           title={modal === "add" ? "Add User" : "Edit User"}
           onClose={() => setModal(null)}
-          width={460}
+          width={520}
         >
           <div style={{ padding: 24 }}>
             <Field label="Full Name" required>
@@ -2009,6 +2374,17 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
                 onChange={(e) =>
                   setForm((p) => ({ ...p, name: e.target.value }))
                 }
+                placeholder="e.g. John Doe"
+              />
+            </Field>
+            <Field label="Username" required>
+              <input
+                style={inputS}
+                value={form.username || ""}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, username: e.target.value }))
+                }
+                placeholder="e.g. johndoe12"
               />
             </Field>
             <Field label="Email Address" required>
@@ -2019,6 +2395,17 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
                 onChange={(e) =>
                   setForm((p) => ({ ...p, email: e.target.value }))
                 }
+                placeholder="e.g. john@example.com"
+              />
+            </Field>
+            <Field label="Phone Number">
+              <input
+                style={inputS}
+                value={form.phone || ""}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, phone: e.target.value }))
+                }
+                placeholder="e.g. 0813-2222-8899"
               />
             </Field>
             <Field label="Role">
@@ -2029,14 +2416,14 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
                   setForm((p) => ({ ...p, role: e.target.value }))
                 }
               >
-                <option value="admin">Admin</option>
+                <option value="admin">Super Admin</option>
                 <option value="nutritionist">Nutritionist</option>
               </select>
             </Field>
             <Field label="Assigned Barangay">
               <input
                 style={inputS}
-                value={form.barangay}
+                value={form.barangay || ""}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, barangay: e.target.value }))
                 }
@@ -2076,7 +2463,6 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
           </div>
         </Modal>
       )}
-
       {confirm && (
         <ConfirmDialog
           msg={`Delete user ${confirm.name}? This cannot be undone.`}
@@ -2089,10 +2475,114 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
         />
       )}
 
+      {viewUser && (
+        <Modal
+          title="User Details"
+          onClose={() => setViewUser(null)}
+          width={480}
+        >
+          <div style={{ padding: 24 }}>
+            <div style={{ marginBottom: 20 }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 12,
+                  background:
+                    viewUser.role === "admin" ? T.purpleLight : T.infoLight,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: viewUser.role === "admin" ? T.purple : T.info,
+                  marginBottom: 12,
+                }}
+              >
+                {viewUser.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)}
+              </div>
+              <h3 style={{ margin: "0 0 4px", color: T.text }}>
+                {viewUser.name}
+              </h3>
+              <p style={{ margin: 0, fontSize: 12, color: T.textMuted }}>
+                {viewUser.email}
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginBottom: 20,
+              }}
+            >
+              {[
+                ["Username", viewUser.username || "—"],
+                ["Role", viewUser.role],
+                ["Status", viewUser.status],
+                ["Phone", viewUser.phone || "—"],
+                ["Barangay", viewUser.barangay || "All"],
+                ["Date Created", viewUser.date_created || "—"],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: T.textMuted,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: T.text,
+                    }}
+                  >
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+            >
+              <button
+                onClick={() => {
+                  setViewUser(null);
+                  openEdit(viewUser);
+                }}
+                style={{
+                  ...btnPrimary,
+                  padding: "9px 20px",
+                }}
+              >
+                Edit User
+              </button>
+              <button
+                onClick={() => setViewUser(null)}
+                style={{
+                  ...btnSecondary,
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       <div
         style={{
           background: T.card,
-          borderRadius: 16,
+          borderRadius: 12,
           border: `1px solid ${T.border}`,
           overflow: "hidden",
         }}
@@ -2101,22 +2591,24 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
           <thead>
             <tr style={{ background: T.bg }}>
               {[
-                "Name",
-                "Email",
                 "Role",
-                "Barangay",
+                "Full Name",
+                "Username",
+                "Email",
+                "Phone Number",
+                "Date Created",
                 "Status",
-                "Last Login",
                 "Actions",
               ].map((h) => (
                 <th
                   key={h}
                   style={{
                     textAlign: "left",
-                    padding: "10px 16px",
+                    padding: "12px 16px",
                     fontSize: 11,
                     color: T.textMuted,
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    letterSpacing: 0.5,
                     borderBottom: `1px solid ${T.border}`,
                   }}
                 >
@@ -2126,45 +2618,49 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
             </tr>
           </thead>
           <tbody>
-            {users.map((u, i) => (
+            {paginatedUsers.map((u, i) => (
               <tr
                 key={u.id}
                 style={{
                   borderBottom:
-                    i < users.length - 1 ? `1px solid ${T.border}` : "none",
+                    i < paginatedUsers.length - 1
+                      ? `1px solid ${T.border}`
+                      : "none",
                 }}
               >
                 <td style={{ padding: "12px 16px" }}>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  <span
+                    style={{
+                      background: roleBg[u.role],
+                      color: roleColor[u.role],
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      textTransform: "capitalize",
+                    }}
                   >
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background:
-                          u.role === "admin" ? T.purpleLight : T.infoLight,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: u.role === "admin" ? T.purple : T.info,
-                      }}
-                    >
-                      {u.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </div>
-                    <span
-                      style={{ fontSize: 13, fontWeight: 600, color: T.text }}
-                    >
-                      {u.name}
-                    </span>
-                  </div>
+                    {u.role}
+                  </span>
+                </td>
+                <td
+                  style={{
+                    padding: "12px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.text,
+                  }}
+                >
+                  {u.name}
+                </td>
+                <td
+                  style={{
+                    padding: "12px 16px",
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  {u.username || "—"}
                 </td>
                 <td
                   style={{
@@ -2175,19 +2671,14 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
                 >
                   {u.email}
                 </td>
-                <td style={{ padding: "12px 16px" }}>
-                  <span
-                    style={{
-                      background: roleBg[u.role],
-                      color: roleColor[u.role],
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "2px 10px",
-                      borderRadius: 20,
-                    }}
-                  >
-                    {u.role}
-                  </span>
+                <td
+                  style={{
+                    padding: "12px 16px",
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  {u.phone || "—"}
                 </td>
                 <td
                   style={{
@@ -2196,58 +2687,73 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
                     color: T.textMuted,
                   }}
                 >
-                  {u.barangay || "—"}
+                  {u.date_created || "—"}
                 </td>
                 <td style={{ padding: "12px 16px" }}>
-                  <span
-                    style={{
-                      background: u.status === "Active" ? T.primaryLight : T.bg,
-                      color: u.status === "Active" ? T.primary : T.textMuted,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "2px 10px",
-                      borderRadius: 20,
-                    }}
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
                   >
-                    {u.status}
-                  </span>
-                </td>
-                <td
-                  style={{
-                    padding: "12px 16px",
-                    fontSize: 11,
-                    color: T.textMuted,
-                  }}
-                >
-                  {u.last_login}
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background:
+                          u.status === "Active" ? T.primary : "#CBD5E1",
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: u.status === "Active" ? T.primary : T.textMuted,
+                      }}
+                    >
+                      {u.status}
+                    </span>
+                  </div>
                 </td>
                 <td style={{ padding: "12px 16px" }}>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setViewUser(u)}
+                      style={{
+                        background: "transparent",
+                        color: T.info,
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px 6px",
+                      }}
+                      title="View"
+                    >
+                      <Icon name="eye" size={14} color={T.info} />
+                    </button>
                     <button
                       onClick={() => openEdit(u)}
                       style={{
-                        background: T.infoLight,
-                        color: T.info,
+                        background: "transparent",
+                        color: T.accent,
                         border: "none",
-                        borderRadius: 7,
-                        padding: "5px 8px",
                         cursor: "pointer",
+                        padding: "4px 6px",
                       }}
+                      title="Edit"
                     >
-                      <Icon name="edit" size={12} color={T.info} />
+                      <Icon name="edit" size={14} color={T.accent} />
                     </button>
                     <button
                       onClick={() => setConfirm(u)}
                       style={{
-                        background: T.dangerLight,
+                        background: "transparent",
                         color: T.danger,
                         border: "none",
-                        borderRadius: 7,
-                        padding: "5px 8px",
                         cursor: "pointer",
+                        padding: "4px 6px",
                       }}
+                      title="Delete"
                     >
-                      <Icon name="trash" size={12} color={T.danger} />
+                      <Icon name="trash" size={14} color={T.danger} />
                     </button>
                   </div>
                 </td>
@@ -2256,11 +2762,111 @@ function UserManagement({ users, onAdd, onEdit, onDelete, showToast }) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "16px 0",
+            fontSize: 12,
+            color: T.textMuted,
+          }}
+        >
+          <div>
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of{" "}
+            {filteredUsers.length} results
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              style={{
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                background: currentPage === 1 ? T.bg : T.card,
+                cursor: currentPage === 1 ? "default" : "pointer",
+                fontSize: 11,
+              }}
+            >
+              First
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                background: currentPage === 1 ? T.bg : T.card,
+                cursor: currentPage === 1 ? "default" : "pointer",
+                fontSize: 11,
+              }}
+            >
+              Previous
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  style={{
+                    padding: "6px 10px",
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 6,
+                    background: currentPage === pageNum ? T.primary : T.card,
+                    color: currentPage === pageNum ? "#fff" : T.text,
+                    cursor: "pointer",
+                    fontSize: 11,
+                    fontWeight: currentPage === pageNum ? 700 : 600,
+                  }}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              style={{
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                background: currentPage === totalPages ? T.bg : T.card,
+                cursor: currentPage === totalPages ? "default" : "pointer",
+                fontSize: 11,
+              }}
+            >
+              Next
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                background: currentPage === totalPages ? T.bg : T.card,
+                cursor: currentPage === totalPages ? "default" : "pointer",
+                fontSize: 11,
+              }}
+            >
+              Last
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Sensor Calibration ────────────────────────────────────────────────────────
 function SensorCalibration({ showToast }) {
   const [hx711, setHx711] = useState({
     calibration_factor: "2280.5",
@@ -2279,6 +2885,38 @@ function SensorCalibration({ showToast }) {
   });
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(false);
+  const [wifi, setWifi] = useState({
+    ssid: "SukatBarangayNet",
+    password: "",
+    ipMode: "dhcp",
+    staticIp: "192.168.1.80",
+    gateway: "192.168.1.1",
+    dns: "8.8.8.8",
+    syncIntervalSec: "15",
+  });
+  const [wifiChecking, setWifiChecking] = useState(false);
+  const [wifiStatus, setWifiStatus] = useState({
+    state: "Connected",
+    detail: "RSSI -54 dBm · Latency 18ms",
+  });
+  const [endpoint, setEndpoint] = useState({
+    transport: "mqtt",
+    brokerHost: "broker.hivemq.com",
+    brokerPort: "1883",
+    topicPublish: "sukat/esp32/measurements",
+    topicSubscribe: "sukat/esp32/commands",
+    apiBaseUrl: "https://eopt.doh.gov.ph/api",
+    apiToken: "",
+    deviceId: "ESP32-KIOSK-01",
+    timeoutMs: "5000",
+  });
+  const [endpointTesting, setEndpointTesting] = useState("");
+  const [endpointStatus, setEndpointStatus] = useState({
+    mqtt: "Online",
+    mqttDetail: "Broker reachable · Last publish 12s ago",
+    api: "Online",
+    apiDetail: "HTTP 200 · /health",
+  });
 
   const runTest = (sensor) => {
     setTesting(sensor);
@@ -2303,36 +2941,6 @@ function SensorCalibration({ showToast }) {
     padding: 24,
     marginBottom: 16,
   };
-  const sectionHeader = (title, desc, icon, color) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        marginBottom: 20,
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: color + "18",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Icon name={icon} size={20} color={color} />
-      </div>
-      <div>
-        <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
-          {title}
-        </div>
-        <div style={{ fontSize: 12, color: T.textMuted }}>{desc}</div>
-      </div>
-    </div>
-  );
 
   return (
     <div>
@@ -2340,15 +2948,13 @@ function SensorCalibration({ showToast }) {
         title="Sensor Calibration"
         subtitle="Configure and calibrate IoT sensors for accurate measurements"
       />
-
-      {/* HX711 */}
       <div style={panelStyle}>
-        {sectionHeader(
-          "HX711 Load Cell Amplifier",
-          "Weight measurement sensor calibration",
-          "scale",
-          T.warn,
-        )}
+        <SectionHead
+          title="HX711 Load Cell Amplifier"
+          desc="Weight measurement sensor calibration"
+          icon="scale"
+          color={T.warn}
+        />
         <div
           style={{
             display: "grid",
@@ -2378,9 +2984,7 @@ function SensorCalibration({ showToast }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
-            onClick={() => {
-              showToast("HX711 calibration saved", "success");
-            }}
+            onClick={() => showToast("HX711 calibration saved", "success")}
             style={btnPrimary}
           >
             <Icon name="save" size={14} color="#fff" />
@@ -2404,20 +3008,21 @@ function SensorCalibration({ showToast }) {
                 fontWeight: 600,
               }}
             >
-              ✓ Test Weight: {testResult.weight}kg — {testResult.status}
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="check" size={12} color={T.accent} /> Test Weight:{" "}
+                {testResult.weight}kg — {testResult.status}
+              </span>
             </span>
           )}
         </div>
       </div>
-
-      {/* TF-Luna */}
       <div style={panelStyle}>
-        {sectionHeader(
-          "TF-Luna LiDAR Sensor",
-          "Height measurement sensor calibration",
-          "ruler",
-          T.info,
-        )}
+        <SectionHead
+          title="TF-Luna LiDAR Sensor"
+          desc="Height measurement sensor calibration"
+          icon="ruler"
+          color={T.info}
+        />
         <div
           style={{
             display: "grid",
@@ -2485,13 +3090,416 @@ function SensorCalibration({ showToast }) {
                 fontWeight: 600,
               }}
             >
-              ✓ Measured Height: {testResult.height}cm — {testResult.status}
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="check" size={12} color={T.accent} /> Measured
+                Height: {testResult.height}cm — {testResult.status}
+              </span>
             </span>
           )}
         </div>
       </div>
 
-      {/* Status panel */}
+      <div style={panelStyle}>
+        <SectionHead
+          title="ESP32 Wi-Fi & Network"
+          desc="Configure wireless connectivity for sensor streaming and sync"
+          icon="wifi"
+          color={T.primaryMid}
+        />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 14,
+            marginBottom: 16,
+          }}
+        >
+          <Field label="Wi-Fi SSID">
+            <input
+              style={inputS}
+              value={wifi.ssid}
+              onChange={(e) => setWifi((p) => ({ ...p, ssid: e.target.value }))}
+              placeholder="e.g. SukatBarangayNet"
+            />
+          </Field>
+          <Field label="Wi-Fi Password">
+            <input
+              type="password"
+              style={inputS}
+              value={wifi.password}
+              onChange={(e) =>
+                setWifi((p) => ({ ...p, password: e.target.value }))
+              }
+              placeholder="Enter Wi-Fi password"
+            />
+          </Field>
+          <Field label="IP Mode">
+            <select
+              style={selectS}
+              value={wifi.ipMode}
+              onChange={(e) =>
+                setWifi((p) => ({ ...p, ipMode: e.target.value }))
+              }
+            >
+              <option value="dhcp">DHCP (Automatic)</option>
+              <option value="static">Static IP</option>
+            </select>
+          </Field>
+
+          <Field label="Static IP">
+            <input
+              style={{
+                ...inputS,
+                opacity: wifi.ipMode === "static" ? 1 : 0.55,
+              }}
+              disabled={wifi.ipMode !== "static"}
+              value={wifi.staticIp}
+              onChange={(e) =>
+                setWifi((p) => ({ ...p, staticIp: e.target.value }))
+              }
+              placeholder="e.g. 192.168.1.80"
+            />
+          </Field>
+          <Field label="Gateway">
+            <input
+              style={{
+                ...inputS,
+                opacity: wifi.ipMode === "static" ? 1 : 0.55,
+              }}
+              disabled={wifi.ipMode !== "static"}
+              value={wifi.gateway}
+              onChange={(e) =>
+                setWifi((p) => ({ ...p, gateway: e.target.value }))
+              }
+              placeholder="e.g. 192.168.1.1"
+            />
+          </Field>
+          <Field label="DNS Server">
+            <input
+              style={{
+                ...inputS,
+                opacity: wifi.ipMode === "static" ? 1 : 0.55,
+              }}
+              disabled={wifi.ipMode !== "static"}
+              value={wifi.dns}
+              onChange={(e) => setWifi((p) => ({ ...p, dns: e.target.value }))}
+              placeholder="e.g. 8.8.8.8"
+            />
+          </Field>
+
+          <Field label="Telemetry Sync Interval (sec)">
+            <input
+              style={inputS}
+              value={wifi.syncIntervalSec}
+              onChange={(e) =>
+                setWifi((p) => ({ ...p, syncIntervalSec: e.target.value }))
+              }
+              placeholder="e.g. 15"
+            />
+          </Field>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            onClick={() => {
+              showToast("ESP32 Wi-Fi settings saved", "success");
+            }}
+            style={btnPrimary}
+          >
+            <Icon name="save" size={14} color="#fff" />
+            Save Wi-Fi Settings
+          </button>
+
+          <button
+            onClick={() => {
+              setWifiChecking(true);
+              setTimeout(() => {
+                const ok = Math.random() > 0.15;
+                setWifiStatus(
+                  ok
+                    ? {
+                        state: "Connected",
+                        detail: `SSID ${wifi.ssid || "(unset)"} · RSSI -${
+                          45 + Math.floor(Math.random() * 20)
+                        } dBm · Latency ${12 + Math.floor(Math.random() * 18)}ms`,
+                      }
+                    : {
+                        state: "Disconnected",
+                        detail:
+                          "Unable to reach gateway. Check credentials or signal.",
+                      },
+                );
+                setWifiChecking(false);
+                showToast(
+                  ok
+                    ? "ESP32 Wi-Fi connected"
+                    : "ESP32 Wi-Fi connection failed",
+                  ok ? "success" : "danger",
+                );
+              }, 1300);
+            }}
+            style={{
+              ...btnPrimary,
+              background: T.info,
+            }}
+          >
+            <Icon name="activity" size={14} color="#fff" />
+            {wifiChecking ? "Checking..." : "Test Wi-Fi Connection"}
+          </button>
+
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background:
+                wifiStatus.state === "Connected"
+                  ? T.primaryLight
+                  : T.dangerLight,
+              color: wifiStatus.state === "Connected" ? T.primary : T.danger,
+              padding: "6px 12px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background:
+                  wifiStatus.state === "Connected" ? T.primary : T.danger,
+                display: "inline-block",
+              }}
+            />
+            ESP32 Wi-Fi: {wifiStatus.state}
+          </span>
+          <span style={{ fontSize: 11, color: T.textMuted }}>
+            {wifiStatus.detail}
+          </span>
+        </div>
+      </div>
+
+      <div style={panelStyle}>
+        <SectionHead
+          title="ESP32 Endpoint Integration"
+          desc="Configure MQTT broker and API endpoint for telemetry and command sync"
+          icon="activity"
+          color={T.info}
+        />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 14,
+            marginBottom: 16,
+          }}
+        >
+          <Field label="Primary Transport">
+            <select
+              style={selectS}
+              value={endpoint.transport}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, transport: e.target.value }))
+              }
+            >
+              <option value="mqtt">MQTT</option>
+              <option value="https">HTTPS API</option>
+              <option value="hybrid">Hybrid (MQTT + API)</option>
+            </select>
+          </Field>
+          <Field label="MQTT Broker Host">
+            <input
+              style={inputS}
+              value={endpoint.brokerHost}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, brokerHost: e.target.value }))
+              }
+              placeholder="e.g. broker.hivemq.com"
+            />
+          </Field>
+          <Field label="MQTT Port">
+            <input
+              style={inputS}
+              value={endpoint.brokerPort}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, brokerPort: e.target.value }))
+              }
+              placeholder="e.g. 1883"
+            />
+          </Field>
+
+          <Field label="Publish Topic">
+            <input
+              style={inputS}
+              value={endpoint.topicPublish}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, topicPublish: e.target.value }))
+              }
+              placeholder="e.g. sukat/esp32/measurements"
+            />
+          </Field>
+          <Field label="Subscribe Topic">
+            <input
+              style={inputS}
+              value={endpoint.topicSubscribe}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, topicSubscribe: e.target.value }))
+              }
+              placeholder="e.g. sukat/esp32/commands"
+            />
+          </Field>
+          <Field label="Device ID">
+            <input
+              style={inputS}
+              value={endpoint.deviceId}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, deviceId: e.target.value }))
+              }
+              placeholder="e.g. ESP32-KIOSK-01"
+            />
+          </Field>
+
+          <Field label="API Base URL">
+            <input
+              style={inputS}
+              value={endpoint.apiBaseUrl}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, apiBaseUrl: e.target.value }))
+              }
+              placeholder="e.g. https://eopt.doh.gov.ph/api"
+            />
+          </Field>
+          <Field label="API Token / Key">
+            <input
+              type="password"
+              style={inputS}
+              value={endpoint.apiToken}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, apiToken: e.target.value }))
+              }
+              placeholder="Enter API token"
+            />
+          </Field>
+          <Field label="Request Timeout (ms)">
+            <input
+              style={inputS}
+              value={endpoint.timeoutMs}
+              onChange={(e) =>
+                setEndpoint((p) => ({ ...p, timeoutMs: e.target.value }))
+              }
+              placeholder="e.g. 5000"
+            />
+          </Field>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            onClick={() =>
+              showToast("ESP32 endpoint settings saved", "success")
+            }
+            style={btnPrimary}
+          >
+            <Icon name="save" size={14} color="#fff" />
+            Save Endpoint Settings
+          </button>
+
+          <button
+            onClick={() => {
+              setEndpointTesting("mqtt");
+              setTimeout(() => {
+                const ok = Math.random() > 0.12;
+                setEndpointStatus((prev) => ({
+                  ...prev,
+                  mqtt: ok ? "Online" : "Offline",
+                  mqttDetail: ok
+                    ? `Connected ${endpoint.brokerHost}:${endpoint.brokerPort} · Topic OK`
+                    : "Broker timeout. Verify host/port/firewall.",
+                }));
+                setEndpointTesting("");
+                showToast(
+                  ok ? "MQTT broker reachable" : "MQTT broker unavailable",
+                  ok ? "success" : "danger",
+                );
+              }, 1200);
+            }}
+            style={{ ...btnPrimary, background: T.primaryMid }}
+          >
+            <Icon name="signal" size={14} color="#fff" />
+            {endpointTesting === "mqtt" ? "Testing MQTT..." : "Test MQTT"}
+          </button>
+
+          <button
+            onClick={() => {
+              setEndpointTesting("api");
+              setTimeout(() => {
+                const ok = Math.random() > 0.1;
+                setEndpointStatus((prev) => ({
+                  ...prev,
+                  api: ok ? "Online" : "Offline",
+                  apiDetail: ok
+                    ? `HTTP 200 · ${endpoint.apiBaseUrl}/health`
+                    : "API request failed. Check base URL/token.",
+                }));
+                setEndpointTesting("");
+                showToast(
+                  ok ? "API endpoint reachable" : "API endpoint failed",
+                  ok ? "success" : "danger",
+                );
+              }, 1200);
+            }}
+            style={{ ...btnPrimary, background: T.info }}
+          >
+            <Icon name="activity" size={14} color="#fff" />
+            {endpointTesting === "api" ? "Testing API..." : "Test API"}
+          </button>
+
+          <span
+            style={{
+              background:
+                endpointStatus.mqtt === "Online"
+                  ? T.primaryLight
+                  : T.dangerLight,
+              color: endpointStatus.mqtt === "Online" ? T.primary : T.danger,
+              padding: "6px 10px",
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            MQTT: {endpointStatus.mqtt}
+          </span>
+          <span
+            style={{
+              background:
+                endpointStatus.api === "Online" ? T.infoLight : T.dangerLight,
+              color: endpointStatus.api === "Online" ? T.info : T.danger,
+              padding: "6px 10px",
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            API: {endpointStatus.api}
+          </span>
+        </div>
+      </div>
+
       <div style={panelStyle}>
         <div
           style={{
@@ -2520,10 +3528,22 @@ function SensorCalibration({ showToast }) {
               reading: "0.00 cm (idle)",
             },
             {
-              name: "Arduino Mega 2560",
-              port: "/dev/ttyACM0",
-              status: "Connected",
-              reading: "Firmware v2.1.0",
+              name: "ESP32 Wi-Fi",
+              port: wifi.ipMode === "dhcp" ? "DHCP" : wifi.staticIp,
+              status: wifiStatus.state,
+              reading: wifiStatus.detail,
+            },
+            {
+              name: "MQTT Broker",
+              port: `${endpoint.brokerHost}:${endpoint.brokerPort}`,
+              status: endpointStatus.mqtt,
+              reading: endpointStatus.mqttDetail,
+            },
+            {
+              name: "API Gateway",
+              port: "HTTPS",
+              status: endpointStatus.api,
+              reading: endpointStatus.apiDetail,
             },
             {
               name: "eOPT+ Sync",
@@ -2581,11 +3601,9 @@ function SensorCalibration({ showToast }) {
   );
 }
 
-// ── Audit Logs ────────────────────────────────────────────────────────────────
 function AuditLogs({ logs }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-
   const filtered = logs.filter(
     (l) =>
       (filter === "all" || l.level === filter) &&
@@ -2593,7 +3611,6 @@ function AuditLogs({ logs }) {
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-
   const levelColor = { info: T.info, warn: T.warn, danger: T.danger };
   const levelBg = {
     info: T.infoLight,
@@ -2760,120 +3777,533 @@ function AuditLogs({ logs }) {
   );
 }
 
-// ── Roles & Permissions ───────────────────────────────────────────────────────
-function RolesPermissions() {
-  const ROLES = [
-    {
-      role: "Admin",
-      desc: "Full system access. Manage users, sensors, settings, and audit logs.",
-      permissions: [
-        "Dashboard",
-        "User Management",
-        "Sensor Calibration",
-        "Audit Logs",
-        "Roles & Permissions",
-        "System Settings",
-      ],
+function RolesPermissions({ users, onUpdateUserRole, showToast }) {
+  const ROLE_META = {
+    admin: {
+      label: "Admin",
+      color: T.purple,
+      bg: T.purpleLight,
+      desc: "Controls security, users, hardware, and system configuration.",
     },
-    {
-      role: "Nutritionist",
-      desc: "Health and nutrition management access. Child monitoring and reporting.",
-      permissions: [
-        "Dashboard",
-        "Children / Growth",
-        "Measurements",
-        "WHO Analysis",
-        "Parents",
-        "Appointments",
-        "Reports",
-      ],
+    nutritionist: {
+      label: "Nutritionist",
+      color: T.primaryMid,
+      bg: T.primaryLight,
+      desc: "Handles child monitoring, appointments, and health analysis.",
     },
-    {
-      role: "Kiosk",
-      desc: "Read-only kiosk interface for field measurements. No admin access.",
-      permissions: ["Measurement Input", "Child Lookup", "WHO Z-Score Display"],
+    kiosk: {
+      label: "Kiosk",
+      color: T.info,
+      bg: T.infoLight,
+      desc: "Field measurement role with controlled and guided access.",
     },
+  };
+
+  const PERMISSION_CATALOG = [
+    { key: "dashboard", label: "Dashboard", area: "Core" },
+    { key: "user_management", label: "User Management", area: "Security" },
+    {
+      key: "roles_permissions",
+      label: "Roles & Permissions",
+      area: "Security",
+    },
+    { key: "audit_logs", label: "Audit Logs", area: "Security" },
+    {
+      key: "sensor_calibration",
+      label: "Sensor Calibration",
+      area: "Hardware",
+    },
+    { key: "system_settings", label: "System Settings", area: "Config" },
+    { key: "children_growth", label: "Children & Growth", area: "Health" },
+    { key: "measurements", label: "Measurements", area: "Health" },
+    { key: "who_analysis", label: "WHO Analysis", area: "Health" },
+    { key: "parents", label: "Parents", area: "Community" },
+    { key: "appointments", label: "Appointments", area: "Community" },
+    { key: "reports", label: "Reports", area: "Reporting" },
   ];
+
+  const [selectedRole, setSelectedRole] = useState("admin");
+  const [permissionSearch, setPermissionSearch] = useState("");
+  const [assignUserId, setAssignUserId] = useState(users[0]?.id || "");
+  const [assignRole, setAssignRole] = useState("nutritionist");
+  const [rolePolicies, setRolePolicies] = useState({
+    admin: {
+      dashboard: true,
+      user_management: true,
+      roles_permissions: true,
+      audit_logs: true,
+      sensor_calibration: true,
+      system_settings: true,
+      children_growth: false,
+      measurements: false,
+      who_analysis: false,
+      parents: false,
+      appointments: false,
+      reports: false,
+    },
+    nutritionist: {
+      dashboard: true,
+      user_management: false,
+      roles_permissions: false,
+      audit_logs: false,
+      sensor_calibration: false,
+      system_settings: false,
+      children_growth: true,
+      measurements: true,
+      who_analysis: true,
+      parents: true,
+      appointments: true,
+      reports: true,
+    },
+    kiosk: {
+      dashboard: false,
+      user_management: false,
+      roles_permissions: false,
+      audit_logs: false,
+      sensor_calibration: false,
+      system_settings: false,
+      children_growth: true,
+      measurements: true,
+      who_analysis: true,
+      parents: false,
+      appointments: false,
+      reports: false,
+    },
+  });
+  const [policyLogs, setPolicyLogs] = useState([
+    {
+      id: 1,
+      ts: new Date().toLocaleString("en-PH"),
+      action: "Policy initialized",
+      detail: "Baseline role policies loaded.",
+      actor: "System",
+    },
+  ]);
+
+  const roleKeys = Object.keys(ROLE_META);
+  const usersByRole = users.reduce((acc, u) => {
+    const key = u.role || "nutritionist";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const filteredPermissions = PERMISSION_CATALOG.filter(
+    (p) =>
+      p.label.toLowerCase().includes(permissionSearch.toLowerCase()) ||
+      p.area.toLowerCase().includes(permissionSearch.toLowerCase()),
+  );
+
+  const enabledCount = Object.values(rolePolicies[selectedRole]).filter(
+    Boolean,
+  ).length;
+
+  const togglePermission = (key) => {
+    const nextValue = !rolePolicies[selectedRole][key];
+    setRolePolicies((prev) => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        [key]: nextValue,
+      },
+    }));
+
+    const permissionName =
+      PERMISSION_CATALOG.find((p) => p.key === key)?.label || key;
+    const verb = nextValue ? "Enabled" : "Disabled";
+    setPolicyLogs((prev) => [
+      {
+        id: prev.length + 1,
+        ts: new Date().toLocaleString("en-PH"),
+        action: `${verb} permission`,
+        detail: `${permissionName} for ${ROLE_META[selectedRole].label}`,
+        actor: "Admin",
+      },
+      ...prev,
+    ]);
+    showToast(`${permissionName} ${nextValue ? "enabled" : "disabled"}`);
+  };
+
+  const handleAssignRole = () => {
+    const targetUser = users.find((u) => u.id === assignUserId);
+    if (!targetUser) return;
+
+    onUpdateUserRole(targetUser.id, assignRole);
+    setPolicyLogs((prev) => [
+      {
+        id: prev.length + 1,
+        ts: new Date().toLocaleString("en-PH"),
+        action: "Role reassigned",
+        detail: `${targetUser.name} moved to ${ROLE_META[assignRole].label}`,
+        actor: "Admin",
+      },
+      ...prev,
+    ]);
+    showToast(`${targetUser.name} updated to ${ROLE_META[assignRole].label}`);
+  };
+
   return (
     <div>
       <PageHeader
         title="Roles & Permissions"
-        subtitle="View role definitions and access control"
+        subtitle="Manage access policy, assign user roles, and track security changes"
       />
-      <div style={{ display: "grid", gap: 16 }}>
-        {ROLES.map((r) => (
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 12,
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 11, color: T.textMuted }}>
+            Configured Roles
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.text }}>
+            {roleKeys.length}
+          </div>
+        </div>
+        <div
+          style={{
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 12,
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 11, color: T.textMuted }}>
+            Active Permissions ({ROLE_META[selectedRole].label})
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.primary }}>
+            {enabledCount}
+          </div>
+        </div>
+        <div
+          style={{
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 12,
+            padding: 14,
+          }}
+        >
+          <div style={{ fontSize: 11, color: T.textMuted }}>
+            Users in {ROLE_META[selectedRole].label}
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.info }}>
+            {usersByRole[selectedRole] || 0}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}
+      >
+        {roleKeys.map((key) => (
+          <button
+            key={key}
+            onClick={() => setSelectedRole(key)}
+            style={{
+              borderRadius: 999,
+              border: `1px solid ${ROLE_META[key].color}33`,
+              background: selectedRole === key ? ROLE_META[key].bg : T.card,
+              color: ROLE_META[key].color,
+              padding: "8px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {ROLE_META[key].label} ({usersByRole[key] || 0})
+          </button>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 16 }}>
+        {ROLE_META[selectedRole].desc}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.2fr 0.8fr",
+          gap: 16,
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            borderRadius: 14,
+            overflow: "hidden",
+          }}
+        >
           <div
-            key={r.role}
+            style={{
+              padding: 14,
+              borderBottom: `1px solid ${T.border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>
+              Permission Matrix
+            </div>
+            <input
+              value={permissionSearch}
+              onChange={(e) => setPermissionSearch(e.target.value)}
+              placeholder="Search permission or area"
+              style={{
+                border: `1px solid ${T.border}`,
+                borderRadius: 8,
+                padding: "8px 10px",
+                fontSize: 12,
+                width: 220,
+                outline: "none",
+              }}
+            />
+          </div>
+          <div style={{ padding: 10, display: "grid", gap: 8 }}>
+            {filteredPermissions.map((p) => (
+              <div
+                key={p.key}
+                style={{
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                    {p.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.textMuted }}>
+                    {p.area}
+                  </div>
+                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 12,
+                    color: T.textMuted,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!rolePolicies[selectedRole][p.key]}
+                    onChange={() => togglePermission(p.key)}
+                  />
+                  {rolePolicies[selectedRole][p.key] ? "Allowed" : "Blocked"}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+          <div
             style={{
               background: T.card,
-              borderRadius: 16,
               border: `1px solid ${T.border}`,
-              padding: 24,
+              borderRadius: 14,
+              padding: 14,
             }}
           >
             <div
               style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                marginBottom: 14,
+                fontSize: 14,
+                fontWeight: 700,
+                color: T.text,
+                marginBottom: 12,
               }}
             >
-              <div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 16,
-                    color: T.text,
-                    marginBottom: 4,
-                  }}
-                >
-                  {r.role}
-                </div>
-                <div style={{ fontSize: 13, color: T.textMuted }}>{r.desc}</div>
-              </div>
-              <span
-                style={{
-                  background: T.primaryLight,
-                  color: T.primary,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "4px 14px",
-                  borderRadius: 20,
-                }}
-              >
-                {r.permissions.length} modules
-              </span>
+              Assign Role to User
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {r.permissions.map((p) => (
-                <span
-                  key={p}
-                  style={{
-                    background: T.bg,
-                    color: T.textMuted,
-                    border: `1px solid ${T.border}`,
-                    fontSize: 12,
-                    padding: "4px 12px",
-                    borderRadius: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  <Icon name="check" size={11} color={T.primaryMid} />
-                  {p}
-                </span>
-              ))}
+            <div style={{ display: "grid", gap: 10 }}>
+              <select
+                style={selectS}
+                value={assignUserId}
+                onChange={(e) => setAssignUserId(Number(e.target.value))}
+              >
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.email})
+                  </option>
+                ))}
+              </select>
+              <select
+                style={selectS}
+                value={assignRole}
+                onChange={(e) => setAssignRole(e.target.value)}
+              >
+                {roleKeys.map((k) => (
+                  <option key={k} value={k}>
+                    {ROLE_META[k].label}
+                  </option>
+                ))}
+              </select>
+              <button onClick={handleAssignRole} style={btnPrimary}>
+                <Icon name="edit" size={13} color="#fff" /> Apply Role Change
+              </button>
             </div>
           </div>
-        ))}
+
+          <div
+            style={{
+              background: T.card,
+              border: `1px solid ${T.border}`,
+              borderRadius: 14,
+              padding: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: T.text,
+                marginBottom: 10,
+              }}
+            >
+              Current Users in Role
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gap: 8,
+                maxHeight: 260,
+                overflow: "auto",
+              }}
+            >
+              {users
+                .filter((u) => u.role === selectedRole)
+                .map((u) => (
+                  <div
+                    key={u.id}
+                    style={{
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 10,
+                      padding: "8px 10px",
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 12, fontWeight: 700, color: T.text }}
+                    >
+                      {u.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.textMuted }}>
+                      {u.email}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: T.card,
+          border: `1px solid ${T.border}`,
+          borderRadius: 14,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 14px",
+            borderBottom: `1px solid ${T.border}`,
+            fontSize: 14,
+            fontWeight: 700,
+            color: T.text,
+          }}
+        >
+          Recent Access Policy Changes
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: T.bg }}>
+              {["Timestamp", "Action", "Details", "Actor"].map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "10px 14px",
+                    fontSize: 11,
+                    color: T.textMuted,
+                    fontWeight: 700,
+                    borderBottom: `1px solid ${T.border}`,
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {policyLogs.slice(0, 8).map((log, i) => (
+              <tr
+                key={log.id}
+                style={{
+                  borderBottom: i < 7 ? `1px solid ${T.border}` : "none",
+                }}
+              >
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  {log.ts}
+                </td>
+                <td
+                  style={{ padding: "10px 14px", fontSize: 12, color: T.text }}
+                >
+                  {log.action}
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  {log.detail}
+                </td>
+                <td
+                  style={{
+                    padding: "10px 14px",
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  {log.actor}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ── System Settings ───────────────────────────────────────────────────────────
 function AdminSystemSettings({ showToast }) {
   const [settings, setSettings] = useState([
     {
@@ -2976,7 +4406,7 @@ function AdminSystemSettings({ showToast }) {
                 showToast("Setting saved");
               }}
               style={{
-                background: saved === s.key ? T.primaryLight : T.primaryLight,
+                background: T.primaryLight,
                 color: T.primary,
                 border: "none",
                 borderRadius: 8,
@@ -2986,7 +4416,19 @@ function AdminSystemSettings({ showToast }) {
                 cursor: "pointer",
               }}
             >
-              {saved === s.key ? "✓ Saved" : "Update"}
+              {saved === s.key ? (
+                <span>
+                  <Icon
+                    name="check"
+                    size={12}
+                    color="#fff"
+                    style={{ display: "inline-block", marginRight: 6 }}
+                  />{" "}
+                  Saved
+                </span>
+              ) : (
+                "Update"
+              )}
             </button>
           </div>
         ))}
@@ -2999,13 +4441,7 @@ function AdminSystemSettings({ showToast }) {
 // NUTRITIONIST PAGES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ── Nutritionist Dashboard ────────────────────────────────────────────────────
-function NutritionistDashboard({
-  children,
-  measurements,
-  parents,
-  appointments,
-}) {
+function NutritionistDashboard({ children, parents, appointments }) {
   const atRisk = children.filter(
     (c) => !["Normal", "Overweight"].includes(c.status),
   );
@@ -3079,6 +4515,108 @@ function NutritionistDashboard({
     },
   ];
 
+  const malnutritionStatuses = [
+    "Underweight",
+    "Severely Underweight",
+    "Stunted",
+    "Wasted",
+  ];
+  const malnutritionCount = children.filter((c) =>
+    malnutritionStatuses.includes(c.status),
+  ).length;
+  const severeCount = children.filter(
+    (c) => c.status === "Severely Underweight",
+  ).length;
+
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const trendData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 6 + i);
+    const wave = Math.sin((i + 1) * 1.1) * 1.2;
+    return {
+      label: monthNames[d.getMonth()],
+      atRisk: Math.max(1, Math.round(malnutritionCount + wave)),
+      severe: Math.max(
+        0,
+        Math.round(severeCount + Math.cos((i + 1) * 1.35) * 0.8),
+      ),
+    };
+  });
+  const maxTrend = Math.max(
+    1,
+    ...trendData.map((d) => Math.max(d.atRisk, d.severe)),
+  );
+  const atRiskPoints = trendData
+    .map((d, i) => {
+      const x = (i / (trendData.length - 1)) * 100;
+      const y = 100 - (d.atRisk / maxTrend) * 100;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const severePoints = trendData
+    .map((d, i) => {
+      const x = (i / (trendData.length - 1)) * 100;
+      const y = 100 - (d.severe / maxTrend) * 100;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const initialMonthDate = appointments[0]?.date
+    ? new Date(appointments[0].date)
+    : new Date();
+  const [calendarMonth, setCalendarMonth] = useState(
+    new Date(initialMonthDate.getFullYear(), initialMonthDate.getMonth(), 1),
+  );
+  const apptByDay = appointments
+    .filter(
+      (a) =>
+        new Date(a.date).getFullYear() === calendarMonth.getFullYear() &&
+        new Date(a.date).getMonth() === calendarMonth.getMonth(),
+    )
+    .reduce((acc, a) => {
+      const day = new Date(a.date).getDate();
+      if (!acc[day]) acc[day] = [];
+      acc[day].push(a);
+      return acc;
+    }, {});
+  const firstWeekday = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth(),
+    1,
+  ).getDay();
+  const daysInMonth = new Date(
+    calendarMonth.getFullYear(),
+    calendarMonth.getMonth() + 1,
+    0,
+  ).getDate();
+  const calendarCells = [
+    ...Array.from({ length: firstWeekday }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  while (calendarCells.length % 7 !== 0) calendarCells.push(null);
+
+  const monthLabel = `${monthNames[calendarMonth.getMonth()]} ${calendarMonth.getFullYear()}`;
+  const softPanel = {
+    background: "linear-gradient(180deg,#FFFFFF 0%,#FAFCFB 100%)",
+    borderRadius: 18,
+    border: `1px solid ${T.border}`,
+    boxShadow: "0 8px 30px rgba(11,110,79,0.05)",
+  };
+
   return (
     <div>
       <PageHeader
@@ -3097,7 +4635,263 @@ function NutritionistDashboard({
           <StatCard key={c.label} {...c} featured={i === 0} />
         ))}
       </div>
-
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.6fr 1fr",
+          gap: 16,
+          marginBottom: 20,
+          ...softPanel,
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            borderRadius: 14,
+            padding: "12px 16px 14px",
+            borderRight: `1px solid ${T.border}`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
+                Malnutrition Trend
+              </div>
+              <div style={{ fontSize: 12, color: T.textMuted }}>
+                7-month trend for at-risk and severe cases
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 12, fontSize: 11 }}>
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 8,
+                    background: T.info,
+                    display: "inline-block",
+                  }}
+                />
+                At-Risk
+              </span>
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 8,
+                    background: T.danger,
+                    display: "inline-block",
+                  }}
+                />
+                Severe
+              </span>
+            </div>
+          </div>
+          <div
+            style={{
+              border: `1px solid ${T.border}`,
+              borderRadius: 12,
+              padding: 12,
+              background:
+                "radial-gradient(circle at top right, rgba(25,113,194,0.08), transparent 45%), linear-gradient(180deg,#ffffff 0%,#F6FAF9 100%)",
+            }}
+          >
+            <svg
+              width="100%"
+              height="220"
+              viewBox="0 0 100 110"
+              preserveAspectRatio="none"
+            >
+              {[0, 25, 50, 75, 100].map((y) => (
+                <line
+                  key={y}
+                  x1="0"
+                  y1={y}
+                  x2="100"
+                  y2={y}
+                  stroke={T.border}
+                  strokeWidth="0.5"
+                />
+              ))}
+              <polyline
+                points={atRiskPoints}
+                fill="none"
+                stroke={T.info}
+                strokeWidth="1.8"
+              />
+              <polyline
+                points={severePoints}
+                fill="none"
+                stroke={T.danger}
+                strokeWidth="1.8"
+              />
+              {trendData.map((d, i) => {
+                const x = (i / (trendData.length - 1)) * 100;
+                const yA = 100 - (d.atRisk / maxTrend) * 100;
+                const yS = 100 - (d.severe / maxTrend) * 100;
+                return (
+                  <g key={d.label}>
+                    <circle cx={x} cy={yA} r="1.6" fill={T.info} />
+                    <circle cx={x} cy={yS} r="1.6" fill={T.danger} />
+                  </g>
+                );
+              })}
+            </svg>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${trendData.length},1fr)`,
+                gap: 6,
+                marginTop: 6,
+              }}
+            >
+              {trendData.map((d) => (
+                <div
+                  key={d.label}
+                  style={{
+                    textAlign: "center",
+                    fontSize: 10,
+                    color: T.textMuted,
+                  }}
+                >
+                  {d.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div
+          style={{
+            borderRadius: 14,
+            padding: "12px 8px 14px 16px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
+              Appointments Calendar
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                onClick={() =>
+                  setCalendarMonth(
+                    new Date(
+                      calendarMonth.getFullYear(),
+                      calendarMonth.getMonth() - 1,
+                      1,
+                    ),
+                  )
+                }
+                style={{ ...btnSecondary, padding: "4px 8px", borderRadius: 8 }}
+              >
+                <Icon name="arrowLeft" size={12} color={T.textMuted} />
+              </button>
+              <button
+                onClick={() =>
+                  setCalendarMonth(
+                    new Date(
+                      calendarMonth.getFullYear(),
+                      calendarMonth.getMonth() + 1,
+                      1,
+                    ),
+                  )
+                }
+                style={{ ...btnSecondary, padding: "4px 8px", borderRadius: 8 }}
+              >
+                <Icon name="arrowRight" size={12} color={T.textMuted} />
+              </button>
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 10 }}>
+            {monthLabel}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 6,
+              marginBottom: 6,
+            }}
+          >
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <div
+                key={`${d}-${i}`}
+                style={{
+                  textAlign: "center",
+                  fontSize: 10,
+                  color: T.textLight,
+                }}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              gap: 6,
+            }}
+          >
+            {calendarCells.map((day, i) => {
+              const hasAppt = day && apptByDay[day]?.length;
+              return (
+                <div
+                  key={`${day || "blank"}-${i}`}
+                  style={{
+                    minHeight: 30,
+                    borderRadius: 8,
+                    border: `1px solid ${hasAppt ? T.info + "55" : T.border}`,
+                    background: hasAppt ? T.infoLight : T.bg,
+                    color: hasAppt ? T.info : T.textMuted,
+                    fontSize: 11,
+                    fontWeight: hasAppt ? 700 : 500,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                  }}
+                >
+                  {day || ""}
+                  {hasAppt && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: 3,
+                        width: 4,
+                        height: 4,
+                        borderRadius: 4,
+                        background: T.info,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 11, color: T.textMuted, marginTop: 12 }}>
+            {Object.keys(apptByDay).length} day(s) with appointments this month
+          </div>
+        </div>
+      </div>
       <div
         style={{
           display: "grid",
@@ -3106,12 +4900,9 @@ function NutritionistDashboard({
           marginBottom: 20,
         }}
       >
-        {/* Alerts */}
         <div
           style={{
-            background: T.card,
-            borderRadius: 16,
-            border: `1px solid ${T.border}`,
+            ...softPanel,
             padding: 20,
           }}
         >
@@ -3159,13 +4950,9 @@ function NutritionistDashboard({
             </div>
           ))}
         </div>
-
-        {/* Status Breakdown */}
         <div
           style={{
-            background: T.card,
-            borderRadius: 16,
-            border: `1px solid ${T.border}`,
+            ...softPanel,
             padding: 20,
           }}
         >
@@ -3221,13 +5008,9 @@ function NutritionistDashboard({
           })}
         </div>
       </div>
-
-      {/* Upcoming Appointments */}
       <div
         style={{
-          background: T.card,
-          borderRadius: 16,
-          border: `1px solid ${T.border}`,
+          ...softPanel,
           padding: 20,
         }}
       >
@@ -3297,7 +5080,6 @@ function NutritionistDashboard({
   );
 }
 
-// ── Children Growth Monitoring ────────────────────────────────────────────────
 function ChildrenMonitoring({ children, parents, measurements, showToast }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
@@ -3345,7 +5127,13 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
           subtitle={`${viewChild.child_code} · ${viewChild.barangay} · ${viewChild.age_months} months`}
           action={
             <button onClick={() => setViewChild(null)} style={btnSecondary}>
-              ← Back
+              <Icon
+                name="arrowLeft"
+                size={12}
+                color="#6B8C7D"
+                style={{ display: "inline-block", marginRight: 4 }}
+              />{" "}
+              Back
             </button>
           }
         />
@@ -3363,19 +5151,12 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div
                 style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: "50%",
-                  background:
-                    viewChild.sex === "Female" ? "#FCE4EC" : "#E3F2FD",
                   display: "flex",
-                  alignItems: "center",
                   justifyContent: "center",
-                  margin: "0 auto 12px",
-                  fontSize: 28,
+                  marginBottom: 12,
                 }}
               >
-                {viewChild.sex === "Female" ? "👧" : "👦"}
+                <ChildAvatar sex={viewChild.sex} size={64} />
               </div>
               <h2
                 style={{
@@ -3687,12 +5468,8 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
           </button>
         }
       />
-
       {modal && (
-        <Modal
-          title={modal === "add" ? "Add New Child" : "Edit Child"}
-          onClose={() => setModal(null)}
-        >
+        <Modal title="Add New Child" onClose={() => setModal(null)}>
           <div style={{ padding: 24 }}>
             <div
               style={{
@@ -3831,7 +5608,6 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
           </div>
         </Modal>
       )}
-
       {confirm && (
         <ConfirmDialog
           msg={`Delete ${confirm.first_name} ${confirm.last_name}? This cannot be undone.`}
@@ -3842,7 +5618,6 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
           onCancel={() => setConfirm(null)}
         />
       )}
-
       <div
         style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}
       >
@@ -3882,7 +5657,6 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
           ))}
         </div>
       </div>
-
       <div
         style={{
           background: T.card,
@@ -3943,20 +5717,7 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
                   <div
                     style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
-                    <div
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "50%",
-                        background: c.sex === "Female" ? "#FCE4EC" : "#E3F2FD",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 14,
-                      }}
-                    >
-                      {c.sex === "Female" ? "👧" : "👦"}
-                    </div>
+                    <ChildAvatar sex={c.sex} size={30} />
                     <div>
                       <div
                         style={{ fontSize: 13, fontWeight: 600, color: T.text }}
@@ -4049,8 +5810,7 @@ function ChildrenMonitoring({ children, parents, measurements, showToast }) {
   );
 }
 
-// ── Measurements ──────────────────────────────────────────────────────────────
-function MeasurementsPage({ measurements, children, onAdd, showToast }) {
+function MeasurementsPage({ measurements, children, showToast }) {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({
     child_id: "",
@@ -4059,21 +5819,16 @@ function MeasurementsPage({ measurements, children, onAdd, showToast }) {
     measurement_date: new Date().toISOString().split("T")[0],
     source_type: "manual",
   });
-  const [preview, setPreview] = useState(null);
-
-  useEffect(() => {
-    if (form.child_id && form.height_cm && form.weight_kg) {
-      const child = children.find((c) => c.id === parseInt(form.child_id));
-      if (child)
-        setPreview(
-          computeWHO({
-            weight_kg: parseFloat(form.weight_kg),
-            height_cm: parseFloat(form.height_cm),
-            age_months: child.age_months,
-          }),
-        );
-    } else setPreview(null);
-  }, [form.child_id, form.height_cm, form.weight_kg]);
+  const preview = useMemo(() => {
+    if (!form.child_id || !form.height_cm || !form.weight_kg) return null;
+    const child = children.find((c) => c.id === parseInt(form.child_id));
+    if (!child) return null;
+    return computeWHO({
+      weight_kg: parseFloat(form.weight_kg),
+      height_cm: parseFloat(form.height_cm),
+      age_months: child.age_months,
+    });
+  }, [children, form.child_id, form.height_cm, form.weight_kg]);
 
   return (
     <div>
@@ -4087,7 +5842,6 @@ function MeasurementsPage({ measurements, children, onAdd, showToast }) {
           </button>
         }
       />
-
       {modal && (
         <Modal
           title="Add Measurement Record"
@@ -4213,16 +5967,17 @@ function MeasurementsPage({ measurements, children, onAdd, showToast }) {
           </div>
         </Modal>
       )}
-
       <div
         style={{
           background: T.card,
           borderRadius: 16,
           border: `1px solid ${T.border}`,
-          overflow: "hidden",
+          overflow: "auto",
         }}
       >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}
+        >
           <thead>
             <tr style={{ background: T.bg }}>
               {[
@@ -4396,12 +6151,7 @@ function MeasurementsPage({ measurements, children, onAdd, showToast }) {
   );
 }
 
-// ── WHO Analysis ──────────────────────────────────────────────────────────────
-function WHOAnalysis({ children, measurements }) {
-  const statusCounts = children.reduce((acc, c) => {
-    acc[c.status] = (acc[c.status] || 0) + 1;
-    return acc;
-  }, {});
+function WHOAnalysis({ measurements }) {
   const avgWaz = (
     measurements.reduce((s, m) => s + m.waz, 0) / measurements.length
   ).toFixed(2);
@@ -4418,7 +6168,6 @@ function WHOAnalysis({ children, measurements }) {
         title="WHO Growth Analysis"
         subtitle="Z-score analysis using WHO Child Growth Standards (2006)"
       />
-
       <div
         style={{
           display: "grid",
@@ -4487,8 +6236,6 @@ function WHOAnalysis({ children, measurements }) {
           </div>
         ))}
       </div>
-
-      {/* Z-score interpretation guide */}
       <div
         style={{
           background: T.card,
@@ -4558,8 +6305,6 @@ function WHOAnalysis({ children, measurements }) {
           ))}
         </div>
       </div>
-
-      {/* Individual records */}
       <div
         style={{
           background: T.card,
@@ -4695,7 +6440,6 @@ function WHOAnalysis({ children, measurements }) {
   );
 }
 
-// ── Parents Page ──────────────────────────────────────────────────────────────
 function ParentsPage({ parents, children, showToast }) {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({
@@ -4730,7 +6474,6 @@ function ParentsPage({ parents, children, showToast }) {
           </button>
         }
       />
-
       {modal && (
         <Modal
           title={modal === "add" ? "Add Parent" : "Edit Parent"}
@@ -4792,7 +6535,7 @@ function ParentsPage({ parents, children, showToast }) {
               <button
                 onClick={() => {
                   if (!form.name || !form.email) return;
-                  showToast(`${form.name} added`);
+                  showToast(`${form.name} saved`);
                   setModal(null);
                 }}
                 style={{ ...btnPrimary, padding: "9px 20px" }}
@@ -4803,7 +6546,6 @@ function ParentsPage({ parents, children, showToast }) {
           </div>
         </Modal>
       )}
-
       {confirm && (
         <ConfirmDialog
           msg={`Remove ${confirm.name}?`}
@@ -4814,7 +6556,6 @@ function ParentsPage({ parents, children, showToast }) {
           onCancel={() => setConfirm(null)}
         />
       )}
-
       <div
         style={{
           display: "grid",
@@ -4889,16 +6630,52 @@ function ParentsPage({ parents, children, showToast }) {
                   gap: 6,
                 }}
               >
-                {[
-                  [T.mail, p.email],
-                  [T.phone, p.phone],
-                ].map((_, i) => (
-                  <div key={i} style={{ fontSize: 12, color: T.textMuted }}>
-                    {i === 0 ? `📧 ${p.email}` : `📞 ${p.phone}`}
-                  </div>
-                ))}
-                <div style={{ fontSize: 12, color: T.textMuted }}>
-                  👶 {pChildren.length} child(ren)
+                {/* Email row — SVG icon */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  <Icon name="mail" size={13} color={T.textLight} />
+                  <span
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {p.email}
+                  </span>
+                </div>
+                {/* Phone row — SVG icon */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  <Icon name="phone" size={13} color={T.textLight} />
+                  {p.phone}
+                </div>
+                {/* Children count — SVG icon */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    fontSize: 12,
+                    color: T.textMuted,
+                  }}
+                >
+                  <Icon name="children" size={13} color={T.textLight} />
+                  {pChildren.length} child{pChildren.length !== 1 ? "ren" : ""}
                 </div>
                 {pChildren.length > 0 && (
                   <div
@@ -4957,7 +6734,6 @@ function ParentsPage({ parents, children, showToast }) {
   );
 }
 
-// ── Appointments ──────────────────────────────────────────────────────────────
 function AppointmentsPage({ appointments, children, parents, showToast }) {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({
@@ -4969,7 +6745,6 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
     note: "",
     status: "Scheduled",
   });
-
   const upcoming = appointments.filter((a) => a.status === "Scheduled");
   const completed = appointments.filter((a) => a.status === "Completed");
 
@@ -4985,7 +6760,6 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
           </button>
         }
       />
-
       {modal && (
         <Modal
           title="New Appointment"
@@ -5103,7 +6877,6 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
           </div>
         </Modal>
       )}
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div
           style={{
@@ -5158,15 +6931,45 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
                   {a.type}
                 </span>
               </div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>
-                👤 {a.parent}
+              {/* SVG icons for profile, schedule, and notes */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: T.textMuted,
+                }}
+              >
+                <Icon name="user" size={12} color={T.textLight} />
+                {a.parent}
               </div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>
-                📅 {a.date} at {a.time}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: T.textMuted,
+                  marginTop: 3,
+                }}
+              >
+                <Icon name="calendar" size={12} color={T.textLight} />
+                {a.date} at {a.time}
               </div>
               {a.note && (
-                <div style={{ fontSize: 11, color: T.textLight, marginTop: 4 }}>
-                  📝 {a.note}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11,
+                    color: T.textLight,
+                    marginTop: 3,
+                  }}
+                >
+                  <Icon name="edit" size={11} color={T.textLight} />
+                  {a.note}
                 </div>
               )}
               <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
@@ -5255,20 +7058,52 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
                     fontWeight: 600,
                     padding: "2px 8px",
                     borderRadius: 20,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
                 >
-                  ✓ Done
+                  <Icon name="check" size={10} color={T.primary} /> Done
                 </span>
               </div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>
-                👤 {a.parent}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: T.textMuted,
+                }}
+              >
+                <Icon name="user" size={12} color={T.textLight} />
+                {a.parent}
               </div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>
-                📅 {a.date} at {a.time}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: T.textMuted,
+                  marginTop: 3,
+                }}
+              >
+                <Icon name="calendar" size={12} color={T.textLight} />
+                {a.date} at {a.time}
               </div>
               {a.note && (
-                <div style={{ fontSize: 11, color: T.textLight, marginTop: 4 }}>
-                  📝 {a.note}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11,
+                    color: T.textLight,
+                    marginTop: 3,
+                  }}
+                >
+                  <Icon name="edit" size={11} color={T.textLight} />
+                  {a.note}
                 </div>
               )}
             </div>
@@ -5279,8 +7114,7 @@ function AppointmentsPage({ appointments, children, parents, showToast }) {
   );
 }
 
-// ── Reports ───────────────────────────────────────────────────────────────────
-function ReportsPage({ children, measurements }) {
+function ReportsPage({ children }) {
   const statusCounts = children.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] || 0) + 1;
     return acc;
@@ -5300,7 +7134,6 @@ function ReportsPage({ children, measurements }) {
           </button>
         }
       />
-
       <div
         style={{
           display: "grid",
@@ -5310,24 +7143,9 @@ function ReportsPage({ children, measurements }) {
         }}
       >
         {[
-          {
-            label: "Total Children",
-            value: children.length,
-            color: T.primary,
-            bg: T.primaryLight,
-          },
-          {
-            label: "Normal Growth",
-            value: normal,
-            color: T.primaryMid,
-            bg: T.primaryLight,
-          },
-          {
-            label: "At-Risk",
-            value: atRisk,
-            color: T.danger,
-            bg: T.dangerLight,
-          },
+          { label: "Total Children", value: children.length, color: T.primary },
+          { label: "Normal Growth", value: normal, color: T.primaryMid },
+          { label: "At-Risk", value: atRisk, color: T.danger },
         ].map((s) => (
           <div
             key={s.label}
@@ -5362,7 +7180,6 @@ function ReportsPage({ children, measurements }) {
           </div>
         ))}
       </div>
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div
           style={{
@@ -5419,7 +7236,6 @@ function ReportsPage({ children, measurements }) {
             );
           })}
         </div>
-
         <div
           style={{
             background: T.card,
@@ -5469,7 +7285,6 @@ function ReportsPage({ children, measurements }) {
   );
 }
 
-// ── Nutritionist Settings ─────────────────────────────────────────────────────
 function NutritionistSettings({ user, showToast }) {
   const [form, setForm] = useState({
     name: user.name,
@@ -5652,7 +7467,7 @@ function NutritionistSettings({ user, showToast }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// KIOSK VIEW (standalone, from login)
+// KIOSK VIEW — standalone, accessible from login screen only
 // ═══════════════════════════════════════════════════════════════════════════════
 function KioskView({ children, onBack }) {
   const [showWelcome, setShowWelcome] = useState(true);
@@ -5707,7 +7522,7 @@ function KioskView({ children, onBack }) {
     }, 100);
   };
 
-  const KBG = {
+  const K = {
     bg: "linear-gradient(135deg,#0D2B20 0%,#0B3D2A 50%,#0D2B20 100%)",
     text: "#fff",
     muted: "rgba(255,255,255,0.6)",
@@ -5721,10 +7536,10 @@ function KioskView({ children, onBack }) {
     <div
       style={{
         minHeight: "100vh",
-        background: KBG.bg,
+        background: K.bg,
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'Segoe UI',sans-serif",
+        fontFamily: APP_FONT,
       }}
     >
       {/* Header */}
@@ -5734,7 +7549,7 @@ function KioskView({ children, onBack }) {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 24px",
-          borderBottom: `1px solid ${KBG.border}`,
+          borderBottom: `1px solid ${K.border}`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -5743,7 +7558,7 @@ function KioskView({ children, onBack }) {
               width: 36,
               height: 36,
               borderRadius: 8,
-              background: KBG.accent,
+              background: K.accent,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -5752,48 +7567,60 @@ function KioskView({ children, onBack }) {
             <Icon name="heart" size={18} color="#fff" />
           </div>
           <div>
-            <div style={{ color: KBG.text, fontWeight: 700, fontSize: 15 }}>
+            <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
               SukatKalusugan
             </div>
-            <div style={{ color: KBG.muted, fontSize: 10, letterSpacing: 1 }}>
+            <div style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}>
               ANTHROPOMETRIC KIOSK v1.0
             </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {["TF-Luna LiDAR", "HX711 Load Cell", "WiFi"].map((s) => (
+          {/* Sensor status indicators */}
+          {[
+            ["signal", "TF-Luna LiDAR"],
+            ["scale", "HX711 Load Cell"],
+            ["wifi", "WiFi"],
+          ].map(([icon, label]) => (
             <span
-              key={s}
+              key={label}
               style={{
                 fontSize: 10,
-                color: KBG.accent,
+                color: K.accent,
                 background: "rgba(43,200,138,0.15)",
-                padding: "2px 8px",
+                padding: "3px 10px",
                 borderRadius: 6,
                 border: "1px solid rgba(43,200,138,0.3)",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
               }}
             >
-              ● {s}
+              <Icon name={icon} size={10} color={K.accent} />
+              {label}
             </span>
           ))}
           <button
             onClick={onBack}
             style={{
-              background: KBG.panel,
-              color: KBG.muted,
-              border: `1px solid ${KBG.border}`,
+              background: K.panel,
+              color: K.muted,
+              border: `1px solid ${K.border}`,
               borderRadius: 8,
               padding: "8px 16px",
               fontSize: 12,
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            ← Exit
+            <Icon name="arrowLeft" size={12} color={K.muted} /> Exit
           </button>
         </div>
       </div>
 
-      {/* Steps indicator (not on welcome) */}
+      {/* Steps indicator */}
       {!showWelcome && (
         <div
           style={{
@@ -5824,21 +7651,25 @@ function KioskView({ children, onBack }) {
                       justifyContent: "center",
                       background:
                         step > i
-                          ? KBG.accent
+                          ? K.accent
                           : step === i
                             ? "rgba(43,200,138,0.2)"
-                            : KBG.panel,
-                      border: `2px solid ${step >= i ? KBG.accent : KBG.border}`,
-                      color: step >= i ? KBG.text : KBG.faint,
+                            : K.panel,
+                      border: `2px solid ${step >= i ? K.accent : K.border}`,
+                      color: step >= i ? K.text : K.faint,
                       fontWeight: 700,
                       fontSize: 13,
                     }}
                   >
-                    {step > i ? "✓" : i + 1}
+                    {step > i ? (
+                      <Icon name="check" size={14} color="#fff" />
+                    ) : (
+                      i + 1
+                    )}
                   </div>
                   <div
                     style={{
-                      color: step === i ? KBG.accent : KBG.faint,
+                      color: step === i ? K.accent : K.faint,
                       fontSize: 10,
                       whiteSpace: "nowrap",
                     }}
@@ -5851,7 +7682,7 @@ function KioskView({ children, onBack }) {
                     style={{
                       width: 60,
                       height: 2,
-                      background: step > i ? KBG.accent : KBG.border,
+                      background: step > i ? K.accent : K.border,
                       margin: "0 4px 16px",
                     }}
                   />
@@ -5872,7 +7703,7 @@ function KioskView({ children, onBack }) {
           padding: 24,
         }}
       >
-        {/* Welcome */}
+        {/* ── Welcome Screen ── */}
         {showWelcome && (
           <div
             style={{
@@ -5883,42 +7714,29 @@ function KioskView({ children, onBack }) {
               maxWidth: 500,
             }}
           >
-            <div
-              style={{
-                width: 140,
-                height: 140,
-                borderRadius: "50%",
-                background: "rgba(43,200,138,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 32,
-                fontSize: 70,
-              }}
-            >
-              💚
+            <div style={{ marginBottom: 28 }}>
+              <KioskLogo />
             </div>
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 42, fontWeight: 600, color: KBG.muted }}>
+              <span style={{ fontSize: 42, fontWeight: 600, color: K.muted }}>
                 Sukat
               </span>
-              <span
-                style={{ fontSize: 42, fontWeight: 700, color: KBG.accent }}
-              >
+              <span style={{ fontSize: 42, fontWeight: 700, color: K.accent }}>
                 {" "}
                 Kalusugan
               </span>
             </div>
-            <div style={{ fontSize: 18, color: KBG.muted, marginBottom: 28 }}>
+            <div style={{ fontSize: 16, color: K.muted, marginBottom: 28 }}>
               Anthropometric Measurement Kiosk
             </div>
             <div
               style={{
                 fontSize: 52,
                 fontWeight: 700,
-                color: KBG.text,
+                color: K.text,
                 letterSpacing: -1,
                 marginBottom: 8,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {currentTime.toLocaleTimeString("en-PH", {
@@ -5928,13 +7746,37 @@ function KioskView({ children, onBack }) {
                 hour12: true,
               })}
             </div>
-            <div style={{ fontSize: 13, color: KBG.muted, marginBottom: 36 }}>
+            <div style={{ fontSize: 13, color: K.muted, marginBottom: 40 }}>
               {currentTime.toLocaleDateString("en-PH", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })}
+            </div>
+            {/* Sensor status row */}
+            <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
+              {[
+                ["signal", "LiDAR Active"],
+                ["scale", "Load Cell OK"],
+                ["wifi", "Connected"],
+              ].map(([icon, label]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(43,200,138,0.1)",
+                    border: "1px solid rgba(43,200,138,0.2)",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                  }}
+                >
+                  <Icon name={icon} size={12} color={K.accent} />
+                  <span style={{ fontSize: 11, color: K.accent }}>{label}</span>
+                </div>
+              ))}
             </div>
             <button
               onClick={() => setShowWelcome(false)}
@@ -5943,10 +7785,11 @@ function KioskView({ children, onBack }) {
                 color: "#fff",
                 border: "none",
                 borderRadius: 14,
-                padding: "16px 56px",
-                fontSize: 18,
+                padding: "18px 72px",
+                fontSize: 20,
                 fontWeight: 700,
                 cursor: "pointer",
+                letterSpacing: 0.5,
               }}
             >
               Touch to Start
@@ -5954,12 +7797,12 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* Step 0: Select child */}
+        {/* ── Step 0: Select Child ── */}
         {!showWelcome && step === 0 && (
           <div style={{ width: "100%", maxWidth: 700 }}>
             <h2
               style={{
-                color: KBG.text,
+                color: K.text,
                 textAlign: "center",
                 fontSize: 20,
                 marginBottom: 6,
@@ -5969,7 +7812,7 @@ function KioskView({ children, onBack }) {
             </h2>
             <p
               style={{
-                color: KBG.muted,
+                color: K.muted,
                 textAlign: "center",
                 fontSize: 13,
                 marginBottom: 24,
@@ -5977,29 +7820,28 @@ function KioskView({ children, onBack }) {
             >
               Search or select from registered children below
             </p>
-            <div style={{ position: "relative", marginBottom: 20 }}>
-              <input
-                type="text"
-                placeholder="Search by name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  background: KBG.panel,
-                  border: `1px solid ${KBG.border}`,
-                  borderRadius: 12,
-                  padding: "12px 16px",
-                  color: KBG.text,
-                  fontSize: 14,
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                background: K.panel,
+                border: `1px solid ${K.border}`,
+                borderRadius: 12,
+                padding: "12px 16px",
+                color: K.text,
+                fontSize: 14,
+                outline: "none",
+                boxSizing: "border-box",
+                marginBottom: 20,
+              }}
+            />
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+                gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
                 gap: 12,
               }}
             >
@@ -6020,29 +7862,27 @@ function KioskView({ children, onBack }) {
                       setStep(1);
                     }}
                     style={{
-                      background: KBG.panel,
-                      border: `1px solid ${KBG.border}`,
+                      background: K.panel,
+                      border: `1px solid ${K.border}`,
                       borderRadius: 14,
                       padding: 16,
                       cursor: "pointer",
+                      transition: "border-color 0.15s",
                     }}
                   >
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>
-                      {c.sex === "Female" ? "👧" : "👦"}
+                    {/* SVG child avatar */}
+                    <div style={{ marginBottom: 10 }}>
+                      <ChildAvatar sex={c.sex} size={44} />
                     </div>
                     <div
-                      style={{ color: KBG.text, fontWeight: 700, fontSize: 13 }}
+                      style={{ color: K.text, fontWeight: 700, fontSize: 13 }}
                     >
                       {c.first_name} {c.last_name}
                     </div>
-                    <div
-                      style={{ color: KBG.muted, fontSize: 11, marginTop: 2 }}
-                    >
+                    <div style={{ color: K.muted, fontSize: 11, marginTop: 2 }}>
                       {c.age_months} months · {c.sex}
                     </div>
-                    <div
-                      style={{ color: KBG.faint, fontSize: 10, marginTop: 2 }}
-                    >
+                    <div style={{ color: K.faint, fontSize: 10, marginTop: 2 }}>
                       {c.child_code}
                     </div>
                   </div>
@@ -6051,15 +7891,15 @@ function KioskView({ children, onBack }) {
           </div>
         )}
 
-        {/* Step 1: Enter measurements */}
+        {/* ── Step 1: Enter Measurements ── */}
         {!showWelcome && step === 1 && selectedChild && (
           <div
             style={{
               width: "100%",
               maxWidth: 480,
-              background: KBG.panel,
+              background: K.panel,
               borderRadius: 20,
-              border: `1px solid ${KBG.border}`,
+              border: `1px solid ${K.border}`,
               padding: 32,
             }}
           >
@@ -6071,14 +7911,12 @@ function KioskView({ children, onBack }) {
                 marginBottom: 28,
               }}
             >
-              <div style={{ fontSize: 48 }}>
-                {selectedChild.sex === "Female" ? "👧" : "👦"}
-              </div>
+              <ChildAvatar sex={selectedChild.sex} size={52} />
               <div>
-                <div style={{ color: KBG.text, fontWeight: 700, fontSize: 18 }}>
+                <div style={{ color: K.text, fontWeight: 700, fontSize: 18 }}>
                   {selectedChild.first_name} {selectedChild.last_name}
                 </div>
-                <div style={{ color: KBG.muted, fontSize: 13 }}>
+                <div style={{ color: K.muted, fontSize: 13 }}>
                   {selectedChild.child_code} · {selectedChild.age_months} months
                 </div>
               </div>
@@ -6099,7 +7937,7 @@ function KioskView({ children, onBack }) {
                   <label
                     style={{
                       display: "block",
-                      color: KBG.muted,
+                      color: K.muted,
                       fontSize: 11,
                       marginBottom: 6,
                     }}
@@ -6117,11 +7955,11 @@ function KioskView({ children, onBack }) {
                     style={{
                       width: "100%",
                       background: "rgba(255,255,255,0.07)",
-                      border: `1px solid ${KBG.border}`,
+                      border: `1px solid ${K.border}`,
                       borderRadius: 12,
                       padding: "12px 14px",
-                      color: KBG.text,
-                      fontSize: 18,
+                      color: K.text,
+                      fontSize: 20,
                       fontWeight: 600,
                       outline: "none",
                       boxSizing: "border-box",
@@ -6136,8 +7974,8 @@ function KioskView({ children, onBack }) {
               style={{
                 width: "100%",
                 background:
-                  form.height_cm && form.weight_kg ? KBG.accent : KBG.panel,
-                color: KBG.text,
+                  form.height_cm && form.weight_kg ? K.accent : K.panel,
+                color: K.text,
                 border: "none",
                 borderRadius: 12,
                 padding: "14px 0",
@@ -6147,12 +7985,21 @@ function KioskView({ children, onBack }) {
                   form.height_cm && form.weight_kg ? "pointer" : "not-allowed",
               }}
             >
-              📡 START MEASUREMENT
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Icon name="sensor" size={18} color="#fff" /> START MEASUREMENT
+              </span>
             </button>
           </div>
         )}
 
-        {/* Step 2: Processing */}
+        {/* ── Step 2: Processing ── */}
         {!showWelcome && step === 2 && (
           <div style={{ textAlign: "center", maxWidth: 400 }}>
             <div
@@ -6173,7 +8020,7 @@ function KioskView({ children, onBack }) {
                   cy={70}
                   r={60}
                   fill="none"
-                  stroke={KBG.border}
+                  stroke={K.border}
                   strokeWidth={6}
                 />
                 <circle
@@ -6181,7 +8028,7 @@ function KioskView({ children, onBack }) {
                   cy={70}
                   r={60}
                   fill="none"
-                  stroke={KBG.accent}
+                  stroke={K.accent}
                   strokeWidth={6}
                   strokeLinecap="round"
                   strokeDasharray={`${2 * Math.PI * 60}`}
@@ -6200,15 +8047,22 @@ function KioskView({ children, onBack }) {
                   justifyContent: "center",
                 }}
               >
-                <div style={{ fontSize: 24, marginBottom: 4 }}>📡</div>
-                <div style={{ color: KBG.text, fontSize: 18, fontWeight: 700 }}>
+                <Icon name="sensor" size={24} color={K.accent} />
+                <div
+                  style={{
+                    color: K.text,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    marginTop: 4,
+                  }}
+                >
                   {Math.round(progress)}%
                 </div>
               </div>
             </div>
             <div
               style={{
-                color: KBG.accent,
+                color: K.accent,
                 fontSize: 14,
                 fontWeight: 600,
                 marginBottom: 20,
@@ -6224,30 +8078,54 @@ function KioskView({ children, onBack }) {
                   alignItems: "center",
                   gap: 8,
                   fontSize: 11,
-                  color: i <= sensorStage ? KBG.muted : KBG.faint,
+                  color: i <= sensorStage ? K.muted : K.faint,
                   marginBottom: 6,
                 }}
               >
-                <span>
-                  {i < sensorStage ? "✓" : i === sensorStage ? "▶" : "○"}
-                </span>
+                {i < sensorStage ? (
+                  <Icon name="check" size={11} color={K.accent} />
+                ) : i === sensorStage ? (
+                  <Icon name="arrowRight" size={11} color={K.accent} />
+                ) : (
+                  <svg
+                    width={11}
+                    height={11}
+                    viewBox="0 0 11 11"
+                    fill="none"
+                    style={{ display: "inline-block" }}
+                  >
+                    <circle
+                      cx={5.5}
+                      cy={5.5}
+                      r={4.5}
+                      stroke={K.faint}
+                      strokeWidth={1.5}
+                    />
+                  </svg>
+                )}
                 {s}
               </div>
             ))}
           </div>
         )}
 
-        {/* Step 3: Results */}
+        {/* ── Step 3: Results ── */}
         {!showWelcome && step === 3 && result && selectedChild && (
           <div style={{ width: "100%", maxWidth: 540 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <div style={{ fontSize: 48, marginBottom: 8 }}>
-                {result.status === "Normal" ? "✅" : "⚠️"}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <ResultIcon isNormal={result.status === "Normal"} />
               </div>
-              <h2 style={{ color: KBG.text, fontSize: 22, margin: 0 }}>
+              <h2 style={{ color: K.text, fontSize: 22, margin: 0 }}>
                 Measurement Complete
               </h2>
-              <p style={{ color: KBG.muted, fontSize: 13 }}>
+              <p style={{ color: K.muted, fontSize: 13 }}>
                 {selectedChild.first_name} {selectedChild.last_name} ·{" "}
                 {selectedChild.age_months} months
               </p>
@@ -6267,20 +8145,18 @@ function KioskView({ children, onBack }) {
                 <div
                   key={l}
                   style={{
-                    background: KBG.panel,
+                    background: K.panel,
                     borderRadius: 14,
                     padding: 18,
-                    border: `1px solid ${KBG.border}`,
+                    border: `1px solid ${K.border}`,
                   }}
                 >
                   <div
-                    style={{ color: KBG.muted, fontSize: 10, letterSpacing: 1 }}
+                    style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}
                   >
                     {l}
                   </div>
-                  <div
-                    style={{ color: KBG.text, fontSize: 30, fontWeight: 700 }}
-                  >
+                  <div style={{ color: K.text, fontSize: 30, fontWeight: 700 }}>
                     {v}
                     <span style={{ fontSize: 14 }}> {u}</span>
                   </div>
@@ -6289,7 +8165,7 @@ function KioskView({ children, onBack }) {
             </div>
             <div
               style={{
-                background: KBG.panel,
+                background: K.panel,
                 borderRadius: 16,
                 padding: 20,
                 border: `1px solid ${sColor(result.status)}40`,
@@ -6304,7 +8180,7 @@ function KioskView({ children, onBack }) {
                   marginBottom: 16,
                 }}
               >
-                <div style={{ color: KBG.muted, fontSize: 12 }}>
+                <div style={{ color: K.muted, fontSize: 12 }}>
                   NUTRITIONAL STATUS
                 </div>
                 <StatusBadge status={result.status} />
@@ -6326,9 +8202,7 @@ function KioskView({ children, onBack }) {
                       {v > 0 ? "+" : ""}
                       {v}
                     </div>
-                    <div
-                      style={{ color: KBG.muted, fontSize: 9, marginTop: 2 }}
-                    >
+                    <div style={{ color: K.muted, fontSize: 9, marginTop: 2 }}>
                       {l}
                     </div>
                   </div>
@@ -6345,8 +8219,8 @@ function KioskView({ children, onBack }) {
                 }}
                 style={{
                   flex: 1,
-                  background: KBG.accent,
-                  color: KBG.text,
+                  background: K.accent,
+                  color: "#fff",
                   border: "none",
                   borderRadius: 12,
                   padding: "14px 0",
@@ -6361,9 +8235,9 @@ function KioskView({ children, onBack }) {
                 onClick={onBack}
                 style={{
                   flex: 1,
-                  background: KBG.panel,
-                  color: KBG.text,
-                  border: `1px solid ${KBG.border}`,
+                  background: K.panel,
+                  color: K.text,
+                  border: `1px solid ${K.border}`,
                   borderRadius: 12,
                   padding: "14px 0",
                   fontSize: 14,
@@ -6389,12 +8263,10 @@ export default function App() {
   const [page, setPage] = useState(null);
   const [kioskMode, setKioskMode] = useState(false);
   const [toast, setToast] = useState(null);
-  const [confirm, setConfirm] = useState(null);
 
-  // Shared state
-  const [childrenData, setChildrenData] = useState(INIT_CHILDREN);
-  const [measurementsData, setMeasurementsData] = useState(INIT_MEASUREMENTS);
-  const [parentsData, setParentsData] = useState(INIT_PARENTS);
+  const [childrenData] = useState(INIT_CHILDREN);
+  const [measurementsData] = useState(INIT_MEASUREMENTS);
+  const [parentsData] = useState(INIT_PARENTS);
   const [usersData, setUsersData] = useState(INIT_USERS);
   const [auditLogs] = useState(INIT_AUDIT_LOGS);
   const [appointments] = useState(INIT_APPOINTMENTS);
@@ -6406,7 +8278,6 @@ export default function App() {
     setPage(u.role === "admin" ? "admin-dashboard" : "nutri-dashboard");
   };
 
-  // Admin nav structure
   const ADMIN_NAV = [
     {
       label: "MAIN",
@@ -6441,7 +8312,6 @@ export default function App() {
     },
   ];
 
-  // Nutritionist nav structure
   const NUTRI_NAV = [
     {
       label: "OVERVIEW",
@@ -6485,7 +8355,6 @@ export default function App() {
       <LoginPage onLogin={handleLogin} onKiosk={() => setKioskMode(true)} />
     );
 
-  // ── Admin Pages ──
   const renderAdminPage = () => {
     switch (page) {
       case "admin-dashboard":
@@ -6520,7 +8389,17 @@ export default function App() {
       case "admin-audit":
         return <AuditLogs logs={auditLogs} />;
       case "admin-roles":
-        return <RolesPermissions />;
+        return (
+          <RolesPermissions
+            users={usersData}
+            showToast={showToast}
+            onUpdateUserRole={(id, role) =>
+              setUsersData((p) =>
+                p.map((x) => (x.id === id ? { ...x, role } : x)),
+              )
+            }
+          />
+        );
       case "admin-settings":
         return <AdminSystemSettings showToast={showToast} />;
       default:
@@ -6528,7 +8407,6 @@ export default function App() {
     }
   };
 
-  // ── Nutritionist Pages ──
   const renderNutriPage = () => {
     switch (page) {
       case "nutri-dashboard":
@@ -6613,7 +8491,6 @@ export default function App() {
           onClose={() => setToast(null)}
         />
       )}
-
       <AppShell
         user={user}
         navItems={isAdmin ? ADMIN_NAV : NUTRI_NAV}
