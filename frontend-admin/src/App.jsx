@@ -46,7 +46,7 @@ const INIT_CHILDREN = [
   },
   {
     id: 2,
-    child_code: "CHD-0002",
+    child_code: "CHD-002",
     first_name: "Juan",
     last_name: "Dela Cruz",
     birthdate: "2022-09-20",
