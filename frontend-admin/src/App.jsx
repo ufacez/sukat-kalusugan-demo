@@ -4437,162 +4437,139 @@ function AdminSystemSettings({ showToast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// NUTRITIONIST PAGES
-// ═══════════════════════════════════════════════════════════════════════════════
+function NutritionistDashboard({ children, parents, appointments,}) {
+  const [tableFilter, setTableFilter] = useState("Today");
+  const [calendarMonth, setCalendarMonth] = useState(new Date(2026, 4, 1)); // May 2026
+  const [hoveredCol, setHoveredCol] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [selectedRows, setSelectedRows] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
 
-function NutritionistDashboard({ children, parents, appointments }) {
-  const atRisk = children.filter(
-    (c) => !["Normal", "Overweight"].includes(c.status),
-  );
+  // ── Derived stats ──────────────────────────────────────────────────────────
+  const atRisk = children.filter((c) => !["Normal", "Overweight"].includes(c.status));
   const statusCounts = children.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] || 0) + 1;
     return acc;
   }, {});
-  const todayAppts = appointments.filter((a) => a.status === "Scheduled");
+  const todayAppts = appointments.filter((a) => a.status === "Scheduled").length;
+  const activeParents = parents.filter((p) => p.status === "Active").length;
 
-  const cards = [
+  // ── Stat cards ──────────────────────────────────────────────────────────────
+  const STAT_CARDS = [
     {
       label: "Children Monitored",
       value: children.length,
-      icon: "children",
-      color: T.primary,
-      bg: T.primaryLight,
-      delta: `${statusCounts["Normal"] || 0} Normal`,
+      icon: PATHS.children,
+      iconColor: "#fff",
+      iconBg: "rgba(255,255,255,.2)",
+      numColor: "#fff",
+      deltaColor: "rgba(255,255,255,.8)",
+      descColor: "rgba(255,255,255,.55)",
+      delta: "↑ +15.9%",
       desc: "Registered children",
       featured: true,
+      miniStroke: "#fff",
+      miniPoints: "0,35 15,25 30,30 45,15 60,20 80,5",
     },
     {
       label: "At-Risk Cases",
       value: atRisk.length,
-      icon: "alertTriangle",
-      color: T.danger,
-      bg: T.dangerLight,
-      delta: "Need attention",
+      icon: PATHS.alertTriangle,
+      iconColor: T.danger,
+      iconBg: T.dangerLight,
+      numColor: T.danger,
+      deltaColor: T.danger,
+      delta: "↑ Need attention",
       desc: "Priority follow-up",
+      featured: false,
+      miniStroke: T.danger,
+      miniPoints: "0,20 15,32 30,18 45,28 60,12 80,22",
     },
     {
       label: "Parents Linked",
       value: parents.length,
-      icon: "parents",
-      color: T.info,
-      bg: T.infoLight,
-      delta: `${parents.filter((p) => p.status === "Active").length} active`,
+      icon: PATHS.parents,
+      iconColor: T.info,
+      iconBg: T.infoLight,
+      numColor: T.info,
+      deltaColor: T.info,
+      delta: `↑ ${activeParents} active`,
       desc: "Guardian accounts",
+      featured: false,
+      miniStroke: T.info,
+      miniPoints: "0,30 15,22 30,28 45,12 60,18 80,8",
     },
     {
       label: "Appointments",
-      value: todayAppts.length,
-      icon: "calendar",
-      color: T.purple,
-      bg: T.purpleLight,
-      delta: "Upcoming",
+      value: todayAppts,
+      icon: PATHS.calendar,
+      iconColor: T.purple,
+      iconBg: T.purpleLight,
+      numColor: T.purple,
+      deltaColor: T.purple,
+      delta: "↑ Upcoming",
       desc: "Scheduled visits",
+      featured: false,
+      miniStroke: T.purple,
+      miniPoints: "0,28 15,18 30,24 45,10 60,16 80,6",
     },
   ];
 
-  const ALERTS = [
-    {
-      child: "Sofia Garcia",
-      status: "Severely Underweight",
-      msg: "WAZ -3.2 — immediate intervention needed",
-      icon: "alertTriangle",
-      color: T.danger,
-    },
-    {
-      child: "Juan Dela Cruz",
-      status: "Underweight",
-      msg: "2nd consecutive underweight reading",
-      icon: "info",
-      color: T.warn,
-    },
-    {
-      child: "Carlos Lim",
-      status: "Wasted",
-      msg: "WHZ -2.2 — dietary plan required",
-      icon: "info",
-      color: T.info,
-    },
+  // ── Chart data (multi-line: Normal, Severe, Underweight, Stunted) ──────────
+  const MONTHS_LABELS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
+  const CHART_XS = [56, 110, 164, 218, 272, 326, 380, 420];
+  const CHART_DATA = {
+    Normal:      [59, 65, 61, 72, 68, 71, 64, 66],
+    Severe:      [10, 12, 11, 14, 13, 15, 12, 13],
+    Underweight: [18, 22, 20, 26, 24, 28, 22, 24],
+    Stunted:     [14, 18, 16, 20, 18, 22, 18, 20],
+  };
+  const CHART_COLORS = {
+    Normal:      "#1A8F68",
+    Severe:      "#E03131",
+    Underweight: "#E67E22",
+    Stunted:     "#7048E8",
+  };
+  // Convert data values → SVG y (range 10–152, domain 0–100)
+  const toY = (v) => 152 - (v / 100) * 136;
+  const makePoints = (arr) =>
+    arr.map((v, i) => `${CHART_XS[i]},${toY(v)}`).join(" ");
+
+  // ── Calendar ────────────────────────────────────────────────────────────────
+  const MONTH_NAMES = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December",
   ];
 
-  const malnutritionStatuses = [
-    "Underweight",
-    "Severely Underweight",
-    "Stunted",
-    "Wasted",
-  ];
-  const malnutritionCount = children.filter((c) =>
-    malnutritionStatuses.includes(c.status),
-  ).length;
-  const severeCount = children.filter(
-    (c) => c.status === "Severely Underweight",
-  ).length;
-
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  const trendData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 6 + i);
-    const wave = Math.sin((i + 1) * 1.1) * 1.2;
-    return {
-      label: monthNames[d.getMonth()],
-      atRisk: Math.max(1, Math.round(malnutritionCount + wave)),
-      severe: Math.max(
-        0,
-        Math.round(severeCount + Math.cos((i + 1) * 1.35) * 0.8),
-      ),
-    };
-  });
-  const maxTrend = Math.max(
-    1,
-    ...trendData.map((d) => Math.max(d.atRisk, d.severe)),
-  );
-  const atRiskPoints = trendData
-    .map((d, i) => {
-      const x = (i / (trendData.length - 1)) * 100;
-      const y = 100 - (d.atRisk / maxTrend) * 100;
-      return `${x},${y}`;
-    })
-    .join(" ");
-  const severePoints = trendData
-    .map((d, i) => {
-      const x = (i / (trendData.length - 1)) * 100;
-      const y = 100 - (d.severe / maxTrend) * 100;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const initialMonthDate = appointments[0]?.date
-    ? new Date(appointments[0].date)
-    : new Date();
-  const [calendarMonth, setCalendarMonth] = useState(
-    new Date(initialMonthDate.getFullYear(), initialMonthDate.getMonth(), 1),
-  );
+  // Build event map for calendar — appointments + Oplan Timbang
   const apptByDay = appointments
-    .filter(
-      (a) =>
-        new Date(a.date).getFullYear() === calendarMonth.getFullYear() &&
-        new Date(a.date).getMonth() === calendarMonth.getMonth(),
-    )
+    .filter((a) => {
+      const d = new Date(a.date);
+      return (
+        d.getFullYear() === calendarMonth.getFullYear() &&
+        d.getMonth() === calendarMonth.getMonth()
+      );
+    })
     .reduce((acc, a) => {
       const day = new Date(a.date).getDate();
       if (!acc[day]) acc[day] = [];
-      acc[day].push(a);
+      acc[day].push({ color: "#E03131", label: "Appointment" });
       return acc;
     }, {});
+
+  // Oplan Timbang — fixed days in any month (6, 13, 20, 27 = every Wednesday-ish)
+  const optDays = [6, 13, 20, 27];
+  optDays.forEach((d) => {
+    if (!apptByDay[d]) apptByDay[d] = [];
+    apptByDay[d].push({ color: "#1A8F68", label: "Oplan Timbang" });
+  });
+
+  // Meeting events
+  [11, 16].forEach((d) => {
+    if (!apptByDay[d]) apptByDay[d] = [];
+    apptByDay[d].push({ color: T.info, label: "Meeting" });
+  });
+
   const firstWeekday = new Date(
     calendarMonth.getFullYear(),
     calendarMonth.getMonth(),
@@ -4603,479 +4580,583 @@ function NutritionistDashboard({ children, parents, appointments }) {
     calendarMonth.getMonth() + 1,
     0,
   ).getDate();
-  const calendarCells = [
-    ...Array.from({ length: firstWeekday }, () => null),
+  const today = new Date();
+  const isCurrentMonth =
+    today.getMonth() === calendarMonth.getMonth() &&
+    today.getFullYear() === calendarMonth.getFullYear();
+
+  const calCells = [
+    ...Array(firstWeekday).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  while (calendarCells.length % 7 !== 0) calendarCells.push(null);
+  while (calCells.length % 7 !== 0) calCells.push(null);
 
-  const monthLabel = `${monthNames[calendarMonth.getMonth()]} ${calendarMonth.getFullYear()}`;
-  const softPanel = {
-    background: "linear-gradient(180deg,#FFFFFF 0%,#FAFCFB 100%)",
-    borderRadius: 18,
+  // ── Alerts ──────────────────────────────────────────────────────────────────
+  const ALERTS = [
+    {
+      child: "Sofia Garcia",
+      status: "Severely Underweight",
+      msg: "WAZ -3.2 — immediate intervention needed",
+      color: T.danger,
+      bg: T.dangerLight,
+      iconPath: PATHS.alertTriangle,
+    },
+    {
+      child: "Juan Dela Cruz",
+      status: "Underweight",
+      msg: "2nd consecutive underweight reading",
+      color: T.warn,
+      bg: T.warnLight,
+      iconPath: PATHS.alertTriangle,
+    },
+    {
+      child: "Carlos Lim",
+      status: "Wasted",
+      msg: "WHZ -2.2 — dietary plan required",
+      color: T.info,
+      bg: T.infoLight,
+      iconPath: PATHS.info,
+    },
+  ];
+
+  // ── Nutritional Status bars ──────────────────────────────────────────────────
+  const STATUS_BARS = [
+    { status: "Normal",               color: T.primary },
+    { status: "Underweight",          color: T.warn },
+    { status: "Severely Underweight", color: T.danger },
+    { status: "Stunted",              color: T.purple },
+    { status: "Wasted",               color: T.info },
+    { status: "Overweight",           color: T.accent },
+  ];
+
+  // ── Patient table rows ────────────────────────────────────────────────────
+  const TABLE_FILTERS = ["Today", "Weekly", "Monthly", "Yearly"];
+
+  // ── Shared card style ─────────────────────────────────────────────────────
+  const card = {
+    background: T.card,
+    borderRadius: 14,
     border: `1px solid ${T.border}`,
-    boxShadow: "0 8px 30px rgba(11,110,79,0.05)",
+    padding: 16,
   };
 
   return (
-    <div>
-      <PageHeader
-        title="Nutrition Dashboard"
-        subtitle="Child health overview and priority alerts"
-      />
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4,1fr)",
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
-        {cards.map((c, i) => (
-          <StatCard key={c.label} {...c} featured={i === 0} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+      {/* ── Stat Cards Row ───────────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
+        {STAT_CARDS.map((s) => (
+          <div
+            key={s.label}
+            style={{
+              background: s.featured ? T.primaryMid : T.card,
+              borderRadius: 14,
+              border: `1px solid ${s.featured ? T.primaryMid : T.border}`,
+              padding: "14px 16px",
+              position: "relative",
+              overflow: "hidden",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 7,
+                  background: s.iconBg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                  stroke={s.iconColor} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d={s.icon} />
+                </svg>
+              </div>
+              <span style={{ fontSize: 11, color: s.featured ? "rgba(255,255,255,.75)" : T.textMuted }}>
+                {s.label}
+              </span>
+              {/* dots */}
+              <svg style={{ marginLeft: "auto" }} width={14} height={14} viewBox="0 0 24 24"
+                fill="none" stroke={s.featured ? "rgba(255,255,255,.5)" : T.textMuted} strokeWidth={1.8} strokeLinecap="round">
+                <circle cx={12} cy={12} r={1} /><circle cx={19} cy={12} r={1} /><circle cx={5} cy={12} r={1} />
+              </svg>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: s.numColor, lineHeight: 1 }}>
+              {s.value}
+            </div>
+            <div style={{ fontSize: 10, color: s.deltaColor, fontWeight: 600, marginTop: 2 }}>
+              {s.delta}
+            </div>
+            <div style={{ fontSize: 10, color: s.featured ? "rgba(255,255,255,.55)" : T.textMuted, marginTop: 1 }}>
+              {s.desc}
+            </div>
+            <svg
+              style={{ position: "absolute", bottom: 0, right: 0, opacity: s.featured ? 0.18 : 0.07 }}
+              width={80} height={40} viewBox="0 0 80 40"
+            >
+              <polyline points={s.miniPoints} fill="none" stroke={s.miniStroke} strokeWidth={2} />
+            </svg>
+          </div>
         ))}
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.6fr 1fr",
-          gap: 16,
-          marginBottom: 20,
-          ...softPanel,
-          padding: 16,
-        }}
-      >
-        <div
-          style={{
-            borderRadius: 14,
-            padding: "12px 16px 14px",
-            borderRight: `1px solid ${T.border}`,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
-            }}
-          >
+
+      {/* ── Mid Row: Chart + Calendar ─────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12 }}>
+
+        {/* Multi-line Malnutrition Chart */}
+        <div style={card}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
-                Malnutrition Trend
-              </div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>
-                7-month trend for at-risk and severe cases
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Patient Overview</div>
+              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
+                Malnutrition trends over time by classification
               </div>
             </div>
-            <div style={{ display: "flex", gap: 12, fontSize: 11 }}>
-              <span
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 8,
-                    background: T.info,
-                    display: "inline-block",
-                  }}
-                />
-                At-Risk
-              </span>
-              <span
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 8,
-                    background: T.danger,
-                    display: "inline-block",
-                  }}
-                />
-                Severe
-              </span>
-            </div>
-          </div>
-          <div
-            style={{
-              border: `1px solid ${T.border}`,
-              borderRadius: 12,
-              padding: 12,
-              background:
-                "radial-gradient(circle at top right, rgba(25,113,194,0.08), transparent 45%), linear-gradient(180deg,#ffffff 0%,#F6FAF9 100%)",
-            }}
-          >
-            <svg
-              width="100%"
-              height="220"
-              viewBox="0 0 100 110"
-              preserveAspectRatio="none"
-            >
-              {[0, 25, 50, 75, 100].map((y) => (
-                <line
-                  key={y}
-                  x1="0"
-                  y1={y}
-                  x2="100"
-                  y2={y}
-                  stroke={T.border}
-                  strokeWidth="0.5"
-                />
-              ))}
-              <polyline
-                points={atRiskPoints}
-                fill="none"
-                stroke={T.info}
-                strokeWidth="1.8"
-              />
-              <polyline
-                points={severePoints}
-                fill="none"
-                stroke={T.danger}
-                strokeWidth="1.8"
-              />
-              {trendData.map((d, i) => {
-                const x = (i / (trendData.length - 1)) * 100;
-                const yA = 100 - (d.atRisk / maxTrend) * 100;
-                const yS = 100 - (d.severe / maxTrend) * 100;
-                return (
-                  <g key={d.label}>
-                    <circle cx={x} cy={yA} r="1.6" fill={T.info} />
-                    <circle cx={x} cy={yS} r="1.6" fill={T.danger} />
-                  </g>
-                );
-              })}
-            </svg>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${trendData.length},1fr)`,
-                gap: 6,
-                marginTop: 6,
-              }}
-            >
-              {trendData.map((d) => (
-                <div
-                  key={d.label}
-                  style={{
-                    textAlign: "center",
-                    fontSize: 10,
-                    color: T.textMuted,
-                  }}
-                >
-                  {d.label}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {Object.entries(CHART_COLORS).map(([label, color]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: T.textMuted }}>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                  {label}
                 </div>
               ))}
             </div>
           </div>
+
+          {/* SVG Chart with hover tooltip */}
+          <div style={{ position: "relative" }}>
+            {hoveredCol !== null && (
+              <div style={{
+                position: "absolute",
+                left: tooltipPos.x,
+                top: tooltipPos.y,
+                background: T.card,
+                border: `1px solid ${T.border}`,
+                borderRadius: 8,
+                padding: "7px 11px",
+                fontSize: 11,
+                zIndex: 20,
+                whiteSpace: "nowrap",
+                boxShadow: "0 4px 12px rgba(0,0,0,.1)",
+                pointerEvents: "none",
+              }}>
+                <div style={{ fontWeight: 600, color: T.text, marginBottom: 4 }}>
+                  {MONTHS_LABELS[hoveredCol]}
+                </div>
+                {Object.entries(CHART_DATA).map(([label, arr]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, fontSize: 10, color: T.textMuted }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: CHART_COLORS[label], flexShrink: 0 }} />
+                    {label}: <span style={{ fontWeight: 600, color: T.text, marginLeft: 2 }}>{arr[hoveredCol]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <svg
+              width="100%"
+              viewBox="0 0 460 195"
+              style={{ display: "block", overflow: "visible" }}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (460 / rect.width);
+                let ci = 0, md = 9999;
+                CHART_XS.forEach((x, i) => { const d = Math.abs(x - mx); if (d < md) { md = d; ci = i; } });
+                if (md > 35) { setHoveredCol(null); return; }
+                setHoveredCol(ci);
+                const px = e.clientX - rect.left;
+                const py = e.clientY - rect.top;
+                setTooltipPos({ x: px + 12, y: py - 10 });
+              }}
+              onMouseLeave={() => setHoveredCol(null)}
+            >
+              {/* Grid lines */}
+              {[16, 50, 84, 118, 152].map((y) => (
+                <line key={y} x1={44} y1={y} x2={430} y2={y} stroke={T.border} strokeWidth={0.5} />
+              ))}
+              {/* Y labels */}
+              {[["100", 19], ["80", 53], ["60", 87], ["40", 121], ["20", 155]].map(([lbl, y]) => (
+                <text key={y} x={38} y={y} fontSize={9} fill={T.textMuted} textAnchor="end">{lbl}</text>
+              ))}
+              {/* Active hover band */}
+              {hoveredCol !== null && (
+                <rect
+                  x={CHART_XS[hoveredCol] - 14}
+                  y={10}
+                  width={28}
+                  height={142}
+                  rx={4}
+                  fill={T.primaryMid}
+                  fillOpacity={0.08}
+                />
+              )}
+              {/* Lines + dots */}
+              {Object.entries(CHART_DATA).map(([label, arr]) => (
+                <g key={label}>
+                  <polyline
+                    points={makePoints(arr)}
+                    fill="none"
+                    stroke={CHART_COLORS[label]}
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {arr.map((v, i) => (
+                    <circle
+                      key={i}
+                      cx={CHART_XS[i]}
+                      cy={toY(v)}
+                      r={hoveredCol === i ? 4.5 : 3.5}
+                      fill={CHART_COLORS[label]}
+                      stroke="#fff"
+                      strokeWidth={1.5}
+                    />
+                  ))}
+                </g>
+              ))}
+              {/* X labels */}
+              {MONTHS_LABELS.map((m, i) => (
+                <text key={m} x={CHART_XS[i]} y={178} fontSize={9} fill={T.textMuted} textAnchor="middle">{m}</text>
+              ))}
+            </svg>
+          </div>
         </div>
-        <div
-          style={{
-            borderRadius: 14,
-            padding: "12px 8px 14px 16px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>
-              Appointments Calendar
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
+
+        {/* Calendar with Oplan Timbang */}
+        <div style={card}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Calendar</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() - 1,
-                      1,
-                    ),
-                  )
-                }
-                style={{ ...btnSecondary, padding: "4px 8px", borderRadius: 8 }}
+                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                style={{ background: "none", border: `1px solid ${T.border}`, borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.textMuted }}
               >
-                <Icon name="arrowLeft" size={12} color={T.textMuted} />
+                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
               </button>
+              <span style={{ fontSize: 12, fontWeight: 500, color: T.text, minWidth: 110, textAlign: "center" }}>
+                {MONTH_NAMES[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </span>
               <button
-                onClick={() =>
-                  setCalendarMonth(
-                    new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() + 1,
-                      1,
-                    ),
-                  )
-                }
-                style={{ ...btnSecondary, padding: "4px 8px", borderRadius: 8 }}
+                onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                style={{ background: "none", border: `1px solid ${T.border}`, borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: T.textMuted }}
               >
-                <Icon name="arrowRight" size={12} color={T.textMuted} />
+                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
               </button>
             </div>
           </div>
-          <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 10 }}>
-            {monthLabel}
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(7,1fr)",
-              gap: 6,
-              marginBottom: 6,
-            }}
-          >
-            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-              <div
-                key={`${d}-${i}`}
-                style={{
-                  textAlign: "center",
-                  fontSize: 10,
-                  color: T.textLight,
-                }}
-              >
+
+          {/* Day headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 4 }}>
+            {["S","M","T","W","T","F","S"].map((d, i) => (
+              <div key={`${d}-${i}`} style={{ textAlign: "center", fontSize: 10, color: T.textMuted, padding: "3px 0", fontWeight: 500 }}>
                 {d}
               </div>
             ))}
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(7,1fr)",
-              gap: 6,
-            }}
-          >
-            {calendarCells.map((day, i) => {
-              const hasAppt = day && apptByDay[day]?.length;
+
+          {/* Calendar grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>
+            {calCells.map((day, i) => {
+              if (!day) return <div key={`blank-${i}`} />;
+              const isToday = isCurrentMonth && day === today.getDate();
+              const events = apptByDay[day] || [];
+              const hasEvents = events.length > 0;
+
               return (
                 <div
-                  key={`${day || "blank"}-${i}`}
+                  key={`day-${day}`}
                   style={{
-                    minHeight: 30,
-                    borderRadius: 8,
-                    border: `1px solid ${hasAppt ? T.info + "55" : T.border}`,
-                    background: hasAppt ? T.infoLight : T.bg,
-                    color: hasAppt ? T.info : T.textMuted,
+                    minHeight: 32,
+                    borderRadius: 7,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: hasEvents || isToday ? "pointer" : "default",
                     fontSize: 11,
-                    fontWeight: hasAppt ? 700 : 500,
+                    padding: 2,
+                    position: "relative",
+                    background: isToday ? T.primary : "transparent",
+                  }}
+                >
+                  <div style={{
+                    lineHeight: 1,
+                    fontSize: 11,
+                    color: isToday ? "#fff" : hasEvents ? T.primary : T.text,
+                    fontWeight: isToday || hasEvents ? 600 : 400,
+                    width: isToday ? 22 : "auto",
+                    height: isToday ? 22 : "auto",
+                    borderRadius: isToday ? "50%" : 0,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    position: "relative",
-                  }}
-                >
-                  {day || ""}
-                  {hasAppt && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: 3,
-                        width: 4,
-                        height: 4,
-                        borderRadius: 4,
-                        background: T.info,
-                      }}
-                    />
+                    background: isToday ? T.primary : "transparent",
+                  }}>
+                    {day}
+                  </div>
+                  {hasEvents && (
+                    <div style={{ display: "flex", gap: 2, marginTop: 2, justifyContent: "center" }}>
+                      {events.slice(0, 3).map((ev, ei) => (
+                        <div key={ei} style={{
+                          width: 4, height: 4, borderRadius: "50%",
+                          background: isToday ? "rgba(255,255,255,.8)" : ev.color,
+                        }} />
+                      ))}
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
-          <div style={{ fontSize: 11, color: T.textMuted, marginTop: 12 }}>
-            {Object.keys(apptByDay).length} day(s) with appointments this month
+
+          {/* Calendar legend */}
+          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+            {[
+              { color: "#E03131",  label: "Appointment" },
+              { color: T.info,     label: "Meeting" },
+              { color: T.primary,  label: "Oplan Timbang" },
+            ].map((l) => (
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: T.textMuted }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />
+                {l.label}
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 20,
-        }}
-      >
-        <div
-          style={{
-            ...softPanel,
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: 15,
-              color: T.text,
-              marginBottom: 4,
-            }}
-          >
+
+      {/* ── Alerts + Nutritional Status Row ──────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
+        {/* Priority Alerts */}
+        <div style={card}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>
             Priority Alerts
-          </div>
-          <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>
-            Children requiring immediate follow-up
           </div>
           {ALERTS.map((a) => (
             <div
               key={a.child}
               style={{
                 display: "flex",
-                gap: 12,
-                padding: "12px 14px",
-                background: a.color + "0E",
-                border: `1px solid ${a.color}30`,
-                borderRadius: 10,
-                marginBottom: 10,
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 8,
+                marginBottom: 8,
+                alignItems: "flex-start",
+                background: a.bg + "10",
+                border: `1px solid ${a.color}20`,
               }}
             >
-              <Icon
-                name={a.icon}
-                size={16}
-                color={a.color}
-                style={{ flexShrink: 0, marginTop: 1 }}
-              />
+              <div style={{
+                width: 28, height: 28, borderRadius: 7,
+                background: a.bg,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                  stroke={a.color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d={a.iconPath} />
+                </svg>
+              </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: T.text }}>
-                  {a.child}
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.child}</div>
+                <div style={{ marginTop: 3 }}>
+                  <StatusBadge status={a.status} />
                 </div>
-                <StatusBadge status={a.status} />
-                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>
-                  {a.msg}
-                </div>
+                <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, lineHeight: 1.4 }}>{a.msg}</div>
               </div>
             </div>
           ))}
         </div>
-        <div
-          style={{
-            ...softPanel,
-            padding: 20,
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: 15,
-              color: T.text,
-              marginBottom: 4,
-            }}
-          >
+
+        {/* Nutritional Status bars */}
+        <div style={card}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>
             Nutritional Status
           </div>
-          <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>
-            Distribution across all registered children
-          </div>
-          {Object.entries(statusCounts).map(([status, count]) => {
-            const pct = Math.round((count / children.length) * 100);
+          {STATUS_BARS.map((s) => {
+            const count = statusCounts[s.status] || 0;
+            const pct = children.length > 0 ? Math.round((count / children.length) * 100) : 0;
             return (
-              <div key={status} style={{ marginBottom: 10 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: 12,
-                    marginBottom: 4,
-                  }}
-                >
-                  <StatusBadge status={status} />
-                  <span style={{ color: T.textMuted }}>
-                    {count} ({pct}%)
-                  </span>
+              <div key={s.status} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
+                  <StatusBadge status={s.status} />
+                  <span style={{ fontSize: 11, color: T.textMuted }}>{count} ({pct}%)</span>
                 </div>
-                <div
-                  style={{
-                    height: 8,
+                <div style={{ height: 7, borderRadius: 999, background: T.bg, overflow: "hidden" }}>
+                  <div style={{
+                    width: `${Math.max(pct > 0 ? pct : 0, pct > 0 ? 3 : 0)}%`,
+                    height: "100%",
                     borderRadius: 999,
-                    background: T.bg,
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${Math.max(4, pct)}%`,
-                      height: "100%",
-                      borderRadius: 999,
-                      background: sColor(status),
-                    }}
-                  />
+                    background: s.color,
+                  }} />
                 </div>
               </div>
             );
           })}
         </div>
       </div>
-      <div
-        style={{
-          ...softPanel,
-          padding: 20,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: 15,
-            color: T.text,
-            marginBottom: 16,
-          }}
-        >
-          Upcoming Appointments
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2,1fr)",
-            gap: 10,
-          }}
-        >
-          {appointments
-            .filter((a) => a.status === "Scheduled")
-            .map((a) => (
-              <div
-                key={a.id}
+
+      {/* ── Patient Overview Table ────────────────────────────────────────── */}
+      <div style={card}>
+        {/* Table header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Patient Overview</div>
+            <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
+              Registered children and their current growth status
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            {TABLE_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setTableFilter(f)}
                 style={{
-                  background: T.bg,
-                  borderRadius: 12,
-                  padding: 14,
-                  border: `1px solid ${T.border}`,
+                  border: `1px solid ${tableFilter === f ? T.primary : T.border}`,
+                  background: tableFilter === f ? T.primary : T.card,
+                  color: tableFilter === f ? "#fff" : T.textMuted,
+                  borderRadius: 6,
+                  padding: "5px 12px",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: tableFilter === f ? 600 : 400,
+                  transition: "all .15s",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: 13, color: T.text }}>
-                    {a.child}
-                  </div>
-                  <span
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: T.bg }}>
+                <th style={{ padding: "8px 10px", borderBottom: `1px solid ${T.border}` }}>
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={(e) => {
+                      setSelectAll(e.target.checked);
+                      const next = {};
+                      if (e.target.checked) children.forEach((c) => { next[c.id] = true; });
+                      setSelectedRows(next);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  />
+                </th>
+                {["No", "Name", "Age", "Date of Birth", "Status", "Barangay", "Parent", "Action"].map((h) => (
+                  <th key={h} style={{
+                    textAlign: "left", padding: "8px 10px",
+                    fontSize: 10, color: T.textMuted, fontWeight: 500,
+                    borderBottom: `1px solid ${T.border}`, whiteSpace: "nowrap",
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {children.map((c, idx) => {
+                const initials = `${c.first_name[0]}${c.last_name[0]}`;
+                const dob = new Date(c.birthdate).toLocaleDateString("en-PH", {
+                  day: "2-digit", month: "short", year: "numeric",
+                });
+                return (
+                  <tr
+                    key={c.id}
                     style={{
-                      background: T.primaryLight,
-                      color: T.primary,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      padding: "2px 8px",
-                      borderRadius: 20,
+                      borderBottom: idx < children.length - 1 ? `1px solid ${T.border}` : "none",
+                      background: selectedRows[c.id] ? T.primaryLight + "80" : "transparent",
+                      transition: "background .1s",
                     }}
                   >
-                    {a.type}
-                  </span>
-                </div>
-                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>
-                  {a.parent} · {a.date} at {a.time}
-                </div>
-                <div style={{ fontSize: 11, color: T.textLight, marginTop: 2 }}>
-                  {a.note}
-                </div>
-              </div>
-            ))}
+                    <td style={{ padding: "10px 10px" }}>
+                      <input
+                        type="checkbox"
+                        checked={!!selectedRows[c.id]}
+                        onChange={(e) => setSelectedRows((p) => ({ ...p, [c.id]: e.target.checked }))}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </td>
+                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 11 }}>
+                      {String(idx + 1).padStart(2, "0")}
+                    </td>
+                    <td style={{ padding: "10px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: "50%",
+                          background: sBg(c.status), color: sColor(c.status),
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0, fontSize: 10, fontWeight: 600,
+                        }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: 12, color: T.text }}>
+                            {c.first_name} {c.last_name}
+                          </div>
+                          <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>
+                            {c.sex}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                      {c.age_months} mo
+                    </td>
+                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12, whiteSpace: "nowrap" }}>
+                      {dob}
+                    </td>
+                    <td style={{ padding: "10px 10px" }}>
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                      {c.barangay}
+                    </td>
+                    <td style={{ padding: "10px 10px", color: T.textMuted, fontSize: 12 }}>
+                      {c.parent}
+                    </td>
+                    <td style={{ padding: "10px 10px" }}>
+                      <button
+                        title="Edit"
+                        style={{
+                          background: "none", border: `1px solid ${T.border}`,
+                          borderRadius: 6, padding: "3px 7px", cursor: "pointer",
+                          color: T.textMuted, marginRight: 3,
+                          display: "inline-flex", alignItems: "center",
+                        }}
+                      >
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                          <path d={PATHS.edit} />
+                        </svg>
+                      </button>
+                      <button
+                        title="Delete"
+                        style={{
+                          background: "none", border: `1px solid ${T.danger}30`,
+                          borderRadius: 6, padding: "3px 7px", cursor: "pointer",
+                          color: T.danger,
+                          display: "inline-flex", alignItems: "center",
+                        }}
+                      >
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                          <path d={PATHS.trash} />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
+
     </div>
   );
 }
