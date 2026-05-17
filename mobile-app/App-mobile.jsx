@@ -1946,6 +1946,231 @@ function AIChatScreen({ user, myChildren }) {
   );
 }
 
+function FloatingChatbot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      role: "assistant",
+      text: "Hi! I am your floating Health Assistant. Ask me about child growth, food, appointments, or breastfeeding.",
+      time: new Date().toLocaleTimeString("en-PH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef(null);
+
+  const quickReplies = [
+    "Weight & height",
+    "Food for babies",
+    "My child is underweight",
+    "Book appointment",
+  ];
+
+  const sendMessage = (preset) => {
+    const text = (preset || input).trim();
+    if (!text) return;
+
+    const userMsg = {
+      id: Date.now(),
+      role: "user",
+      text,
+      time: new Date().toLocaleTimeString("en-PH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setIsTyping(true);
+
+    setTimeout(
+      () => {
+        const aiMsg = {
+          id: Date.now() + 1,
+          role: "assistant",
+          text: getAIResponse(text),
+          time: new Date().toLocaleTimeString("en-PH", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsTyping(false);
+      },
+      900 + Math.random() * 700,
+    );
+  };
+
+  return (
+    <>
+      {isOpen && (
+        <KeyboardAvoidingView
+          style={ss.floatChatWrap}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          pointerEvents="box-none"
+        >
+          <View style={ss.floatChatCard}>
+            <View style={ss.floatChatHeader}>
+              <View style={[ss.listRow, { gap: 10 }]}>
+                <View style={ss.chatBotAvatar}>
+                  <Icon name="bot" size={16} color="#fff" strokeWidth={2} />
+                </View>
+                <View>
+                  <Text style={[ss.listName, { color: "#fff" }]}>
+                    Health Assistant
+                  </Text>
+                  <Text
+                    style={[ss.listMeta, { color: "rgba(255,255,255,0.7)" }]}
+                  >
+                    Always available
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsOpen(false)}
+                style={ss.floatChatCloseBtn}
+              >
+                <Icon name="x" size={16} color="#fff" strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              ref={scrollRef}
+              style={ss.floatChatMessages}
+              contentContainerStyle={{ padding: 12 }}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() =>
+                scrollRef.current?.scrollToEnd({ animated: true })
+              }
+            >
+              {messages.map((m) => (
+                <View
+                  key={m.id}
+                  style={[
+                    ss.msgWrapper,
+                    m.role === "user" && ss.msgWrapperUser,
+                  ]}
+                >
+                  {m.role === "assistant" && (
+                    <View style={ss.msgBotIcon}>
+                      <Icon
+                        name="bot"
+                        size={14}
+                        color={C.primary}
+                        strokeWidth={2}
+                      />
+                    </View>
+                  )}
+                  <View
+                    style={[
+                      ss.msgBubble,
+                      m.role === "user" ? ss.msgBubbleUser : ss.msgBubbleBot,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        ss.msgText,
+                        m.role === "user" && { color: "#fff" },
+                      ]}
+                    >
+                      {m.text}
+                    </Text>
+                    <Text
+                      style={[
+                        ss.msgTime,
+                        m.role === "user" && {
+                          color: "rgba(255,255,255,0.65)",
+                        },
+                      ]}
+                    >
+                      {m.time}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+
+              {isTyping && (
+                <View style={ss.msgWrapper}>
+                  <View style={ss.msgBotIcon}>
+                    <Icon
+                      name="bot"
+                      size={14}
+                      color={C.primary}
+                      strokeWidth={2}
+                    />
+                  </View>
+                  <View style={ss.msgBubbleBot}>
+                    <View style={ss.typingDots}>
+                      <View style={[ss.typingDot, { opacity: 0.4 }]} />
+                      <View style={[ss.typingDot, { opacity: 0.7 }]} />
+                      <View style={ss.typingDot} />
+                    </View>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={ss.floatQuickReplies}
+              contentContainerStyle={{ paddingHorizontal: 10, gap: 8 }}
+            >
+              {quickReplies.map((q, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={ss.quickReply}
+                  onPress={() => sendMessage(q)}
+                >
+                  <Text style={ss.quickReplyText}>{q}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={ss.chatInputRow}>
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder="Type your question..."
+                placeholderTextColor={C.textLight}
+                style={ss.chatInput}
+                multiline
+                returnKeyType="send"
+                onSubmitEditing={() => sendMessage()}
+              />
+              <TouchableOpacity
+                onPress={() => sendMessage()}
+                style={[ss.sendBtn, !input.trim() && { opacity: 0.4 }]}
+                disabled={!input.trim()}
+              >
+                <Icon name="send" size={18} color="#fff" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      )}
+
+      <TouchableOpacity
+        style={ss.floatChatFab}
+        onPress={() => setIsOpen((prev) => !prev)}
+        activeOpacity={0.9}
+      >
+        <Icon
+          name={isOpen ? "x" : "message-circle"}
+          size={24}
+          color="#fff"
+          strokeWidth={2}
+        />
+      </TouchableOpacity>
+    </>
+  );
+}
+
 // ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -3277,6 +3502,7 @@ export default function App() {
         />
       )}
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
+      <FloatingChatbot />
     </SafeAreaView>
   );
 }
@@ -3877,5 +4103,76 @@ const ss = StyleSheet.create({
     backgroundColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // Floating chatbot
+  floatChatWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "flex-end",
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === "ios" ? 94 : 82,
+  },
+  floatChatCard: {
+    height: "65%",
+    minHeight: 360,
+    maxHeight: 540,
+    backgroundColor: C.card,
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 18,
+  },
+  floatChatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: C.primaryDark,
+  },
+  floatChatCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
+  },
+  floatChatMessages: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  floatQuickReplies: {
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    flexGrow: 0,
+    paddingVertical: 8,
+  },
+  floatChatFab: {
+    position: "absolute",
+    right: 16,
+    bottom: Platform.OS === "ios" ? 88 : 74,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 12,
+    zIndex: 120,
   },
 });
