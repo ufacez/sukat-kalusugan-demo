@@ -8488,7 +8488,7 @@ function KioskView({ children, onBack }) {
             lineHeight: 1,
             fontVariantNumeric: "tabular-nums",
           }}>
-            {currentTime.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", hour12: true })}
+            {currentTime.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
           </div>
           <div style={{ fontSize: 12, color: K.muted, marginTop: 6, letterSpacing: 0.5 }}>
             {currentTime.toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
