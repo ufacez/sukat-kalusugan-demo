@@ -8105,1633 +8105,806 @@ function NutritionistSettings({ user, showToast }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // KIOSK VIEW — standalone, accessible from login screen only
 // ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// KIOSK VIEW — Oplan Timbang Plus redesign
+// Drop-in replacement for KioskView in App.jsx
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// USAGE: Replace the entire `function KioskView(...)` block in App.jsx with
+//        this function (copy everything below, starting from "function KioskView").
+//        Keep all other code in App.jsx unchanged.
+//
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KIOSK VIEW — Oplan Timbang Plus redesign
+// Drop-in replacement for KioskView in App.jsx
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// USAGE: Replace the entire `function KioskView(...)` block in App.jsx with
+//        this function (copy everything below, starting from "function KioskView").
+//        Keep all other code in App.jsx unchanged.
+//
+
 function KioskView({ children, onBack }) {
-  const [showWelcome, setShowWelcome] = useState(true);
-  // steps: 0=select child, 1=height scan, 2=weight scan, 3=processing, 4=results
+  // ── steps: 0=language, 1=select child, 2=confirm, 3=measurement, 4=results, 5=done
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
+  const [brgyFilter, setBrgyFilter] = useState("");
   const [selectedChild, setSelectedChild] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Live sensor readings
-  const [heightReading, setHeightReading] = useState(null);
-  const [heightFinal, setHeightFinal] = useState(null);
-  const [heightScanState, setHeightScanState] = useState("idle"); // idle|scanning|locking|done
+  // Measurement state — both sensors run simultaneously like the HTML kiosk
+  const [heightVal, setHeightVal] = useState(null);
+  const [heightLocked, setHeightLocked] = useState(false);
+  const [heightChip, setHeightChip] = useState("idle"); // idle|measuring|locked
+  const [weightVal, setWeightVal] = useState(null);
+  const [weightLocked, setWeightLocked] = useState(false);
+  const [weightChip, setWeightChip] = useState("idle");
+  const [measHeight, setMeasHeight] = useState(null);
+  const [measWeight, setMeasWeight] = useState(null);
+  const [measStarted, setMeasStarted] = useState(false);
+  const [bothLocked, setBothLocked] = useState(false);
 
-  const [weightReading, setWeightReading] = useState(null);
-  const [weightFinal, setWeightFinal] = useState(null);
-  const [weightScanState, setWeightScanState] = useState("idle"); // idle|stabilizing|locking|done
-
-  // Pre-generate random values for weight bar visualization
-  const [weightBarRandoms] = useState(() =>
-    Array.from({ length: 12 }, () => ({
-      height: 8 + Math.floor(Math.random() * 16),
-      duration: 0.2 + Math.random() * 0.3,
-    })),
+  // Weight bars random values
+  const [wBars, setWBars] = useState(() =>
+    Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14))
   );
 
-  // Processing
-  const [processStage, setProcessStage] = useState(0);
-  const [processProgress, setProcessProgress] = useState(0);
   const [result, setResult] = useState(null);
 
-  const timerRef = useRef(null);
-  const heightIntervalRef = useRef(null);
-  const weightIntervalRef = useRef(null);
+  const heightIntRef = useRef(null);
+  const weightIntRef = useRef(null);
+  const wBarsIntRef = useRef(null);
 
   useEffect(() => {
     const iv = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(iv);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      clearInterval(heightIntervalRef.current);
-      clearInterval(weightIntervalRef.current);
-      clearInterval(timerRef.current);
+      clearInterval(heightIntRef.current);
+      clearInterval(weightIntRef.current);
+      clearInterval(wBarsIntRef.current);
     };
   }, []);
 
-  // ── HEIGHT SCAN ──────────────────────────────────────────────────────────────
-  const startHeightScan = () => {
-    if (!selectedChild) return;
-    setHeightScanState("scanning");
-    setHeightFinal(null);
+  // Unique barangays
+  const barangays = [...new Set(children.map((c) => c.barangay))].sort();
 
-    // Base height derived from child age (realistic range)
-    const baseHeight =
-      55 + selectedChild.age_months * 0.9 + (Math.random() * 6 - 3);
+  // Filtered children list
+  const filteredChildren = children.filter((c) => {
+    const matchSearch =
+      search === "" ||
+      `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase());
+    const matchBrgy = brgyFilter === "" || c.barangay === brgyFilter;
+    return matchSearch && matchBrgy;
+  });
 
-    let ticks = 0;
-    heightIntervalRef.current = setInterval(() => {
-      ticks++;
-      // Fluctuate ±3cm while scanning, narrowing as it stabilizes
-      const noise =
-        ticks < 30
-          ? Math.random() * 6 - 3
-          : ticks < 50
-            ? Math.random() * 2 - 1
-            : Math.random() * 0.4 - 0.2;
-      const reading = baseHeight + noise;
-      setHeightReading(parseFloat(reading.toFixed(1)));
+  // ── WHO compute (same as existing helper)
+  const computeWHO = ({ weight_kg, height_cm, age_months }) => {
+    const wazRef = { median: 9.5 + age_months * 0.15, sd: 1.2 };
+    const hazRef = { median: 65 + age_months * 0.9, sd: 3.2 };
+    const whzRef = { median: 10.5 + (height_cm - 65) * 0.09, sd: 1.1 };
+    const waz = ((weight_kg - wazRef.median) / wazRef.sd).toFixed(2);
+    const haz = ((height_cm - hazRef.median) / hazRef.sd).toFixed(2);
+    const whz = ((weight_kg - whzRef.median) / whzRef.sd).toFixed(2);
+    let status = "Normal";
+    if (parseFloat(waz) < -3 || parseFloat(whz) < -3) status = "Severely Underweight";
+    else if (parseFloat(waz) < -2) status = "Underweight";
+    else if (parseFloat(haz) < -2) status = "Stunted";
+    else if (parseFloat(whz) < -2) status = "Wasted";
+    else if (parseFloat(whz) > 2) status = "Overweight";
+    return {
+      waz: parseFloat(waz),
+      haz: parseFloat(haz),
+      whz: parseFloat(whz),
+      status,
+    };
+  };
 
-      if (ticks === 50) {
-        setHeightScanState("locking");
-      }
-      if (ticks >= 65) {
-        clearInterval(heightIntervalRef.current);
-        const locked = parseFloat(baseHeight.toFixed(1));
-        setHeightReading(locked);
-        setHeightFinal(locked);
-        setHeightScanState("done");
+  const zColor = (v) => (v < -2 ? "#e03131" : v < -1 ? "#f5a623" : "#2bc88a");
+  const zCls = (v) => (v < -2 ? "danger" : v < -1 ? "warn" : "normal");
+  const zLabel = (v, type) => {
+    if (type === "waz") return v < -3 ? "Severely Underweight" : v < -2 ? "Underweight" : v > 2 ? "Overweight" : "Normal";
+    if (type === "haz") return v < -2 ? "Stunted" : v > 2 ? "Tall for Age" : "Normal";
+    return v < -3 ? "Severely Wasted" : v < -2 ? "Wasted" : v > 2 ? "Overweight" : "Normal";
+  };
+
+  // ── Initiate measurement (both sensors simultaneously)
+  const startMeasurement = () => {
+    if (!selectedChild || measStarted) return;
+    setMeasStarted(true);
+    setHeightChip("measuring");
+    setWeightChip("measuring");
+
+    const baseH = 55 + selectedChild.age_months * 0.9 + (Math.random() * 4 - 2);
+    const baseW = 3.5 + selectedChild.age_months * 0.25 + (Math.random() * 1.2 - 0.6);
+
+    let hTicks = 0;
+    let hDone = false;
+    let wTicks = 0;
+    let wDone = false;
+
+    heightIntRef.current = setInterval(() => {
+      hTicks++;
+      const noise = hTicks < 30 ? Math.random() * 6 - 3 : hTicks < 55 ? Math.random() * 1.4 - 0.7 : Math.random() * 0.3 - 0.15;
+      setHeightVal(parseFloat((baseH + noise).toFixed(1)));
+      if (hTicks >= 65 && !hDone) {
+        hDone = true;
+        clearInterval(heightIntRef.current);
+        const locked = parseFloat(baseH.toFixed(1));
+        setHeightVal(locked);
+        setMeasHeight(locked);
+        setHeightLocked(true);
+        setHeightChip("locked");
+        if (wDone) setBothLocked(true);
       }
     }, 60);
-  };
 
-  const proceedToWeight = () => {
-    setStep(2);
-    setWeightScanState("idle");
-    setWeightReading(null);
-    setWeightFinal(null);
-  };
-
-  // ── WEIGHT SCAN ──────────────────────────────────────────────────────────────
-  const startWeightScan = () => {
-    if (!selectedChild) return;
-    setWeightScanState("stabilizing");
-    setWeightFinal(null);
-
-    // Realistic weight from age
-    const baseWeight =
-      3.5 + selectedChild.age_months * 0.25 + (Math.random() * 1.4 - 0.7);
-
-    let ticks = 0;
-    weightIntervalRef.current = setInterval(() => {
-      ticks++;
-      const noise =
-        ticks < 20
-          ? Math.random() * 2 - 1
-          : ticks < 45
-            ? Math.random() * 0.6 - 0.3
-            : Math.random() * 0.08 - 0.04;
-      const reading = baseWeight + noise;
-      setWeightReading(parseFloat(reading.toFixed(2)));
-
-      if (ticks === 45) {
-        setWeightScanState("locking");
-      }
-      if (ticks >= 58) {
-        clearInterval(weightIntervalRef.current);
-        const locked = parseFloat(baseWeight.toFixed(2));
-        setWeightReading(locked);
-        setWeightFinal(locked);
-        setWeightScanState("done");
+    weightIntRef.current = setInterval(() => {
+      wTicks++;
+      const noise = wTicks < 20 ? Math.random() * 1.8 - 0.9 : wTicks < 48 ? Math.random() * 0.5 - 0.25 : Math.random() * 0.06 - 0.03;
+      setWeightVal(parseFloat((baseW + noise).toFixed(2)));
+      if (wTicks >= 60 && !wDone) {
+        wDone = true;
+        clearInterval(weightIntRef.current);
+        clearInterval(wBarsIntRef.current);
+        const locked = parseFloat(baseW.toFixed(2));
+        setWeightVal(locked);
+        setMeasWeight(locked);
+        setWeightLocked(true);
+        setWeightChip("locked");
+        if (hDone) setBothLocked(true);
       }
     }, 70);
+
+    // Animate weight bars
+    wBarsIntRef.current = setInterval(() => {
+      setWBars(Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14)));
+    }, 120);
   };
 
-  const proceedToProcessing = () => {
-    setStep(3);
-    setProcessStage(0);
-    setProcessProgress(0);
-
-    const STAGES = [
-      "Validating sensor data...",
-      "Applying WHO 2006 standards...",
-      "Computing WAZ (Weight-for-Age)...",
-      "Computing HAZ (Height-for-Age)...",
-      "Computing WHZ (Weight-for-Height)...",
-      "Classifying nutritional status...",
-      "Syncing to eOPT+ database...",
-      "Complete!",
-    ];
-
-    let p = 0;
-    timerRef.current = setInterval(() => {
-      p += 100 / 55;
-      const stageIdx = Math.min(
-        Math.floor((p / 100) * STAGES.length),
-        STAGES.length - 1,
-      );
-      setProcessProgress(Math.min(p, 100));
-      setProcessStage(stageIdx);
-
-      if (p >= 100) {
-        clearInterval(timerRef.current);
-        const r = computeWHO({
-          weight_kg: weightFinal,
-          height_cm: heightFinal,
-          age_months: selectedChild.age_months,
-        });
-        setResult(r);
-        setTimeout(() => setStep(4), 500);
-      }
-    }, 90);
+  const goToResults = () => {
+    if (!measHeight || !measWeight) return;
+    const r = computeWHO({ weight_kg: measWeight, height_cm: measHeight, age_months: selectedChild.age_months });
+    setResult(r);
+    setStep(4);
   };
 
   const resetKiosk = () => {
-    clearInterval(heightIntervalRef.current);
-    clearInterval(weightIntervalRef.current);
-    clearInterval(timerRef.current);
+    clearInterval(heightIntRef.current);
+    clearInterval(weightIntRef.current);
+    clearInterval(wBarsIntRef.current);
     setStep(0);
     setSelectedChild(null);
     setSearch("");
-    setHeightReading(null);
-    setHeightFinal(null);
-    setHeightScanState("idle");
-    setWeightReading(null);
-    setWeightFinal(null);
-    setWeightScanState("idle");
-    setProcessProgress(0);
-    setProcessStage(0);
+    setBrgyFilter("");
+    setHeightVal(null);
+    setHeightLocked(false);
+    setHeightChip("idle");
+    setWeightVal(null);
+    setWeightLocked(false);
+    setWeightChip("idle");
+    setMeasHeight(null);
+    setMeasWeight(null);
+    setMeasStarted(false);
+    setBothLocked(false);
     setResult(null);
+    setWBars(Array.from({ length: 12 }, () => 4 + Math.floor(Math.random() * 14)));
   };
 
+  // ── Design tokens (dark green kiosk theme from HTML)
   const K = {
-    bg: "linear-gradient(135deg,#0D2B20 0%,#0B3D2A 50%,#0D2B20 100%)",
-    text: "#fff",
-    muted: "rgba(255,255,255,0.6)",
-    faint: "rgba(255,255,255,0.25)",
+    bg: "#0b2e1e",
+    bgGrad: "radial-gradient(ellipse at 20% 0%,rgba(43,200,138,0.12) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(43,200,138,0.07) 0%,transparent 40%),#0b2e1e",
+    topbar: "#071c13",
+    border: "rgba(255,255,255,0.09)",
     panel: "rgba(255,255,255,0.05)",
-    border: "rgba(255,255,255,0.1)",
-    accent: "#2BC88A",
-    accentDim: "rgba(43,200,138,0.2)",
-    danger: "#E03131",
-    warn: "#E67E22",
+    panelDark: "rgba(0,0,0,0.22)",
+    green: "#2bc88a",
+    greenDim: "rgba(43,200,138,0.12)",
+    greenBorder: "rgba(43,200,138,0.22)",
+    amber: "#f5a623",
+    red: "#e03131",
+    blue: "cornflowerblue",
+    text: "#fff",
+    muted: "rgba(255,255,255,0.5)",
+    faint: "rgba(255,255,255,0.18)",
   };
 
-  const STEP_LABELS = [
-    "Select Child",
-    "Height Scan",
-    "Weight Scan",
-    "Processing",
-    "Results",
-  ];
+  const STEP_LABELS = ["Language", "Select Child", "Confirm", "Measure", "Results", "Done"];
 
-  // ── Processing STAGES list (for display) ────────────────────────────────────
-  const PROC_STAGES = [
-    "Validating sensor data...",
-    "Applying WHO 2006 standards...",
-    "Computing WAZ (Weight-for-Age)...",
-    "Computing HAZ (Height-for-Age)...",
-    "Computing WHZ (Weight-for-Height)...",
-    "Classifying nutritional status...",
-    "Syncing to eOPT+ database...",
-    "Complete!",
-  ];
-
-  // ── Step indicator ───────────────────────────────────────────────────────────
-  const StepBar = () => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 0,
-        padding: "18px 0 4px",
-      }}
-    >
-      {STEP_LABELS.map((label, i) => (
-        <div key={label} style={{ display: "flex", alignItems: "center" }}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background:
-                  step > i ? K.accent : step === i ? K.accentDim : K.panel,
-                border: `2px solid ${step >= i ? K.accent : K.border}`,
-                color: step >= i ? K.text : K.faint,
-                fontWeight: 700,
-                fontSize: 11,
-              }}
-            >
-              {step > i ? <Icon name="check" size={12} color="#fff" /> : i + 1}
-            </div>
-            <div
-              style={{
-                color: step === i ? K.accent : K.faint,
-                fontSize: 9,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {label}
-            </div>
-          </div>
+  // Step indicator
+  const StepBar = ({ current }) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, padding: "10px 0 8px", flexShrink: 0 }}>
+      {STEP_LABELS.map((_, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center" }}>
+          <div style={{
+            width: i === current ? 24 : 8,
+            height: 8,
+            borderRadius: i === current ? 4 : "50%",
+            background: i < current ? "#1a6b43" : i === current ? K.green : K.faint,
+            transition: "all 0.3s",
+          }} />
           {i < STEP_LABELS.length - 1 && (
-            <div
-              style={{
-                width: 48,
-                height: 2,
-                background: step > i ? K.accent : K.border,
-                margin: "0 4px 16px",
-              }}
-            />
+            <div style={{ width: 20, height: 1, background: K.border, margin: "0 3px" }} />
           )}
         </div>
       ))}
     </div>
   );
 
-  // ── Result icon ──────────────────────────────────────────────────────────────
-  const ResultIcon = ({ isNormal }) => (
-    <svg width={52} height={52} viewBox="0 0 56 56" fill="none">
-      {isNormal ? (
-        <>
-          <circle
-            cx="28"
-            cy="28"
-            r="26"
-            fill="rgba(43,200,138,0.15)"
-            stroke="#2BC88A"
-            strokeWidth="2"
-          />
-          <path
-            d="M18 28 L24 34 L38 20"
-            stroke="#2BC88A"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </>
-      ) : (
-        <>
-          <path
-            d="M28 6 L52 48 H4 Z"
-            fill="rgba(230,126,34,0.15)"
-            stroke="#E67E22"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M28 22 L28 34"
-            stroke="#E67E22"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <circle cx="28" cy="41" r="2" fill="#E67E22" />
-        </>
-      )}
-    </svg>
-  );
-
-  // ── Shared header ────────────────────────────────────────────────────────────
-  const Header = () => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "14px 24px",
-        borderBottom: `1px solid ${K.border}`,
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        background: "rgba(13,43,32,0.95)",
-        backdropFilter: "blur(8px)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 8,
-            background: K.accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="heart" size={17} color="#fff" />
+  // Top bar (shared)
+  const Topbar = ({ right }) => (
+    <div style={{
+      background: K.topbar,
+      borderBottom: `1px solid ${K.border}`,
+      padding: "10px 20px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexShrink: 0,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {/* Brand badge */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 7,
+          background: K.greenDim, border: `1px solid ${K.greenBorder}`,
+          borderRadius: 8, padding: "5px 10px",
+        }}>
+          <svg width={18} height={18} viewBox="0 0 18 18" fill="none">
+            <path d="M9 15.5S2.5 11 2.5 6.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 15.5 6.5C15.5 11 9 15.5 9 15.5Z" fill="#2BC88A" opacity="0.25" />
+            <path d="M9 15.5S2.5 11 2.5 6.5a3.5 3.5 0 0 1 6.5-1.8A3.5 3.5 0 0 1 15.5 6.5C15.5 11 9 15.5 9 15.5Z" stroke="#2BC88A" strokeWidth="1.4" strokeLinejoin="round" />
+            <line x1="9" y1="7" x2="9" y2="11" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="7" y1="9" x2="11" y2="9" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span style={{ fontSize: 11, fontWeight: 700, color: K.green, letterSpacing: 0.4 }}>Oplan Timbang Plus</span>
         </div>
-        <div>
-          <div style={{ color: K.text, fontWeight: 700, fontSize: 14 }}>
-            SukatKalusugan
-          </div>
-          <div style={{ color: K.muted, fontSize: 9, letterSpacing: 1.5 }}>
-            ANTHROPOMETRIC KIOSK v1.0
-          </div>
-        </div>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#0052a3", color: "#fff", padding: "3px 7px", borderRadius: 5 }}>DOH</span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, background: "#cc5500", color: "#fff", padding: "3px 7px", borderRadius: 5 }}>NNC</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {[
-          [
-            "signal",
-            "TF-Luna",
-            heightScanState === "done"
-              ? K.accent
-              : heightScanState === "scanning" || heightScanState === "locking"
-                ? K.warn
-                : K.muted,
-          ],
-          [
-            "scale",
-            "HX711",
-            weightScanState === "done"
-              ? K.accent
-              : weightScanState === "stabilizing" ||
-                  weightScanState === "locking"
-                ? K.warn
-                : K.muted,
-          ],
-          ["wifi", "WiFi", K.accent],
-        ].map(([icon, label, color]) => (
-          <span
-            key={label}
-            style={{
-              fontSize: 10,
-              color,
-              background:
-                color === K.accent
-                  ? "rgba(43,200,138,0.12)"
-                  : "rgba(255,255,255,0.06)",
-              padding: "3px 8px",
-              borderRadius: 5,
-              border: `1px solid ${color === K.accent ? "rgba(43,200,138,0.25)" : "rgba(255,255,255,0.1)"}`,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Icon name={icon} size={10} color={color} />
-            {label}
-          </span>
-        ))}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {right}
+        <span style={{ fontFamily: "monospace", fontSize: 12, color: K.muted, letterSpacing: 0.5 }}>
+          {currentTime.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", hour12: true })}
+        </span>
         <button
           onClick={onBack}
-          style={{
-            background: K.panel,
-            color: K.muted,
-            border: `1px solid ${K.border}`,
-            borderRadius: 7,
-            padding: "6px 14px",
-            fontSize: 12,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-          }}
+          style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
         >
-          <Icon name="arrowLeft" size={11} color={K.muted} /> Exit
+          Exit
         </button>
       </div>
     </div>
   );
 
-  // ── KioskLogo SVG ────────────────────────────────────────────────────────────
-  const KioskLogo = () => (
-    <svg width={96} height={96} viewBox="0 0 100 100" fill="none">
-      <circle
-        cx="50"
-        cy="50"
-        r="48"
-        fill="rgba(43,200,138,0.1)"
-        stroke="rgba(43,200,138,0.25)"
-        strokeWidth="1"
-      />
-      <path
-        d="M50 68 L22 44 A18 18 0 0 1 50 30 A18 18 0 0 1 78 44 Z"
-        fill="none"
-        stroke="#2BC88A"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-      />
-      <rect
-        x="46"
-        y="38"
-        width="8"
-        height="22"
-        rx="2"
-        fill="#2BC88A"
-        opacity="0.8"
-      />
-      <rect
-        x="39"
-        y="45"
-        width="22"
-        height="8"
-        rx="2"
-        fill="#2BC88A"
-        opacity="0.8"
-      />
-    </svg>
-  );
+  // Chip component
+  const Chip = ({ type, label }) => {
+    const styles = {
+      idle: { bg: K.panel, color: K.muted },
+      measuring: { bg: "rgba(245,166,35,0.18)", color: K.amber },
+      locked: { bg: "rgba(43,200,138,0.18)", color: K.green },
+    };
+    const s = styles[type] || styles.idle;
+    return (
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, padding: "5px 12px", borderRadius: 20, background: s.bg, color: s.color, marginTop: 10 }}>
+        {type === "idle" && <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>}
+        {type === "measuring" && <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>}
+        {type === "locked" && <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6 9 17l-5-5" /></svg>}
+        {label}
+      </div>
+    );
+  };
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ══════════════════════════════════════════════════════════════════════════════
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: K.bg,
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "'Inter',ui-sans-serif,system-ui,sans-serif",
-      }}
-    >
-      <Header />
+  // ── SCREEN 0: LANGUAGE SELECT ─────────────────────────────────────────────
+  if (step === 0) return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 24px", gap: 22 }}>
 
-      {!showWelcome && <StepBar />}
+        {/* Family illustration */}
+        <svg width={120} height={88} viewBox="0 0 120 88" fill="none">
+          <circle cx="32" cy="20" r="10" fill="rgba(255,255,255,0.15)" />
+          <path d="M22 42c0-5.5 4.5-10 10-10s10 4.5 10 10v26" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <circle cx="88" cy="20" r="10" fill="rgba(255,255,255,0.15)" />
+          <path d="M78 42c0-5.5 4.5-10 10-10s10 4.5 10 10v26" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <circle cx="60" cy="28" r="12" fill="rgba(43,200,138,0.22)" />
+          <circle cx="60" cy="28" r="12" stroke="#2BC88A" strokeWidth="1.5" />
+          <path d="M48 52c0-6.6 5.4-12 12-12s12 5.4 12 12v24" stroke="#2BC88A" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" />
+          <line x1="14" y1="80" x2="106" y2="80" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeLinecap="round" />
+          <rect x="50" y="76" width="20" height="4" rx="2" fill="rgba(43,200,138,0.35)" />
+          <line x1="8" y1="10" x2="8" y2="80" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <line x1="5" y1="10" x2="11" y2="10" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          <line x1="6" y1="28" x2="10" y2="28" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+          <line x1="5" y1="46" x2="11" y2="46" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+          <line x1="5" y1="80" x2="11" y2="80" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+        </svg>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "20px 24px 32px",
-        }}
-      >
-        {/* ══ WELCOME ══════════════════════════════════════════════════════════ */}
-        {showWelcome && (
-          <div
-            style={{
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              maxWidth: 480,
-            }}
-          >
-            <div style={{ marginBottom: 24 }}>
-              <KioskLogo />
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              <span style={{ fontSize: 38, fontWeight: 300, color: K.muted }}>
-                Sukat
-              </span>
-              <span style={{ fontSize: 38, fontWeight: 700, color: K.accent }}>
-                {" "}
-                Kalusugan
-              </span>
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                color: K.muted,
-                marginBottom: 24,
-                letterSpacing: 0.5,
-              }}
-            >
-              Anthropometric Measurement Kiosk
-            </div>
-            <div
-              style={{
-                fontSize: 48,
-                fontWeight: 700,
-                color: K.text,
-                letterSpacing: -1,
-                marginBottom: 6,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {currentTime.toLocaleTimeString("en-PH", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              })}
-            </div>
-            <div style={{ fontSize: 12, color: K.muted, marginBottom: 36 }}>
-              {currentTime.toLocaleDateString("en-PH", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </div>
-            <div style={{ display: "flex", gap: 10, marginBottom: 36 }}>
-              {[
-                ["signal", "LiDAR Active"],
-                ["scale", "Load Cell OK"],
-                ["wifi", "Connected"],
-              ].map(([icon, label]) => (
-                <div
-                  key={label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: K.accentDim,
-                    border: "1px solid rgba(43,200,138,0.2)",
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                  }}
-                >
-                  <Icon name={icon} size={12} color={K.accent} />
-                  <span style={{ fontSize: 11, color: K.accent }}>{label}</span>
-                </div>
-              ))}
-            </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: K.text, letterSpacing: -0.5, lineHeight: 1.1 }}>Oplan Timbang Plus</div>
+          <div style={{ fontSize: 12, color: K.muted, marginTop: 5, letterSpacing: 0.3 }}>Barangay Child Growth Monitoring Station</div>
+        </div>
+
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontStyle: "italic", textAlign: "center", padding: "9px 18px", background: "rgba(255,255,255,0.04)", border: `1px solid ${K.border}`, borderRadius: 10, maxWidth: 340, lineHeight: 1.6 }}>
+          "Mabuhay! Piliin ang wika / Please select your language."
+        </div>
+
+        <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
+          {[
+            { lang: "Filipino", sub: "Pindutin para magsimula", icon: "PH" },
+            { lang: "English", sub: "Tap to begin", icon: "EN" },
+          ].map(({ lang, sub, icon }) => (
             <button
-              onClick={() => setShowWelcome(false)}
-              style={{
-                background: K.danger,
-                color: "#fff",
-                border: "none",
-                borderRadius: 14,
-                padding: "18px 72px",
-                fontSize: 20,
-                fontWeight: 700,
-                cursor: "pointer",
-                letterSpacing: 0.5,
-              }}
+              key={lang}
+              onClick={() => setStep(1)}
+              style={{ background: "transparent", border: `1px solid ${K.border}`, borderRadius: 16, padding: "20px 28px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minWidth: 180, transition: "border-color 0.2s,background 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.green; e.currentTarget.style.background = "rgba(43,200,138,0.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.border; e.currentTarget.style.background = "transparent"; }}
             >
-              Touch to Start
-            </button>
-          </div>
-        )}
-
-        {/* ══ STEP 0: SELECT CHILD ═════════════════════════════════════════════ */}
-        {!showWelcome && step === 0 && (
-          <div style={{ width: "100%", maxWidth: 720 }}>
-            <h2
-              style={{
-                color: K.text,
-                textAlign: "center",
-                fontSize: 18,
-                fontWeight: 600,
-                margin: "0 0 6px",
-              }}
-            >
-              Select Child Profile
-            </h2>
-            <p
-              style={{
-                color: K.muted,
-                textAlign: "center",
-                fontSize: 13,
-                margin: "0 0 20px",
-              }}
-            >
-              Search or tap a child to begin measurement
-            </p>
-            <input
-              type="text"
-              placeholder="Search by name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: "100%",
-                background: K.panel,
-                border: `1px solid ${K.border}`,
-                borderRadius: 10,
-                padding: "11px 16px",
-                color: K.text,
-                fontSize: 14,
-                outline: "none",
-                boxSizing: "border-box",
-                marginBottom: 16,
-              }}
-            />
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))",
-                gap: 10,
-              }}
-            >
-              {children
-                .filter(
-                  (c) =>
-                    search === "" ||
-                    `${c.first_name} ${c.last_name}`
-                      .toLowerCase()
-                      .includes(search.toLowerCase()),
-                )
-                .slice(0, 9)
-                .map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => {
-                      setSelectedChild(c);
-                      setStep(1);
-                      setHeightScanState("idle");
-                    }}
-                    style={{
-                      background: K.panel,
-                      border: `1px solid ${K.border}`,
-                      borderRadius: 12,
-                      padding: "14px 12px",
-                      cursor: "pointer",
-                      transition: "border-color 0.15s, background 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = K.accent;
-                      e.currentTarget.style.background = K.accentDim;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = K.border;
-                      e.currentTarget.style.background = K.panel;
-                    }}
-                  >
-                    <div style={{ marginBottom: 8 }}>
-                      <ChildAvatar sex={c.sex} size={40} />
-                    </div>
-                    <div
-                      style={{ color: K.text, fontWeight: 600, fontSize: 13 }}
-                    >
-                      {c.first_name} {c.last_name}
-                    </div>
-                    <div style={{ color: K.muted, fontSize: 11, marginTop: 2 }}>
-                      {c.age_months} months · {c.sex}
-                    </div>
-                    <div style={{ color: K.faint, fontSize: 10, marginTop: 2 }}>
-                      {c.child_code}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* ══ STEP 1: HEIGHT SCAN ══════════════════════════════════════════════ */}
-        {!showWelcome && step === 1 && selectedChild && (
-          <div style={{ width: "100%", maxWidth: 520 }}>
-            {/* Child info strip */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 24,
-                background: K.panel,
-                borderRadius: 12,
-                padding: "12px 16px",
-                border: `1px solid ${K.border}`,
-              }}
-            >
-              <ChildAvatar sex={selectedChild.sex} size={44} />
-              <div>
-                <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
-                  {selectedChild.first_name} {selectedChild.last_name}
-                </div>
-                <div style={{ color: K.muted, fontSize: 12 }}>
-                  {selectedChild.child_code} · {selectedChild.age_months} months
-                  old
-                </div>
-              </div>
-            </div>
-
-            {/* Sensor panel */}
-            <div
-              style={{
-                background: K.panel,
-                borderRadius: 18,
-                border: `1px solid ${
-                  heightScanState === "done"
-                    ? "rgba(43,200,138,0.5)"
-                    : heightScanState === "scanning" ||
-                        heightScanState === "locking"
-                      ? "rgba(230,126,34,0.4)"
-                      : K.border
-                }`,
-                padding: 28,
-                textAlign: "center",
-                marginBottom: 20,
-                transition: "border-color 0.4s",
-              }}
-            >
-              {/* TF-Luna icon + animation */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ position: "relative", width: 80, height: 80 }}>
-                  {/* Pulse rings when scanning */}
-                  {(heightScanState === "scanning" ||
-                    heightScanState === "locking") && (
-                    <>
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          style={{
-                            position: "absolute",
-                            inset: `${-i * 10}px`,
-                            borderRadius: "50%",
-                            border: `1px solid rgba(230,126,34,${0.5 - i * 0.15})`,
-                            animation: `pulseRing 1.2s ease-out ${i * 0.3}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  {heightScanState === "done" && (
-                    <>
-                      {[0, 1].map((i) => (
-                        <div
-                          key={i}
-                          style={{
-                            position: "absolute",
-                            inset: `${-i * 12}px`,
-                            borderRadius: "50%",
-                            border: `1px solid rgba(43,200,138,${0.4 - i * 0.15})`,
-                            animation: `pulseRing 1.5s ease-out ${i * 0.4}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  {/* Sensor icon circle */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "50%",
-                      background:
-                        heightScanState === "done"
-                          ? "rgba(43,200,138,0.2)"
-                          : heightScanState !== "idle"
-                            ? "rgba(230,126,34,0.2)"
-                            : K.accentDim,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `2px solid ${
-                        heightScanState === "done"
-                          ? K.accent
-                          : heightScanState !== "idle"
-                            ? K.warn
-                            : "rgba(43,200,138,0.3)"
-                      }`,
-                      transition: "all 0.4s",
-                    }}
-                  >
-                    <Icon
-                      name="scan"
-                      size={30}
-                      color={
-                        heightScanState === "done"
-                          ? K.accent
-                          : heightScanState !== "idle"
-                            ? K.warn
-                            : K.muted
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Sensor label */}
-              <div
-                style={{
-                  fontSize: 11,
-                  color: K.muted,
-                  letterSpacing: 1.5,
-                  marginBottom: 8,
-                }}
-              >
-                TF-LUNA LiDAR SENSOR
-              </div>
-
-              {/* Reading display */}
-              <div
-                style={{
-                  fontSize: 52,
-                  fontWeight: 800,
-                  color:
-                    heightScanState === "done"
-                      ? K.accent
-                      : heightScanState !== "idle"
-                        ? K.warn
-                        : K.faint,
-                  fontVariantNumeric: "tabular-nums",
-                  letterSpacing: -2,
-                  marginBottom: 4,
-                  minHeight: 64,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  transition: "color 0.3s",
-                }}
-              >
-                {heightReading !== null ? heightReading.toFixed(1) : "—"}
-                <span
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 400,
-                    color: K.muted,
-                    letterSpacing: 0,
-                  }}
-                >
-                  cm
-                </span>
-              </div>
-
-              {/* Status text */}
-              <div
-                style={{
-                  fontSize: 13,
-                  color:
-                    heightScanState === "done"
-                      ? K.accent
-                      : heightScanState === "locking"
-                        ? K.warn
-                        : heightScanState === "scanning"
-                          ? "rgba(230,126,34,0.9)"
-                          : K.faint,
-                  fontWeight: 600,
-                  minHeight: 20,
-                }}
-              >
-                {heightScanState === "idle" && "Ready to measure height"}
-                {heightScanState === "scanning" && "Scanning… stand still"}
-                {heightScanState === "locking" && "Stabilizing reading…"}
-                {heightScanState === "done" &&
-                  `✓ Height locked — ${heightFinal} cm`}
-              </div>
-
-              {/* Beam animation when scanning */}
-              {(heightScanState === "scanning" ||
-                heightScanState === "locking") && (
-                <div style={{ marginTop: 16 }}>
-                  <div
-                    style={{
-                      height: 3,
-                      borderRadius: 999,
-                      background: K.border,
-                      overflow: "hidden",
-                      width: "60%",
-                      margin: "0 auto",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: 999,
-                        background: K.warn,
-                        animation:
-                          "scanBeam 0.8s ease-in-out infinite alternate",
-                        width: "40%",
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action button */}
-            {heightScanState === "idle" && (
-              <button
-                onClick={startHeightScan}
-                style={{
-                  width: "100%",
-                  background: K.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "15px 0",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Icon name="scan" size={17} color="#fff" />
-                START HEIGHT MEASUREMENT
-              </button>
-            )}
-
-            {(heightScanState === "scanning" ||
-              heightScanState === "locking") && (
-              <div
-                style={{
-                  width: "100%",
-                  background: "rgba(230,126,34,0.15)",
-                  border: "1px solid rgba(230,126,34,0.3)",
-                  borderRadius: 12,
-                  padding: "14px 0",
-                  fontSize: 14,
-                  color: K.warn,
-                  fontWeight: 600,
-                  textAlign: "center",
-                }}
-              >
-                Measuring… please wait
-              </div>
-            )}
-
-            {heightScanState === "done" && (
-              <button
-                onClick={proceedToWeight}
-                style={{
-                  width: "100%",
-                  background: K.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "15px 0",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                Continue to Weight Measurement
-                <Icon name="arrowRight" size={16} color="#fff" />
-              </button>
-            )}
-
-            <style>{`
-              @keyframes pulseRing {
-                0% { opacity: 1; transform: scale(1); }
-                100% { opacity: 0; transform: scale(1.5); }
-              }
-              @keyframes scanBeam {
-                0% { transform: translateX(-100%); }
-                100% { transform: translateX(250%); }
-              }
-              @keyframes weightFlicker {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.7; }
-              }
-            `}</style>
-          </div>
-        )}
-
-        {/* ══ STEP 2: WEIGHT SCAN ══════════════════════════════════════════════ */}
-        {!showWelcome && step === 2 && selectedChild && (
-          <div style={{ width: "100%", maxWidth: 520 }}>
-            {/* Child info strip */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 24,
-                background: K.panel,
-                borderRadius: 12,
-                padding: "12px 16px",
-                border: `1px solid ${K.border}`,
-              }}
-            >
-              <ChildAvatar sex={selectedChild.sex} size={44} />
-              <div style={{ flex: 1 }}>
-                <div style={{ color: K.text, fontWeight: 700, fontSize: 15 }}>
-                  {selectedChild.first_name} {selectedChild.last_name}
-                </div>
-                <div style={{ color: K.muted, fontSize: 12 }}>
-                  {selectedChild.child_code} · {selectedChild.age_months} months
-                  old
-                </div>
-              </div>
-              {/* Height already locked */}
-              <div
-                style={{
-                  background: "rgba(43,200,138,0.12)",
-                  border: "1px solid rgba(43,200,138,0.3)",
-                  borderRadius: 8,
-                  padding: "6px 12px",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 9, color: K.muted, letterSpacing: 1 }}>
-                  HEIGHT
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: K.accent }}>
-                  {heightFinal} cm
-                </div>
-              </div>
-            </div>
-
-            {/* Scale sensor panel */}
-            <div
-              style={{
-                background: K.panel,
-                borderRadius: 18,
-                border: `1px solid ${
-                  weightScanState === "done"
-                    ? "rgba(43,200,138,0.5)"
-                    : weightScanState === "stabilizing" ||
-                        weightScanState === "locking"
-                      ? "rgba(100,149,237,0.4)"
-                      : K.border
-                }`,
-                padding: 28,
-                textAlign: "center",
-                marginBottom: 20,
-                transition: "border-color 0.4s",
-              }}
-            >
-              {/* HX711 icon */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <div style={{ position: "relative", width: 80, height: 80 }}>
-                  {(weightScanState === "stabilizing" ||
-                    weightScanState === "locking") && (
-                    <>
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          style={{
-                            position: "absolute",
-                            inset: `${-i * 10}px`,
-                            borderRadius: "50%",
-                            border: `1px solid rgba(100,149,237,${0.5 - i * 0.15})`,
-                            animation: `pulseRing 1.4s ease-out ${i * 0.35}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  {weightScanState === "done" && (
-                    <>
-                      {[0, 1].map((i) => (
-                        <div
-                          key={i}
-                          style={{
-                            position: "absolute",
-                            inset: `${-i * 12}px`,
-                            borderRadius: "50%",
-                            border: `1px solid rgba(43,200,138,${0.4 - i * 0.15})`,
-                            animation: `pulseRing 1.5s ease-out ${i * 0.4}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "50%",
-                      background:
-                        weightScanState === "done"
-                          ? "rgba(43,200,138,0.2)"
-                          : weightScanState !== "idle"
-                            ? "rgba(100,149,237,0.2)"
-                            : K.accentDim,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `2px solid ${
-                        weightScanState === "done"
-                          ? K.accent
-                          : weightScanState !== "idle"
-                            ? "cornflowerblue"
-                            : "rgba(43,200,138,0.3)"
-                      }`,
-                      transition: "all 0.4s",
-                    }}
-                  >
-                    <Icon
-                      name="scale"
-                      size={30}
-                      color={
-                        weightScanState === "done"
-                          ? K.accent
-                          : weightScanState !== "idle"
-                            ? "cornflowerblue"
-                            : K.muted
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  fontSize: 11,
-                  color: K.muted,
-                  letterSpacing: 1.5,
-                  marginBottom: 8,
-                }}
-              >
-                HX711 LOAD CELL AMPLIFIER
-              </div>
-
-              {/* Weight reading */}
-              <div
-                style={{
-                  fontSize: 52,
-                  fontWeight: 800,
-                  color:
-                    weightScanState === "done"
-                      ? K.accent
-                      : weightScanState !== "idle"
-                        ? "cornflowerblue"
-                        : K.faint,
-                  fontVariantNumeric: "tabular-nums",
-                  letterSpacing: -2,
-                  marginBottom: 4,
-                  minHeight: 64,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  transition: "color 0.3s",
-                  animation:
-                    weightScanState === "stabilizing"
-                      ? "weightFlicker 0.3s ease-in-out infinite"
-                      : "none",
-                }}
-              >
-                {weightReading !== null ? weightReading.toFixed(2) : "—"}
-                <span
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 400,
-                    color: K.muted,
-                    letterSpacing: 0,
-                  }}
-                >
-                  kg
-                </span>
-              </div>
-
-              <div
-                style={{
-                  fontSize: 13,
-                  color:
-                    weightScanState === "done"
-                      ? K.accent
-                      : weightScanState === "locking"
-                        ? "cornflowerblue"
-                        : weightScanState === "stabilizing"
-                          ? "rgba(100,149,237,0.9)"
-                          : K.faint,
-                  fontWeight: 600,
-                  minHeight: 20,
-                }}
-              >
-                {weightScanState === "idle" && "Ready to measure weight"}
-                {weightScanState === "stabilizing" &&
-                  "Reading load cell… hold still"}
-                {weightScanState === "locking" && "Stabilizing value…"}
-                {weightScanState === "done" &&
-                  `✓ Weight locked — ${weightFinal} kg`}
-              </div>
-
-              {/* Load cell bar graph when active */}
-              {(weightScanState === "stabilizing" ||
-                weightScanState === "locking") && (
-                <div
-                  style={{
-                    marginTop: 16,
-                    display: "flex",
-                    gap: 3,
-                    alignItems: "flex-end",
-                    justifyContent: "center",
-                    height: 24,
-                  }}
-                >
-                  {weightBarRandoms.map((rand, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: 4,
-                        borderRadius: 2,
-                        background: "cornflowerblue",
-                        height: `${rand.height}px`,
-                        animation: `weightFlicker ${rand.duration}s ease-in-out infinite alternate`,
-                        animationDelay: `${i * 0.05}s`,
-                        opacity: 0.7,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            {weightScanState === "idle" && (
-              <button
-                onClick={startWeightScan}
-                style={{
-                  width: "100%",
-                  background: "cornflowerblue",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "15px 0",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Icon name="scale" size={17} color="#fff" />
-                START WEIGHT MEASUREMENT
-              </button>
-            )}
-
-            {(weightScanState === "stabilizing" ||
-              weightScanState === "locking") && (
-              <div
-                style={{
-                  width: "100%",
-                  background: "rgba(100,149,237,0.12)",
-                  border: "1px solid rgba(100,149,237,0.25)",
-                  borderRadius: 12,
-                  padding: "14px 0",
-                  fontSize: 14,
-                  color: "cornflowerblue",
-                  fontWeight: 600,
-                  textAlign: "center",
-                }}
-              >
-                Measuring… please wait
-              </div>
-            )}
-
-            {weightScanState === "done" && (
-              <button
-                onClick={proceedToProcessing}
-                style={{
-                  width: "100%",
-                  background: K.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "15px 0",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                Generate WHO Analysis
-                <Icon name="arrowRight" size={16} color="#fff" />
-              </button>
-            )}
-
-            <style>{`
-              @keyframes pulseRing {
-                0% { opacity: 1; transform: scale(1); }
-                100% { opacity: 0; transform: scale(1.5); }
-              }
-              @keyframes weightFlicker {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.6; }
-              }
-            `}</style>
-          </div>
-        )}
-
-        {/* ══ STEP 3: PROCESSING ═══════════════════════════════════════════════ */}
-        {!showWelcome && step === 3 && (
-          <div style={{ textAlign: "center", maxWidth: 400 }}>
-            {/* Circular progress */}
-            <div
-              style={{
-                position: "relative",
-                width: 140,
-                height: 140,
-                margin: "0 auto 24px",
-              }}
-            >
-              <svg
-                width={140}
-                height={140}
-                style={{ position: "absolute", top: 0, left: 0 }}
-              >
-                <circle
-                  cx={70}
-                  cy={70}
-                  r={60}
-                  fill="none"
-                  stroke={K.border}
-                  strokeWidth={6}
-                />
-                <circle
-                  cx={70}
-                  cy={70}
-                  r={60}
-                  fill="none"
-                  stroke={K.accent}
-                  strokeWidth={6}
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 60}`}
-                  strokeDashoffset={`${2 * Math.PI * 60 * (1 - processProgress / 100)}`}
-                  transform="rotate(-90 70 70)"
-                  style={{ transition: "stroke-dashoffset 0.09s linear" }}
-                />
-              </svg>
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon name="activity" size={22} color={K.accent} />
-                <div
-                  style={{
-                    color: K.text,
-                    fontSize: 18,
-                    fontWeight: 700,
-                    marginTop: 4,
-                  }}
-                >
-                  {Math.round(processProgress)}%
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                color: K.accent,
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 20,
-              }}
-            >
-              {PROC_STAGES[processStage]}
-            </div>
-
-            {PROC_STAGES.map((s, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 11,
-                  color: i <= processStage ? K.muted : K.faint,
-                  marginBottom: 5,
-                  justifyContent: "center",
-                }}
-              >
-                {i < processStage ? (
-                  <Icon name="check" size={11} color={K.accent} />
-                ) : i === processStage ? (
-                  <Icon name="arrowRight" size={11} color={K.accent} />
+              <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: icon === "PH" ? "rgba(0,82,163,0.25)" : "rgba(180,0,0,0.22)", border: `1px solid ${icon === "PH" ? "rgba(0,82,163,0.4)" : "rgba(180,0,0,0.35)"}` }}>
+                {icon === "PH" ? (
+                  <svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+                    <circle cx="11" cy="11" r="9" stroke="#FFC300" strokeWidth="1.2" opacity="0.7" />
+                    <circle cx="11" cy="11" r="3" fill="#FFC300" opacity="0.9" />
+                    <line x1="11" y1="2" x2="11" y2="6" stroke="#FFC300" strokeWidth="1.2" strokeLinecap="round" />
+                    <line x1="11" y1="16" x2="11" y2="20" stroke="#FFC300" strokeWidth="1.2" strokeLinecap="round" />
+                    <line x1="2" y1="11" x2="6" y2="11" stroke="#FFC300" strokeWidth="1.2" strokeLinecap="round" />
+                    <line x1="16" y1="11" x2="20" y2="11" stroke="#FFC300" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
                 ) : (
-                  <svg width={11} height={11} viewBox="0 0 11 11" fill="none">
-                    <circle
-                      cx={5.5}
-                      cy={5.5}
-                      r={4.5}
-                      stroke={K.faint}
-                      strokeWidth={1.5}
-                    />
+                  <svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+                    <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" />
+                    <ellipse cx="11" cy="11" rx="4.5" ry="9" stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
+                    <line x1="2" y1="11" x2="20" y2="11" stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
                   </svg>
                 )}
-                {s}
               </div>
-            ))}
+              <span style={{ fontSize: 17, fontWeight: 800, color: K.text }}>{lang}</span>
+              <span style={{ fontSize: 11, color: K.muted, fontWeight: 400 }}>{sub}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <StepBar current={0} />
+    </div>
+  );
+
+  // ── SCREEN 1: SELECT CHILD ────────────────────────────────────────────────
+  if (step === 1) return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar right={
+        <button onClick={() => setStep(0)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+          Bumalik
+        </button>
+      } />
+      <div style={{ flex: 1, padding: "16px 20px", overflowY: "auto" }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: K.text, textAlign: "center", lineHeight: 1.2 }}>Sino ang titimbangin ngayon?</div>
+        <div style={{ fontSize: 12, color: K.muted, textAlign: "center", marginTop: 4 }}>Who are we measuring today?</div>
+
+        {/* Live time display */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "12px 0 4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 10, padding: "8px 18px" }}>
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={K.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span style={{ fontFamily: "monospace", fontSize: 18, fontWeight: 700, color: K.text, letterSpacing: 1, fontVariantNumeric: "tabular-nums" }}>
+              {currentTime.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
+            </span>
           </div>
-        )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 10, padding: "8px 18px" }}>
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={K.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span style={{ fontSize: 12, color: K.muted, fontWeight: 500, letterSpacing: 0.3 }}>
+              {currentTime.toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          </div>
+        </div>
 
-        {/* ══ STEP 4: RESULTS ══════════════════════════════════════════════════ */}
-        {!showWelcome && step === 4 && result && selectedChild && (
-          <div style={{ width: "100%", maxWidth: 560 }}>
-            <div style={{ textAlign: "center", marginBottom: 22 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <ResultIcon isNormal={result.status === "Normal"} />
-              </div>
-              <h2
-                style={{
-                  color: K.text,
-                  fontSize: 20,
-                  margin: "0 0 4px",
-                  fontWeight: 700,
-                }}
-              >
-                Measurement Complete
-              </h2>
-              <p style={{ color: K.muted, fontSize: 13, margin: 0 }}>
-                {selectedChild.first_name} {selectedChild.last_name} ·{" "}
-                {selectedChild.age_months} months old
-              </p>
-            </div>
-
-            {/* Height + Weight cards */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 10,
-                marginBottom: 12,
-              }}
-            >
-              {[
-                ["HEIGHT", heightFinal, "cm", K.accent, "scan"],
-                ["WEIGHT", weightFinal, "kg", "cornflowerblue", "scale"],
-              ].map(([label, val, unit, color, icon]) => (
-                <div
-                  key={label}
-                  style={{
-                    background: K.panel,
-                    borderRadius: 12,
-                    padding: "16px 14px",
-                    border: `1px solid ${K.border}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Icon name={icon} size={13} color={color} />
-                    <span
-                      style={{ color: K.muted, fontSize: 10, letterSpacing: 1 }}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      color,
-                      fontSize: 30,
-                      fontWeight: 700,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {val}
-                    <span
-                      style={{ fontSize: 14, fontWeight: 400, color: K.muted }}
-                    >
-                      {" "}
-                      {unit}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Z-score results */}
-            <div
-              style={{
-                background: K.panel,
-                borderRadius: 14,
-                padding: 18,
-                border: `1px solid rgba(43,200,138,0.25)`,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 14,
-                }}
-              >
-                <div style={{ color: K.muted, fontSize: 11, letterSpacing: 1 }}>
-                  NUTRITIONAL STATUS
-                </div>
-                <StatusBadge status={result.status} />
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3,1fr)",
-                  gap: 8,
-                }}
-              >
-                {[
-                  ["WAZ", result.waz, "#F5A623"],
-                  ["HAZ", result.haz, "#6EA8DC"],
-                  ["WHZ", result.whz, K.accent],
-                ].map(([l, v, c]) => (
-                  <div
-                    key={l}
-                    style={{
-                      textAlign: "center",
-                      background: "rgba(255,255,255,0.04)",
-                      borderRadius: 10,
-                      padding: "12px 6px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: c,
-                        fontSize: 24,
-                        fontWeight: 700,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {v > 0 ? "+" : ""}
-                      {v}
-                    </div>
-                    <div
-                      style={{
-                        color: K.muted,
-                        fontSize: 9,
-                        marginTop: 4,
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {l} Z-SCORE
-                    </div>
-                  </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "16px 0" }}>
+          {/* Option A: Barangay filter */}
+          <div style={{ background: K.panelDark, border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>OPTION A — FILTER BY BARANGAY</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 6 }}>
+                {barangays.map((b) => (
+                  <button key={b} onClick={() => setBrgyFilter(brgyFilter === b ? "" : b)} style={{
+                    background: brgyFilter === b ? K.greenDim : K.panel,
+                    border: `1px solid ${brgyFilter === b ? K.green : K.border}`,
+                    borderRadius: 8, padding: "7px 8px", cursor: "pointer",
+                    fontSize: 11, color: brgyFilter === b ? K.green : K.muted, fontWeight: 600,
+                    textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
+                    {b}
+                  </button>
                 ))}
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={resetKiosk}
-                style={{
-                  width: "100%",
-                  background: K.accent,
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "13px 0",
-                  fontSize: 14,
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Icon name="plus" size={15} color="#fff" />
-                New Measurement
+              <button onClick={() => setBrgyFilter("")} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "7px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                Lahat / Show All
               </button>
             </div>
           </div>
-        )}
+
+          {/* Option B: Manual search */}
+          <div style={{ background: K.panelDark, border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>OPTION B — MANUAL SEARCH</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="First / Last Name"
+                style={{ background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 10, padding: "10px 12px", color: K.text, fontSize: 13, outline: "none", fontFamily: "inherit" }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0" }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke={K.muted} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <span style={{ fontSize: 10, color: K.muted }}>Type to filter from the list below</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 8 }}>REGISTERED CHILDREN</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+          {filteredChildren.map((c) => (
+            <div
+              key={c.id}
+              onClick={() => { setSelectedChild(c); setStep(2); }}
+              style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${K.border}`, borderRadius: 14, padding: "14px 10px", cursor: "pointer", textAlign: "center", transition: "border-color 0.2s,background 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = K.green; e.currentTarget.style.background = "rgba(43,200,138,0.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = K.border; e.currentTarget.style.background = "rgba(0,0,0,0.2)"; }}
+            >
+              <div style={{ display: "flex", justifyContent: "center" }}><ChildAvatar sex={c.sex} size={42} /></div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: K.text, marginTop: 8 }}>{c.first_name} {c.last_name}</div>
+              <div style={{ fontSize: 10, color: K.muted, marginTop: 2 }}>{c.age_months} mo · {c.sex}</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", marginTop: 3, fontFamily: "monospace" }}>{c.child_code}</div>
+            </div>
+          ))}
+        </div>
       </div>
+      <StepBar current={1} />
+    </div>
+  );
+
+  // ── SCREEN 2: CONFIRM CHILD ───────────────────────────────────────────────
+  if (step === 2 && selectedChild) return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar right={
+        <button onClick={() => setStep(1)} style={{ background: K.panel, color: K.muted, border: `1px solid ${K.border}`, borderRadius: 8, padding: "5px 12px", fontSize: 11, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+          Bumalik
+        </button>
+      } />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 24px" }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: K.text, textAlign: "center", marginBottom: 4 }}>Tama ba ang batang ito?</div>
+        <div style={{ fontSize: 12, color: K.muted, textAlign: "center", marginBottom: 20 }}>Please confirm the child's profile</div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 540 }}>
+          {/* Profile card */}
+          <div style={{ background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 2 }}>
+              <ChildAvatar sex={selectedChild.sex} size={58} />
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: K.text }}>{selectedChild.first_name} {selectedChild.last_name}</div>
+              <div style={{ fontSize: 11, color: K.muted, marginTop: 2, fontFamily: "monospace" }}>{selectedChild.child_code}</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                ["Edad / Age", `${selectedChild.age_months} months old`, K.green],
+                ["Kasarian / Sex", selectedChild.sex, K.text],
+                ["Barangay", selectedChild.barangay, K.text],
+              ].map(([label, val, color]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "rgba(0,0,0,0.18)", borderRadius: 8 }}>
+                  <span style={{ fontSize: 11, color: K.muted }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color }}>{val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, justifyContent: "center" }}>
+            <button
+              onClick={() => { setMeasStarted(false); setBothLocked(false); setHeightLocked(false); setWeightLocked(false); setHeightChip("idle"); setWeightChip("idle"); setHeightVal(null); setWeightVal(null); setMeasHeight(null); setMeasWeight(null); setStep(3); }}
+              style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 12, padding: "20px", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
+            >
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              <div>
+                <div>Opo, Tama Ito</div>
+                <div style={{ fontSize: 11, fontWeight: 400, opacity: 0.75, marginTop: 2 }}>Yes, this is correct</div>
+              </div>
+            </button>
+            <button
+              onClick={() => setStep(1)}
+              style={{ background: K.red, color: K.text, border: "none", borderRadius: 12, padding: "16px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
+            >
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+              <div>
+                <div>Hindi, Bumalik</div>
+                <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.75, marginTop: 2 }}>No, go back</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <StepBar current={2} />
+    </div>
+  );
+
+  // ── SCREEN 3: LIVE MEASUREMENT ────────────────────────────────────────────
+  if (step === 3 && selectedChild) return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar right={<span style={{ fontSize: 12, color: K.muted }}>{selectedChild.first_name} {selectedChild.last_name}</span>} />
+
+      <div style={{ padding: "14px 18px", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Instruction banner */}
+        <div style={{ background: "rgba(43,200,138,0.07)", border: "1px solid rgba(43,200,138,0.18)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={28} height={28} viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="14" cy="6" r="3.5" stroke="#2BC88A" strokeWidth="1.4" />
+            <line x1="14" y1="9.5" x2="14" y2="18" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="9" y1="13" x2="19" y2="13" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="14" y1="18" x2="10" y2="24" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="14" y1="18" x2="18" y2="24" stroke="#2BC88A" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>Tumayo nang tuwid sa timbangan</div>
+            <div style={{ fontSize: 10, color: K.muted }}>Stand straight on the scale without shoes</div>
+          </div>
+        </div>
+
+        {/* Dual gauge row */}
+        <div style={{ display: "flex", gap: 12 }}>
+          {/* Height gauge */}
+          <div style={{
+            background: "rgba(0,0,0,0.28)",
+            border: `1px solid ${heightLocked ? "rgba(43,200,138,0.45)" : heightChip === "measuring" ? "rgba(245,166,35,0.45)" : K.border}`,
+            borderRadius: 16, padding: "20px 16px", textAlign: "center", flex: 1, transition: "border-color 0.4s",
+          }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.8, color: K.muted, textTransform: "uppercase", marginBottom: 8 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /><path d="M13 13l6 6" /></svg>
+                TAAS / HEIGHT — TF-Luna LiDAR
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+              <div style={{
+                fontSize: 54, fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: -3, lineHeight: 1, transition: "color 0.3s",
+                color: heightLocked ? K.green : heightChip === "measuring" ? K.amber : "rgba(255,255,255,0.2)",
+              }}>
+                {heightVal !== null ? heightVal.toFixed(1) : "000.0"}
+              </div>
+              <span style={{ fontSize: 17, fontWeight: 400, color: K.muted, marginLeft: 4 }}>cm</span>
+            </div>
+            <Chip type={heightChip} label={heightLocked ? `Locked — ${measHeight} cm` : heightChip === "measuring" ? "Measuring..." : "Standby"} />
+            {/* Scan beam */}
+            {heightChip === "measuring" && !heightLocked && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ height: 2, width: "80%", margin: "0 auto", background: "linear-gradient(90deg,transparent,#f5a623,transparent)", borderRadius: 999, animation: "kScanBeam 1.2s ease-in-out infinite" }} />
+              </div>
+            )}
+          </div>
+
+          {/* Weight gauge */}
+          <div style={{
+            background: "rgba(0,0,0,0.28)",
+            border: `1px solid ${weightLocked ? "rgba(43,200,138,0.45)" : weightChip === "measuring" ? "rgba(100,149,237,0.45)" : K.border}`,
+            borderRadius: 16, padding: "20px 16px", textAlign: "center", flex: 1, transition: "border-color 0.4s",
+          }}>
+            <div style={{ fontSize: 9, letterSpacing: 1.8, color: K.muted, textTransform: "uppercase", marginBottom: 8 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v2M3 12h2M19 12h2M12 17l-5 2V12a5 5 0 0 1 10 0v7l-5-2z" /></svg>
+                TIMBANG / WEIGHT — HX711 Load Cell
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+              <div style={{
+                fontSize: 54, fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: -3, lineHeight: 1, transition: "color 0.3s",
+                color: weightLocked ? K.green : weightChip === "measuring" ? K.blue : "rgba(255,255,255,0.2)",
+              }}>
+                {weightVal !== null ? weightVal.toFixed(2) : "00.00"}
+              </div>
+              <span style={{ fontSize: 17, fontWeight: 400, color: K.muted, marginLeft: 4 }}>kg</span>
+            </div>
+            <Chip type={weightChip} label={weightLocked ? `Locked — ${measWeight} kg` : weightChip === "measuring" ? "Stabilizing..." : "Standby"} />
+            {/* Weight bars */}
+            {weightChip === "measuring" && !weightLocked && (
+              <div style={{ display: "flex", gap: 3, alignItems: "flex-end", justifyContent: "center", height: 22, marginTop: 8 }}>
+                {wBars.map((h, i) => (
+                  <div key={i} style={{ width: 4, borderRadius: 2, background: K.blue, height: h }} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={startMeasurement}
+            disabled={measStarted}
+            style={{
+              flex: 1, background: measStarted ? "rgba(31,143,90,0.4)" : "#1f8f5a", color: K.text,
+              border: "none", borderRadius: 12, padding: 14, fontSize: 14, fontWeight: 700,
+              cursor: measStarted ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: measStarted ? 0.5 : 1,
+            }}
+          >
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z" /></svg>
+            Simulan ang Pagsukat / Start Measurement
+          </button>
+          <button
+            onClick={goToResults}
+            disabled={!bothLocked}
+            style={{
+              flex: 1, background: "transparent", color: bothLocked ? K.green : "rgba(43,200,138,0.3)",
+              border: `1px solid ${bothLocked ? "rgba(43,200,138,0.6)" : "rgba(43,200,138,0.2)"}`,
+              borderRadius: 12, padding: 14, fontSize: 14, fontWeight: 700,
+              cursor: bothLocked ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+            I-save ang Timbang / Save
+          </button>
+        </div>
+      </div>
+
+      {/* CSS animations via inline style tag approach — inject into head */}
+      <style>{`
+        @keyframes kScanBeam { 0%{opacity:1;transform:scaleX(1)} 50%{opacity:0.5;transform:scaleX(0.4)} 100%{opacity:1;transform:scaleX(1)} }
+      `}</style>
+
+      <StepBar current={3} />
+    </div>
+  );
+
+  // ── SCREEN 4: WHO RESULTS ─────────────────────────────────────────────────
+  if (step === 4 && result && selectedChild) return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar right={<span style={{ fontSize: 10, color: K.muted, letterSpacing: 0.3 }}>WHO Growth Standards 2006</span>} />
+
+      <div style={{ flex: 1, padding: "14px 18px", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
+        {/* Result header */}
+        <div style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${K.border}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flexShrink: 0 }}><ChildAvatar sex={selectedChild.sex} size={40} /></div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: K.text }}>Mga Resulta ni {selectedChild.first_name}</div>
+            <div style={{ fontSize: 11, color: K.muted, marginTop: 2 }}>Measurement results</div>
+          </div>
+          <div style={{ marginLeft: "auto", textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: K.muted }}>H: {measHeight} cm</div>
+            <div style={{ fontSize: 11, color: K.muted }}>W: {measWeight} kg</div>
+          </div>
+        </div>
+
+        {/* Z-score cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+          {[
+            { label: "Weight-for-Age", sub: "Timbang para sa Edad", abbr: "WAZ", z: result.waz, type: "waz" },
+            { label: "Height-for-Age", sub: "Taas para sa Edad", abbr: "HAZ", z: result.haz, type: "haz" },
+            { label: "Wt-for-Height", sub: "Timbang para sa Taas", abbr: "WHZ", z: result.whz, type: "whz" },
+          ].map(({ label, sub, abbr, z, type }) => {
+            const cls = zCls(z);
+            const clr = zColor(z);
+            const bgMap = { normal: "rgba(43,200,138,0.1)", warn: "rgba(245,166,35,0.1)", danger: "rgba(224,49,49,0.1)" };
+            const bdMap = { normal: "rgba(43,200,138,0.3)", warn: "rgba(245,166,35,0.3)", danger: "rgba(224,49,49,0.3)" };
+            return (
+              <div key={abbr} style={{ background: bgMap[cls], border: `1px solid ${bdMap[cls]}`, borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontSize: 9, letterSpacing: 1, color: K.muted, textTransform: "uppercase" }}>{sub}</div>
+                <div style={{ fontSize: 9, letterSpacing: 1, color: K.muted, textTransform: "uppercase", marginTop: 1 }}>{label} ({abbr})</div>
+                <div style={{ fontSize: 30, fontWeight: 800, fontVariantNumeric: "tabular-nums", lineHeight: 1, color: clr }}>{z > 0 ? "+" : ""}{z}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: clr }}>{zLabel(z, type)}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Z-score scale bars */}
+        <div style={{ background: "rgba(0,0,0,0.18)", border: `1px solid ${K.border}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", marginBottom: 10 }}>WHO Z-SCORE SCALE</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              { l: "WAZ", z: result.waz },
+              { l: "HAZ", z: result.haz },
+              { l: "WHZ", z: result.whz },
+            ].map(({ l, z }) => {
+              const pct = Math.min(Math.max((z + 4) / 8 * 100, 2), 98);
+              return (
+                <div key={l}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: K.muted, marginBottom: 4 }}>
+                    <span>{l}</span>
+                    <span style={{ color: zColor(z), fontWeight: 700 }}>{z > 0 ? "+" : ""}{z}</span>
+                  </div>
+                  <div style={{ height: 7, background: "rgba(255,255,255,0.08)", borderRadius: 999, position: "relative", overflow: "visible" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: "33%", background: "rgba(224,49,49,0.28)", borderRadius: "999px 0 0 999px" }} />
+                    <div style={{ position: "absolute", left: "33%", top: 0, height: "100%", width: "34%", background: "rgba(245,166,35,0.2)" }} />
+                    <div style={{ position: "absolute", left: "67%", top: 0, height: "100%", width: "33%", background: "rgba(43,200,138,0.22)", borderRadius: "0 999px 999px 0" }} />
+                    <div style={{ position: "absolute", top: -4.5, left: `${pct}%`, width: 16, height: 16, borderRadius: "50%", border: "2px solid #fff", transform: "translateX(-50%)", background: zColor(z), transition: "left 0.9s cubic-bezier(.34,1.56,.64,1)" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Continue button */}
+        <button
+          onClick={() => setStep(5)}
+          style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 12, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          Magpatuloy / Continue
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+      <StepBar current={4} />
+    </div>
+  );
+
+  // ── SCREEN 5: DONE ────────────────────────────────────────────────────────
+  return (
+    <div style={{ minHeight: "100vh", background: K.bgGrad, display: "flex", flexDirection: "column", fontFamily: "'Inter',ui-sans-serif,sans-serif" }}>
+      <Topbar right={
+        <div style={{ fontSize: 11, fontWeight: 600, color: K.green, display: "flex", alignItems: "center", gap: 5 }}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          Session Complete
+        </div>
+      } />
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, gap: 20 }}>
+        {/* Success mark */}
+        <div style={{ width: 70, height: 70, borderRadius: "50%", background: "rgba(43,200,138,0.15)", border: "2px solid rgba(43,200,138,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={K.green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: K.text }}>Naitala na ang datos!</div>
+          <div style={{ fontSize: 13, color: K.muted, marginTop: 4 }}>Data has been recorded successfully</div>
+        </div>
+
+        {/* Summary card */}
+        {result && selectedChild && (
+          <div style={{ background: "rgba(0,0,0,0.22)", border: `1px solid ${K.border}`, borderRadius: 16, padding: "16px 20px", width: "100%", maxWidth: 460 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <ChildAvatar sex={selectedChild.sex} size={36} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: K.text }}>{selectedChild.first_name} {selectedChild.last_name}</div>
+                <div style={{ fontSize: 11, color: K.muted }}>{selectedChild.age_months} months · {selectedChild.child_code}</div>
+              </div>
+              <div style={{ marginLeft: "auto" }}>
+                <StatusBadge status={result.status} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+              {[
+                ["WAZ", result.waz, "#F5A623"],
+                ["HAZ", result.haz, "#6EA8DC"],
+                ["WHZ", result.whz, K.green],
+              ].map(([l, v, c]) => (
+                <div key={l} style={{ textAlign: "center", background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "10px 6px" }}>
+                  <div style={{ color: c, fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{v > 0 ? "+" : ""}{v}</div>
+                  <div style={{ color: K.muted, fontSize: 9, marginTop: 4, letterSpacing: 0.5 }}>{l} Z-SCORE</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 11, color: K.muted, borderTop: `1px solid ${K.border}`, paddingTop: 10 }}>
+              <span>H: {measHeight} cm</span>
+              <span>W: {measWeight} kg</span>
+              <span>{new Date().toLocaleDateString("en-PH")}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Reset button */}
+        <button
+          onClick={resetKiosk}
+          style={{ background: "#1f8f5a", color: K.text, border: "none", borderRadius: 14, padding: "18px 40px", fontSize: 16, fontWeight: 700, cursor: "pointer", width: "100%", maxWidth: 460, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 .49-3" /></svg>
+          Tapusin at I-reset / Done — Reset Kiosk
+        </button>
+      </div>
+      <StepBar current={5} />
     </div>
   );
 }
